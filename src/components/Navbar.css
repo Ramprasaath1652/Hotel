@@ -1,0 +1,46 @@
+/* Navbar background */
+.bg-airforceblue {
+  background-color: #5d8aa8 !important; /* Air Force Blue */
+}
+
+/* Section font size & bold */
+.navbar-nav .nav-link {
+  font-size: 1.4rem;      /* slightly bigger font */
+  font-weight: 700;       /* bold */
+  color: white !important;
+  margin-right: 20px;     /* space between sections */
+}
+
+/* Remove last margin */
+.navbar-nav .nav-item:last-child .nav-link {
+  margin-right: 0;
+}
+
+/* Dropdown menu hidden by default */
+.navbar-nav .dropdown-menu {
+  display: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+/* Show dropdown on hover */
+.navbar-nav .dropdown:hover > .dropdown-menu {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Dropdown items styling */
+.dropdown-item {
+  font-size: 1.2rem;  /* slightly bigger font */
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Shuttle effect on hover */
+.dropdown-item:hover {
+  background-color: #4a6f91;
+  color: white;
+  transform: translateX(5px);
+}
