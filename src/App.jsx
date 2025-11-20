@@ -9,11 +9,14 @@ import Home from './pages/Home';
 //Master section
 import Layout from './components/Layout';
 import Group from './pages/master/Group';
+import GroupReduce from './pages/master/GroupReduce';
 import BrandMaster from './pages/master/BrandMaster';
 import Unit from './pages/master/Unit';
 import Product from './pages/master/Product';
 import LedgerCreation from './pages/master/LedgerCreation';
 import ProjectMaster from './pages/master/ProjectMaster';
+import LedgerReduce from './pages/master/LedgerReduce';
+import Test from './pages/master/test';
 
 //Transaction Master
 import SuppQuotation from './pages/transaction/SuppQuotation';
@@ -75,6 +78,7 @@ import About from './pages/help/About';
 
 
 
+
 const App = ()=>{
     return(
      <Router>
@@ -85,11 +89,14 @@ const App = ()=>{
 
              {/*Master Section */}
              <Route path='/master/group' element={<Group/>} />
+             <Route path='/master/group-reducer' element={<GroupReduce/>} />
              <Route path='/master/brand-master' element={<BrandMaster/>} />
              <Route path='/master/unit' element={<Unit/>} />
              <Route path='/master/product' element={<Product/>} />
              <Route path='/master/ledger-creation' element={<LedgerCreation/>} />
+             <Route path='/master/ledger-reducer' element={<LedgerReduce/>} />
              <Route path='/master/project-master' element={<ProjectMaster/>} />
+             <Route path='/master/test' element={<Test/>} />
 
              {/* Transaction Master */}
              <Route path='/transaction/supp-quotation' element={<SuppQuotation/>} />

@@ -1,25 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const ProjectMaster = () => {
-    const [formData, setFormData] = useState({
-        projectNo: '',
-        date: '',
-        projectName: '',
-        ledger: '',
-        refPerson: '',
-        description: '',
-    });
 
 
+    const [projectNo, setProjectNo] = useState('')
+    const [date, setDate] = useState('')
+    const [projectName, setProjectName] = useState('')
+    const [ledger, setLedger] = useState('')
+    const [refPerson, setRefPerson] = useState('')
+    const [description, setDescription] = useState('')
     const [projects, setProjects] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [editingIndex, setEditingIndex] = useState(null);
+    const [add1 , setAdd1] = useState('');
+    const [add2 , setAdd2] = useState('');
+    const [state , setState] = useState('');
+    const [country , setCountry] = useState('');
+    const [pin , setPin] = useState('');
+    const [mobile , setMobile] = useState('');
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+    const gapi = import.meta.env.VITE_API_URL;
+
+    const API = `${gapi}/project`;
+
+    useEffect(() => {
+        console.log('main url : ' + gapi + '/project');
+        // console.log(API);
+        loadProjects();
+    }, []);
+
+    const loadProjects = async () => {
+        try {
+            const res = await axios.get(API);
+
+            console.log("AFTER ADD, projects:", res.data);
+
+            setProjects(res.data);
+
+
+        } catch (err) {
+            console.error('Error fetching groups:', err);
+            console.log("Server error:", err.response?.data);
+            alert('Could not load groups. Check API connection.');
+        }
+    };
+
+    const handleAdd = async () => {
+        if (!projectName.trim()) {
+            alert('Please enter group name');
+            return;
+        }
+
+        const newProject = {
+            ProjId: 0,
+            ProjNo: Number(projectNo),
+            ProjDate: date ? `${date}T00:00:00` : null,
+            ProjName: projectName,
+            LedgerId: Number(ledger),   // NOT LedgerName
+            RefName: refPerson,
+            Description: description,
+            Add1: add1 || "",
+            Add2: add2 || "",
+            State: Number(state) || 0,
+            Country: country || "",
+            Pin: pin || "",
+            Mobile: mobile || ""
+        };
+        console.log("DATA SENT TO API:", newProject);
+        console.log("DATA SENT TO API:", {
+            projectNo,
+            date,
+            projectName,
+            ledger,
+            refPerson,
+            description
+        });
+
+        try {
+            await axios.post(API, newProject, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            await loadProjects();
+
+            alert("Project Added Successfully!");
+
+            setProjectName('');
+            setProjectNo('');
+            setProjectName('');
+            setLedger('');
+            setRefPerson('');
+            setDescription('');
+            setDate('');
+            alert("Project added successfully!");
+        } catch (err) {
+            console.error('Add error:', err);
+            alert("Failed to add project.");
+        }
     }
+
+    const handleEdit = (index) => {
+        setFormData(projects[index])
+        setEditingIndex(index)
+    }
+
+
+
 
     const handleInsertOrUpdate = () => {
         if (!formData.projectName.trim()) {
@@ -44,10 +132,8 @@ const ProjectMaster = () => {
         });
     };
 
-    const handleEdit = (index) => {
-        setFormData(projects[index])
-        setEditingIndex(index)
-    }
+
+
 
     const handleDelete = (index) => {
         const updated = projects.filter((_, i) => i !== index);
@@ -67,9 +153,13 @@ const ProjectMaster = () => {
 
     //Filtered list for search
     const filteredProject = Array.isArray(projects)
-        ? projects.filter((item) =>
-            item.projectName.toLowerCase().includes(searchTerm.toLowerCase())
-        ) : [];
+        ? projects.filter(
+            (item) =>
+                item?.projName &&
+                item.projName.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : [];
+
 
     return (
         <div className='container-fluid mt-2'>
@@ -105,8 +195,8 @@ const ProjectMaster = () => {
                                         name='projectNo'
                                         type='text'
                                         className='form-control'
-                                        value={formData.projectNo}
-                                        onChange={handleChange}
+                                        value={projectNo}
+                                        onChange={(e) => setProjectNo(e.target.value.replace(/\D/g, ""))}
                                     />
                                 </div>
 
@@ -116,8 +206,8 @@ const ProjectMaster = () => {
                                         name='date'
                                         type='date'
                                         className='form-control'
-                                        value={formData.date}
-                                        onChange={handleChange}
+                                        value={date}
+                                        onChange={(e) => setDate(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -128,8 +218,8 @@ const ProjectMaster = () => {
                                     name='projectName'
                                     type='text'
                                     className='form-control'
-                                    value={formData.projectName}
-                                    onChange={handleChange}
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
                                 />
                             </div>
 
@@ -139,8 +229,8 @@ const ProjectMaster = () => {
                                     name='ledger'
                                     type='text'
                                     className='form-control'
-                                    value={formData.ledger}
-                                    onChange={handleChange}
+                                    value={ledger}
+                                    onChange={(e) => setLedger(e.target.value)}
                                 />
                             </div>
 
@@ -150,8 +240,8 @@ const ProjectMaster = () => {
                                     type='text'
                                     name='refPerson'
                                     className='form-control'
-                                    value={formData.refPerson}
-                                    onChange={handleChange}
+                                    value={refPerson}
+                                    onChange={(e) => setRefPerson(e.target.value)}
                                 />
 
                             </div>
@@ -163,14 +253,14 @@ const ProjectMaster = () => {
                                     name='description'
                                     rows='3'
                                     className='form-control'
-                                    value={formData.description}
-                                    onChange={handleChange}
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
                                 />
 
                             </div>
                             <button
                                 className='btn btn-primary btn-sm'
-                                onClick={handleInsertOrUpdate}
+                                onClick={editingIndex !== null ? handleUpdate : handleAdd}
                             >
                                 {editingIndex !== null ? 'Update' : 'Insert'}
                             </button>
@@ -188,7 +278,7 @@ const ProjectMaster = () => {
                                 />
                             </div>
 
-                            {filteredProject.length === 0 ? (<p className='text-center text-muted'>No records found.</p>
+                            {projects.length === 0 ? (<p className='text-center text-muted'>No records found.</p>
                             ) : (
                                 <div
                                     style={{
@@ -208,22 +298,22 @@ const ProjectMaster = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {filteredProject.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td>{item.projectNo}</td>
-                                                    <td>{item.projectName}</td>
-                                                    <td>{item.ledger}</td>
-                                                    <td>{item.refPerson}</td>
+                                            {projects.map((item) => (
+                                                <tr key={item.ProjId}>
+                                                    <td>{item.ProjNo}</td>
+                                                    <td>{item.ProjName}</td>
+                                                    <td>{item.LedgerName}</td>
+                                                    <td>{item.RefName}</td>
                                                     <td>
                                                         <button
                                                             className="btn btn-warning btn-sm me-2"
-                                                            onClick={() => handleEdit(index)}
+                                                            onClick={() => handleEdit(item)}
                                                         >
                                                             Edit
                                                         </button>
                                                         <button
                                                             className="btn btn-danger btn-sm"
-                                                            onClick={() => handleDelete(index)}
+                                                            onClick={() => handleDelete(item)}
                                                         >
                                                             Delete
                                                         </button>

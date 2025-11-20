@@ -46,11 +46,14 @@ const Navbar = () => {
                                 Master</span>
                             <ul className="dropdown-menu">
                                 <li><Link className="dropdown-item" to="/master/group">Group</Link></li>
+                                <li><Link className="dropdown-item" to="/master/group-reducer">Group Reduser</Link></li>
                                 <li><Link className="dropdown-item" to="/master/brand-master">Brand Master</Link></li>
                                 <li><Link className="dropdown-item" to="/master/unit">Unit</Link></li>
                                 <li><Link className="dropdown-item" to="/master/product">Product</Link></li>
                                 <li><Link className="dropdown-item" to="/master/ledger-creation">Ledger creation</Link></li>
+                                <li><Link className="dropdown-item" to="/master/ledger-reducer">Ledger Reduce</Link></li>
                                 <li><Link className="dropdown-item" to="/master/project-master">Project Master</Link></li>
+                                <li><Link className="dropdown-item" to="/master/test">Test</Link></li>
 
                             </ul>
                         </li>

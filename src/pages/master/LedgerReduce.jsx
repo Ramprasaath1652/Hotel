@@ -1,346 +1,301 @@
+import React, { useReducer, useEffect } from 'react';
+import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
-
-
-
-const LedgerCreation = () => {
-
-    const [formData, setFormData] = useState({
+const initialState = {
+    formData: {
         AccId: '',
         LedgerName: '',
         LedgerId: '',
         TName: '',
-        Add1: '',
-        Add2: '',
-        TPlace: '',
-        EPlace: '',
-        District: '',
-        Pin: '',
-        Phone: '',
-        Mobile: '',
-        TinNo: '',
-        Debit: '',
-        Credit: '',
-        CategoryId: '',
-        State: '',
-        TinStatus: '',
-        LocalAgent: '',
-        OtherState: '',
-        GSTinNo: '',
-        OtherNo: '',
-        Country: '',
-    });
+        Add1: "",
+        Add2: "",
+        TPlace: "",
+        EPlace: "",
+        District: "",
+        Pin: "",
+        Phone: "",
+        Mobile: "",
+        TinNo: "",
+        Debit: "",
+        Credit: "",
+        CategoryId: "",
+        State: "",
+        TinStatus: "",
+        LocalAgent: "",
+        OtherState: "",
+        GSTinNo: "",
+        OtherNo: "",
+        Country: "",
+    },
+
+    ledgers: [],
+    stateList: [],
+    searchTerm: '',
+    editingIndex: null,
+    accountGroups: [],
+
+    showDeleteModal: false,
+    ledgerToDelete: null,
+
+    showEditModal: false,
+    ledgerToEdit: null,
+}
+
+function reducer(state, action) {
+    switch (action.type) {
+        case "SET_FORM_FIELD":
+            return {
+                ...state,
+                formData: { ...state.formData, [action.field]: action.value },
+            };
+
+        case "SET_FORM_DATA":
+            return { ...state, formData: { ...action.payload } };
+
+        case "RESET_FORM":
+            return { ...state, formData: { ...initialState.formData } };
+
+        case "SET_LEDGERS":
+            return { ...state, ledgers: action.payload };
+
+        case "SET_ACCOUNT_GROUPS":
+            return { ...state, accountGroups: action.payload };
+
+        case "SET_STATES":
+            return { ...state, stateList: action.payload };
+
+        case "SET_SEARCH_TERM":
+            return { ...state, searchTerm: action.payload };
+
+        case "SET_EDIT_INDEX":
+            return { ...state, editingIndex: action.payload };
+
+        case "SHOW_DELETE_MODAL":
+            return { ...state, showDeleteModal: true, ledgerToDelete: action.payload };
+
+        case "HIDE_DELETE_MODAL":
+            return { ...state, showDeleteModal: false, ledgerToDelete: null };
+
+        case "SHOW_EDIT_MODAL":
+            return { ...state, showEditModal: true, ledgerToEdit: action.payload };
+
+        case "HIDE_EDIT_MODAL":
+            return { ...state, showEditModal: false, ledgerToEdit: null };
+
+        default:
+            return state;
+    }
+}
 
 
-    const [ledgers, setLedgers] = useState([]);
-    const [stateList, setStateList] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [editingIndex, setEditingIndex] = useState(null);
-    const [accountGroups, setAccountGroups] = useState([]);
+const LedgerReduce = () => {
+    const [state, dispatch] = useReducer(reducer, initialState);
 
-    const [showDeleteModal, setshowDeleteModal] = useState(false);
-    const [ledgerToDelete, setledgerToDelete] = useState(null);
-
-    const [showEditModal, setshowEditModal] = useState(false);
-    const [ledgerToEdit, setledgerToEdit] = useState(null);
-
-
+    const {
+        formData,
+        ledgers,
+        stateList,
+        searchTerm,
+        editingIndex,
+        accountGroups,
+        showDeleteModal,
+        ledgerToDelete,
+        showEditModal,
+        ledgerToEdit,
+    } = state;
 
     const gapi = import.meta.env.VITE_API_URL;
     const API = `${gapi}/ledger`;
 
-    useEffect(() => {
-        console.log('main url : ' + gapi + '/ledger');
+    useEffect(()=>{
         loadLedgers();
         loadAccountGroups();
         loadStates();
-        // setledgerToDelete({ ledgerName: 'Test Ledger' });
-        // setshowDeleteModal(true);
-        // setledgerToEdit({ ledgerName: 'Test Ledger' });
-        // setshowEditModal(true);
-    }, [])
+    },[])
 
-    const loadLedgers = async () => {
-        try {
-            const res = await axios.get(API);
-            console.log(' Ledgers received from API:', res.data)
-            setLedgers(res.data);
-
-        } catch (err) {
-            console.error('Error fetching groups:', err);
-            alert('Could not load groups. Check API connection.');
+    const loadLedgers = async() =>{
+        try{
+            const res = await axios.get(`${gapi}/ledger`);
+             console.log('main url : ' + gapi + '/ledger');
+            dispatch({type: 'SET_LEDGERS',payload: res.data})
+        } catch (err){
+            alert("Could not load account groups.")
         }
-    };
+    }
 
+    
     const loadAccountGroups = async () => {
         try {
             const res = await axios.get(`${gapi}/accountgroups`);
-            console.log("Account Groups:", res.data);
-            setAccountGroups(res.data);
+            dispatch({ type: "SET_ACCOUNT_GROUPS", payload: res.data });
         } catch (err) {
-            console.error("Error fetching account groups:", err);
-            alert("Could not load account groups. Check API connection.");
+            alert("Could not load account groups.");
         }
     };
 
-    const loadStates = async () => {
+     const loadStates = async () => {
         try {
             const res = await axios.get(`${gapi}/statemasters`);
-            console.log("State masters:", res.data);
-            setStateList(res.data);
+            dispatch({ type: "SET_STATES", payload: res.data });
         } catch (err) {
-            console.error("Error fetching State master:", err);
-            alert("Could not load state master. Check API connection.");
+            alert("Could not load state master.");
         }
     };
 
-
-    //cancel delete
+    
     const cancelDelete = () => {
-        setshowDeleteModal(false);
-        setledgerToDelete(null)
-    }
+        dispatch({ type: "HIDE_DELETE_MODAL" });
+    };
 
-    // Handle input changes
     const handleChange = (e) => {
-        //alert(e.value());
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+        dispatch({
+            type: "SET_FORM_FIELD",
+            field: e.target.name,
+            value: e.target.value,
+        });
+    };
 
-    //Add
-    const handleAdd = async () => {
+        const handleAdd = async () => {
         if (!formData.LedgerName.trim()) {
-            alert('please enter ledger Name');
+            alert("please enter ledger Name");
             return;
         }
 
         const newLedger = {
             LedgerId: 0,
             AccId: Number(formData.AccId) || 0,
-            LedgerName: formData.LedgerName?.trim() || '',
-            TName: formData.LedgerName?.trim() || '',
-            Add1: formData.Add1?.trim() || '',
-            Add2: formData.Add2?.trim() || '',
-            TPlace: formData.EPlace?.trim() || '',
-            EPlace: formData.EPlace?.trim() || '',
-            District: formData.District?.trim() || '',
-            Pin: formData.Pin?.trim() || '',
-            Phone: formData.Phone?.trim() || '',
-            Mobile: formData.Mobile?.trim() || '',
-            TinNo: formData.TinNo?.trim() || '',
-            Debit: !isNaN(parseFloat(formData.Debit)) ? parseFloat(formData.Debit) : 0,
-            Credit: !isNaN(parseFloat(formData.Credit)) ? parseFloat(formData.Credit) : 0,
+            LedgerName: formData.LedgerName?.trim() || "",
+            TName: formData.LedgerName?.trim() || "",
+            Add1: formData.Add1?.trim() || "",
+            Add2: formData.Add2?.trim() || "",
+            TPlace: formData.EPlace?.trim() || "",
+            EPlace: formData.EPlace?.trim() || "",
+            District: formData.District?.trim() || "",
+            Pin: formData.Pin?.trim() || "",
+            Phone: formData.Phone?.trim() || "",
+            Mobile: formData.Mobile?.trim() || "",
+            TinNo: formData.TinNo?.trim() || "",
+            Debit: !isNaN(parseFloat(formData.Debit))
+                ? parseFloat(formData.Debit)
+                : 0,
+            Credit: !isNaN(parseFloat(formData.Credit))
+                ? parseFloat(formData.Credit)
+                : 0,
             CategoryId: Number(formData.CategoryId) || 1,
             State: Number(formData.State) || 0,
-            TinStatus: formData.TinStatus?.trim() || 'No',
-            LocalAgent: formData.LocalAgent?.trim() || 'No',
-            OtherState: formData.OtherState?.trim() || 'No',
-            GSTinNo: formData.TinNo?.trim() || '',
-            OtherNo: formData.OtherNo?.trim() || '',
-            Country: formData.Country?.trim() || ''
+            TinStatus: formData.TinStatus?.trim() || "No",
+            LocalAgent: formData.LocalAgent?.trim() || "No",
+            OtherState: formData.OtherState?.trim() || "No",
+            GSTinNo: formData.TinNo?.trim() || "",
+            OtherNo: formData.OtherNo?.trim() || "",
+            Country: formData.Country?.trim() || "",
         };
 
-        console.log("Payload sent to API:", newLedger);
-
         try {
-            const res = await axios.post(API, newLedger, {
-                headers: { 'Content-Type': 'application/json' },
-            })
-            // console.log("Full API response:", res);
-            // console.log("Sent payload:", newLedger);
-            // console.log("Returned from API:", res.data);
-
-            //setLedgers(prev => [...prev, res.data]);                        
-            //("✅ Ledger added successfully:", res.data);
-            alert("✅ Ledger added successfully!");
+            await axios.post(API, newLedger);
+            alert("Ledger added successfully!");
             loadLedgers();
-
-            setFormData({
-                AccId: '',
-                LedgerName: '',
-                LedgerId: '',
-                TName: '',
-                Add1: '',
-                Add2: '',
-                TPlace: '',
-                EPlace: '',
-                District: '',
-                Pin: '',
-                Phone: '',
-                Mobile: '',
-                TinNo: '',
-                Debit: '',
-                Credit: '',
-                CategoryId: '',
-                State: '',
-                TinStatus: '',
-                LocalAgent: '',
-                OtherState: '',
-                GSTinNo: '',
-                OtherNo: '',
-                Country: '',
-            })
-
+            dispatch({ type: "RESET_FORM" });
         } catch (err) {
-            console.error('Add error:', err);
-            alert("Failed to add ledger. Please check API connection.")
+            alert("Failed to add ledger.");
         }
+    };
 
-    }
-
-    // update
-    const handleUpdate = async () => {
+        const handleUpdate = async () => {
         if (!formData.LedgerName.trim()) {
-            alert('Please enter Ledger Name');
+            alert("Please enter Ledger Name");
             return;
         }
 
-        if (editingIndex === null || editingIndex === undefined) {
-            alert('Invalid ledger selected for update.');
+        if (!ledgerToEdit) {
+            alert("Invalid ledger selected for update.");
             return;
         }
 
         const updatedLedger = {
-            LedgerId: formData.LedgerId,
-            AccId: (formData.AccId) || 0,
-            LedgerName: formData.LedgerName,
-            TName: formData.LedgerName,
-            Add1: formData.Add1,
-            Add2: formData.Add2,
-            TPlace: formData.EPlace,
-            EPlace: formData.EPlace,
-            District: formData.District,
-            Pin: formData.Pin,
-            Phone: formData.Phone,
-            Mobile: formData.Mobile,
-            TinNo: formData.TinNo,
+            ...formData,
             Debit: parseFloat(formData.Debit) || 0,
             Credit: parseFloat(formData.Credit) || 0,
             CategoryId: Number(formData.CategoryId) || 1,
             State: Number(formData.State) || 0,
-            TinStatus: formData.TinStatus,
-            LocalAgent: formData.LocalAgent,
-            OtherState: formData.OtherState,
-            GSTinNo: formData.TinNo,
-            OtherNo: formData.OtherNo,
-            Country: formData.Country,
-
+            GSTinNo: formData.TinNo || "",
         };
 
-        
-        console.log("URL:", `${API}/${editingIndex}`);
-        console.log("About to PUT ledger:", updatedLedger);
-
-
         try {
-            await axios.put(`${API}/${updatedLedger.LedgerId}`, updatedLedger, {
-                headers: { 'Content-type': 'application/json' }
-            })
-
-            console.log("✅ Ledger updated successfully:", updatedLedger);
+            await axios.put(`${API}/${updatedLedger.LedgerId}`, updatedLedger);
             alert("Ledger updated successfully!");
 
             await loadLedgers();
-            setFormData({
-                AccId: '',
-                LedgerName: '',
-                LedgerId: '',
-                TName: '',
-                Add1: '',
-                Add2: '',
-                TPlace: '',
-                EPlace: '',
-                District: '',
-                Pin: '',
-                Phone: '',
-                Mobile: '',
-                TinNo: '',
-                Debit: '',
-                Credit: '',
-                CategoryId: '',
-                State: '',
-                TinStatus: '',
-                LocalAgent: '',
-                OtherState: '',
-                GSTinNo: '',
-                OtherNo: '',
-                Country: '',
-            });
-            setEditingIndex(null);
-        } catch (err) {
-            console.error('Update error:', err);
-            alert('Failed to update ledger . please check API connection')
-        }
+            dispatch({ type: "RESET_FORM" });
+            dispatch({ type: "SET_EDIT_INDEX", payload: null });
 
-    }
-    //Edit
-    const confirmEdit = () => {
+        } catch (err) {
+            alert("Failed to update ledger.");
+        }
+    };
+
+
+        const confirmEdit = () => {
         if (!ledgerToEdit) return;
 
-        setFormData({
-            LedgerId: ledgerToEdit.LedgerId, 
-            AccId: ledgerToEdit.AccId ? ledgerToEdit.AccId : '',
-            LedgerName: ledgerToEdit.LedgerName || "",
-            TName: ledgerToEdit.TName || "",
-            Add1: ledgerToEdit.Add1 || "",
-            Add2: ledgerToEdit.Add2 || "",
-            TPlace: ledgerToEdit.TPlace || "",
-            EPlace: ledgerToEdit.EPlace || "",
-            District: ledgerToEdit.District || "",
-            Pin: ledgerToEdit.Pin || "",
-            Phone: ledgerToEdit.Phone || "",
-            Mobile: ledgerToEdit.Mobile || "",
-            TinNo: ledgerToEdit.TinNo || "",
-            Debit: ledgerToEdit.Debit || 0,
-            Credit: ledgerToEdit.Credit || 0,
-            CategoryId: ledgerToEdit.CategoryId || "",
-            State: ledgerToEdit.State || '',
-            TinStatus: ledgerToEdit.TinStatus || "",
-            LocalAgent: ledgerToEdit.LocalAgent || "",
-            OtherState: ledgerToEdit.OtherState || "",
-            GSTinNo: ledgerToEdit.GSTinNo || "",
-            OtherNo: ledgerToEdit.OtherNo || "",
-            Country: ledgerToEdit.Country || "",
-        })
+        dispatch({
+            type: "SET_FORM_DATA",
+            payload: {
+                LedgerId: ledgerToEdit.LedgerId,
+                AccId: ledgerToEdit.AccId ? ledgerToEdit.AccId : "",
+                LedgerName: ledgerToEdit.LedgerName || "",
+                TName: ledgerToEdit.TName || "",
+                Add1: ledgerToEdit.Add1 || "",
+                Add2: ledgerToEdit.Add2 || "",
+                TPlace: ledgerToEdit.TPlace || "",
+                EPlace: ledgerToEdit.EPlace || "",
+                District: ledgerToEdit.District || "",
+                Pin: ledgerToEdit.Pin || "",
+                Phone: ledgerToEdit.Phone || "",
+                Mobile: ledgerToEdit.Mobile || "",
+                TinNo: ledgerToEdit.TinNo || "",
+                Debit: ledgerToEdit.Debit || 0,
+                Credit: ledgerToEdit.Credit || 0,
+                CategoryId: ledgerToEdit.CategoryId || "",
+                State: ledgerToEdit.State || "",
+                TinStatus: ledgerToEdit.TinStatus || "",
+                LocalAgent: ledgerToEdit.LocalAgent || "",
+                OtherState: ledgerToEdit.OtherState || "",
+                GSTinNo: ledgerToEdit.GSTinNo || "",
+                OtherNo: ledgerToEdit.OtherNo || "",
+                Country: ledgerToEdit.Country || "",
+            },
+        });
 
-        const index = ledgers.findIndex((l) => l.LedgerId === ledgerToEdit.LedgerId);
-        setEditingIndex(index);
+        const index = ledgers.findIndex(
+            (l) => l.LedgerId === ledgerToEdit.LedgerId
+        );
 
-        setshowEditModal(false);
+        dispatch({ type: "SET_EDIT_INDEX", payload: index });
+        dispatch({ type: "HIDE_EDIT_MODAL" });
+    };
 
-        console.log("Form data populated for editing:", ledgerToEdit);
-    }
 
-    //Delete Record
     const handleDelete = async () => {
         if (!ledgerToDelete) return;
 
         try {
-            await axios.delete(`${API}/${ledgerToDelete.LedgerId}`)
+            await axios.delete(`${API}/${ledgerToDelete.LedgerId}`);
             await loadLedgers();
-            setshowDeleteModal(false);
-            setledgerToDelete(null);
-            console.log(`Ledger "${ledgerToDelete.LedgerName}" deleted successfully.`);
+            dispatch({ type: "HIDE_DELETE_MODAL" });
+        } catch (err) {
+            alert("Failed to delete ledger.");
         }
-        catch (err) {
-            console.error("Error deleting ledger:", err);
-            alert('Failed to delete ledger. Please check the API connection or ID.')
-        }
-    }
+    };
 
-
-    //Filter List for search
-    const filteredLedgers = Array.isArray(ledgers)
+     const filteredLedgers = Array.isArray(ledgers)
         ? ledgers.filter((item) => {
-            const ledgerName = item?.LedgerName?.toLowerCase() || '';
-            const search = searchTerm?.toLowerCase() || '';
-            return ledgerName.includes(search);
-        })
+              const ledgerName = item?.LedgerName?.toLowerCase() || "";
+              const search = searchTerm?.toLowerCase() || "";
+              return ledgerName.includes(search);
+          })
         : [];
-
 
     return (
         <div className='container-fluid mt-2'>
@@ -620,8 +575,10 @@ const LedgerCreation = () => {
                                                         <button
                                                             className="btn btn-warning btn-sm me-2"
                                                             onClick={() => {
-                                                                setledgerToEdit(l);
-                                                                setshowEditModal(true);
+                                                                dispatch({
+                                                                    type: 'SHOW_EDIT_MODAL',
+                                                                    payload: l,
+                                                                })
                                                             }}
                                                         >
                                                             Edit
@@ -629,8 +586,10 @@ const LedgerCreation = () => {
                                                         <button
                                                             className="btn btn-danger btn-sm"
                                                             onClick={() => {
-                                                                setledgerToDelete(l);
-                                                                setshowDeleteModal(true);
+                                                                dispatch({
+                                                                    type: 'SHOW_DELETE_MODAL',
+                                                                    payload: l,
+                                                                })              
                                                             }}
                                                         >
                                                             Delete
@@ -693,7 +652,7 @@ const LedgerCreation = () => {
                                         <button
                                             type='button'
                                             className='btn-close'
-                                            onClick={() => setshowEditModal(false)}
+                                            onClick={() => dispatch({type: "HIDE_EDIT_MODAL"})}
                                         >
                                         </button>
                                     </div>
@@ -707,7 +666,11 @@ const LedgerCreation = () => {
                                     <div className='modal-footer'>
                                         <button
                                             className='btn btn-secondary'
-                                            onClick={() => setshowEditModal(false)}
+                                            onClick={() =>{
+                                                dispatch({
+                                                    type: 'HIDE_EDIT_MODAL'
+                                                })
+                                            }}
                                         >
                                             No
                                         </button>
@@ -730,4 +693,5 @@ const LedgerCreation = () => {
         </div>
     )
 }
-export default LedgerCreation;
+
+export default LedgerReduce;
