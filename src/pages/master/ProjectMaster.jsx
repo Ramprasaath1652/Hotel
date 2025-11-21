@@ -14,12 +14,29 @@ const ProjectMaster = () => {
     const [projects, setProjects] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [editingIndex, setEditingIndex] = useState(null);
-    const [add1 , setAdd1] = useState('');
-    const [add2 , setAdd2] = useState('');
-    const [state , setState] = useState('');
-    const [country , setCountry] = useState('');
-    const [pin , setPin] = useState('');
-    const [mobile , setMobile] = useState('');
+    const [add1, setAdd1] = useState('');
+    const [add2, setAdd2] = useState('');
+    const [state, setState] = useState('');
+    const [country, setCountry] = useState('');
+    const [pin, setPin] = useState('');
+    const [mobile, setMobile] = useState('');
+    const [projectId, setProjectId] = useState('')
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState(null);
+    const [showMessage, setShowMessage] = useState(false);
+    const [message, setMessage] = useState('');
+
+
+    const [projectToEdit, setProjectToEdit] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+
+    const [ledgerList, setLedgerList] = useState([]);
+    const [ledgerQuery, setLedgerQuery] = useState("");
+    const [showLedgerDropdown, setShowLedgerDropdown] = useState(false);
+
+
+
 
     const gapi = import.meta.env.VITE_API_URL;
 
@@ -29,22 +46,38 @@ const ProjectMaster = () => {
         console.log('main url : ' + gapi + '/project');
         // console.log(API);
         loadProjects();
+        loadLedger();
     }, []);
+
+
+    const loadLedger = async () => {
+        try {
+            const res = await axios.get(`${gapi}/ledger`);
+            setLedgerList(res.data);
+        } catch (err) {
+            console.error("Ledger Load Error:", err);
+        }
+    };
+
+
+
 
     const loadProjects = async () => {
         try {
             const res = await axios.get(API);
-
-            console.log("AFTER ADD, projects:", res.data);
-
+            console.log("LOAD PROJECTS RESPONSE:", res.data);
             setProjects(res.data);
-
-
         } catch (err) {
             console.error('Error fetching groups:', err);
             console.log("Server error:", err.response?.data);
             alert('Could not load groups. Check API connection.');
         }
+    };
+
+    const showTempMessage = (msg) => {
+        setMessage(msg);
+        setShowMessage(true);
+        setTimeout(() => setShowMessage(false), 3000);
     };
 
     const handleAdd = async () => {
@@ -54,46 +87,44 @@ const ProjectMaster = () => {
         }
 
         const newProject = {
-            ProjId: 0,
+            ProjId: 0,                          // ← IMPORTANT
             ProjNo: Number(projectNo),
-            ProjDate: date ? `${date}T00:00:00` : null,
+            ProjDate: date && date.trim() !== "" ? `${date}T00:00:00` : "2025-01-01T00:00:00",
             ProjName: projectName,
-            LedgerId: Number(ledger),   // NOT LedgerName
+            LedgerId: Number(ledger),
             RefName: refPerson,
             Description: description,
-            Add1: add1 || "",
-            Add2: add2 || "",
-            State: Number(state) || 0,
-            Country: country || "",
-            Pin: pin || "",
-            Mobile: mobile || ""
+            Add1: add1,
+            Add2: add2,
+            State: state ? Number(state) : 0,
+            Country: country,
+            Pin: pin,
+            Mobile: mobile,
         };
         console.log("DATA SENT TO API:", newProject);
-        console.log("DATA SENT TO API:", {
-            projectNo,
-            date,
-            projectName,
-            ledger,
-            refPerson,
-            description
-        });
-
         try {
-            await axios.post(API, newProject, {
+            const result = await axios.post(API, newProject, {
                 headers: { 'Content-Type': 'application/json' },
             });
+
+            console.log("Result RESPONSE:", result.data);
 
             await loadProjects();
 
             alert("Project Added Successfully!");
-
+            setProjectId('')
             setProjectName('');
             setProjectNo('');
-            setProjectName('');
             setLedger('');
             setRefPerson('');
             setDescription('');
             setDate('');
+            setAdd1('');
+            setAdd2('');
+            setState('');
+            setCountry('');
+            setPin('');
+            setMobile('');
             alert("Project added successfully!");
         } catch (err) {
             console.error('Add error:', err);
@@ -101,64 +132,147 @@ const ProjectMaster = () => {
         }
     }
 
-    const handleEdit = (index) => {
-        setFormData(projects[index])
-        setEditingIndex(index)
+
+    const handleEdit = (project) => {
+        console.log("EDIT OBJECT:", project);
+
+        setProjectToEdit(project);
+
+        setProjectId(project.ProjId);
+        setProjectName(project.ProjName ?? '');
+        setProjectNo(project.ProjNo ?? '');
+        setDate(project.ProjDate ? project.ProjDate.split("T")[0] : '');
+        setLedger(project.LedgerId ?? '');
+        setRefPerson(project.RefName ?? '');
+        setDescription(project.Description ?? '');
+        setAdd1(project.Add1 ?? '');
+        setAdd2(project.Add2 ?? '');
+        setState(project.State ?? '');
+        setCountry(project.Country ?? '');
+        setPin(project.Pin ?? '');
+        setMobile(project.Mobile ?? '');
+
+        setShowEditModal(true);   // 👈 MUST BE PRESENT
     }
 
 
+    const confirmEdit = () => {
+        if (!projectToEdit) return;
+
+        // Set form into real edit mode
+        setProjectId(projectToEdit.ProjId);
+
+        const index = projects.findIndex(p => p.ProjId === projectToEdit.ProjId);
+        setEditingIndex(index);
+
+        setShowEditModal(false);   // close modal
+
+        showTempMessage("Ready to update"); // optional
+    };
 
 
-    const handleInsertOrUpdate = () => {
-        if (!formData.projectName.trim()) {
-            alert('please enter project name')
-        }
-        if (editingIndex !== null) {
-            const updated = [...projects];
-            updated[editingIndex] = formData;
-            setProjects(updated);
-            setEditingIndex(null);
-        } else {
-            setProjects([...projects, formData])
-        }
-
-        setFormData({
-            projectNo: '',
-            date: '',
-            projectName: '',
-            ledger: '',
-            refPerson: '',
-            description: '',
-        });
+    const resetForm = () => {
+        setProjectName('');
+        setProjectNo('');
+        setProjectId('');
+        setDate('');
+        setLedger('');
+        setRefPerson('');
+        setDescription('');
+        setAdd1('');
+        setAdd2('');
+        setState('');
+        setCountry('');
+        setPin('');
+        setMobile('');
+        setEditingIndex(null);
+        setProjectToEdit(null);
     };
 
 
 
 
-    const handleDelete = (index) => {
-        const updated = projects.filter((_, i) => i !== index);
-        setProjects(updated);
-        if (editingIndex === index) {
-            setEditingIndex(null);
-            setFormData({
-                projectNo: '',
-                date: '',
-                projectName: '',
-                ledger: '',
-                refPerson: '',
-                description: '',
-            })
+    // Update group
+    const handleUpdate = async () => {
+        if (!projectName.trim()) {
+            alert('Please enter group name');
+            return;
         }
-    }
+
+        if (projectId === 0) {
+            alert('Invalid group selected');
+            return;
+        }
+
+        const updatedProject = {
+            ProjId: projectId,
+            ProjNo: projectNo,
+            ProjDate: date,
+            ProjName: projectName,
+            LedgerId: ledger,   // NOT LedgerName
+            RefName: refPerson,
+            Description: description,
+            Add1: add1,
+            Add2: add2,
+            State: state,
+            Country: country,
+            Pin: pin,
+            Mobile: mobile,
+        };
+
+        try {
+            await axios.put(`${API}/${projectId}`, updatedProject, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+            loadProjects();
+            setProjectName('');
+            setProjectId(0);
+            setEditingIndex(null);
+            showTempMessage('Project updated successfully!');
+
+            resetForm();
+        } catch (err) {
+            console.error('Update error:', err);
+        }
+    };
+
+
+
+
+
+
+    // Delete
+    const handleDelete = async () => {
+        if (!projectToDelete) return;
+
+        try {
+            await axios.delete(`${API}/${projectToDelete.ProjId}`);
+            setShowDeleteModal(false);
+            setProjectToDelete(null);
+            loadProjects();
+            showTempMessage('project deleted successfully!');
+        } catch (err) {
+            console.error('Delete error:', err);
+        }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setProjectToDelete(null);
+    };
 
     //Filtered list for search
     const filteredProject = Array.isArray(projects)
         ? projects.filter(
             (item) =>
-                item?.projName &&
-                item.projName.toLowerCase().includes(searchTerm.toLowerCase())
+                item?.ProjName &&
+                item.ProjName.toLowerCase().includes(searchTerm.toLowerCase())
         )
         : [];
+
+    const filteredLedger = ledgerList.filter(item =>
+        item.LedgerName?.toLowerCase().includes(ledgerQuery.toLowerCase())
+    );
 
 
     return (
@@ -223,16 +337,60 @@ const ProjectMaster = () => {
                                 />
                             </div>
 
-                            <div className='mb-3'>
+                            <div className='mb-3 position-relative'>
                                 <label className='form-label'>Ledger</label>
+
+                                {/* Input Box */}
                                 <input
-                                    name='ledger'
                                     type='text'
                                     className='form-control'
-                                    value={ledger}
-                                    onChange={(e) => setLedger(e.target.value)}
+                                    placeholder='Search Ledger...'
+                                    value={ledgerQuery}
+                                    onChange={(e) => {
+                                        setLedgerQuery(e.target.value);
+                                        setShowLedgerDropdown(true);
+                                    }}
+                                    onFocus={() => setShowLedgerDropdown(true)}
                                 />
+
+                                {/* Bootstrap Dropdown */}
+                                {showLedgerDropdown && ledgerQuery && (
+                                    <div
+                                        className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm"
+                                        style={{ maxHeight: "250px", overflowY: "auto", zIndex: 9999 }}
+                                    >
+                                        {/* Header */}
+                                        <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
+                                            <div className="col-2">ID</div>
+                                            <div className="col-4">Name</div>
+                                            <div className="col-3">Place</div>
+                                            <div className="col-3">State</div>
+                                        </div>
+
+                                        {/* List Items */}
+                                        {filteredLedger.map(item => (
+                                            <div
+                                                key={item.LedgerId}
+                                                className="d-flex px-2 py-2 border-bottom hover-bg"
+                                                style={{ cursor: "pointer" }}
+                                                onClick={() => {
+                                                    setLedger(item.LedgerId);         // save ID
+                                                    setLedgerQuery(item.LedgerName);  // show name
+                                                    setShowLedgerDropdown(false);
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.classList.add("bg-light")}
+                                                onMouseLeave={e => e.currentTarget.classList.remove("bg-light")}
+                                            >
+                                                <div className="col-2">{item.LedgerId}</div>
+                                                <div className="col-4">{item.LedgerName}</div>
+                                                <div className="col-3">{item.EPlace || "-"}</div>
+                                                <div className="col-3">{item.StateName || "-"}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
+
 
                             <div className='mb-3'>
                                 <label className='form-label'>Ref Person</label>
@@ -278,7 +436,7 @@ const ProjectMaster = () => {
                                 />
                             </div>
 
-                            {projects.length === 0 ? (<p className='text-center text-muted'>No records found.</p>
+                            {filteredProject.length === 0 ? (<p className='text-center text-muted'>No records found.</p>
                             ) : (
                                 <div
                                     style={{
@@ -298,7 +456,7 @@ const ProjectMaster = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {projects.map((item) => (
+                                            {filteredProject.map((item) => (
                                                 <tr key={item.ProjId}>
                                                     <td>{item.ProjNo}</td>
                                                     <td>{item.ProjName}</td>
@@ -313,7 +471,10 @@ const ProjectMaster = () => {
                                                         </button>
                                                         <button
                                                             className="btn btn-danger btn-sm"
-                                                            onClick={() => handleDelete(item)}
+                                                            onClick={() => {
+                                                                setProjectToDelete(item);
+                                                                setShowDeleteModal(true);
+                                                            }}
                                                         >
                                                             Delete
                                                         </button>
@@ -326,6 +487,95 @@ const ProjectMaster = () => {
                             )}
                         </div>
                     </div>
+
+
+                    {/* Success Message */}
+                    {showMessage && (
+                        <div
+                            className="position-fixed top-0 start-50 translate-middle-x mt-3"
+                            style={{ zIndex: 9999, minWidth: '300px' }}
+                        >
+                            <div
+                                className="alert alert-success alert-dismissible fade show mb-0"
+                                role="alert"
+                            >
+                                {message}
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowMessage(false)}
+                                ></button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Delete Modal */}
+                    {showDeleteModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Confirm Delete</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={cancelDelete}
+                                        ></button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <p>
+                                            Are you sure you want to delete "
+                                            {projectToDelete?.projectName}"?
+                                        </p>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={cancelDelete}
+                                        >
+                                            No
+                                        </button>
+                                        <button className="btn btn-danger" onClick={handleDelete}>
+                                            Yes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Edit Confirmation Modal */}
+                    {showEditModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Confirm Edit</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={() => setShowEditModal(false)}
+                                        ></button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <p>Are you sure you want to edit "{projectToEdit?.projectName}"?</p>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowEditModal(false)}
+                                        >
+                                            No
+                                        </button>
+                                        <button className="btn btn-primary" onClick={confirmEdit}>
+                                            Yes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </div>
