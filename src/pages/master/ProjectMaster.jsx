@@ -35,6 +35,8 @@ const ProjectMaster = () => {
     const [ledgerQuery, setLedgerQuery] = useState("");
     const [showLedgerDropdown, setShowLedgerDropdown] = useState(false);
 
+    const [forceOpen, setForceOpen] = useState(false);
+
 
 
 
@@ -274,6 +276,15 @@ const ProjectMaster = () => {
         item.LedgerName?.toLowerCase().includes(ledgerQuery.toLowerCase())
     );
 
+    const handleKeyDown = (e) =>{
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+            setShowLedgerDropdown(true);
+            setForceOpen(true); 
+        }
+    }
+
+   
+
 
     return (
         <div className='container-fluid mt-2'>
@@ -339,7 +350,7 @@ const ProjectMaster = () => {
 
                             <div className='mb-3 position-relative'>
                                 <label className='form-label'>Ledger</label>
-
+                               
                                 {/* Input Box */}
                                 <input
                                     type='text'
@@ -348,13 +359,27 @@ const ProjectMaster = () => {
                                     value={ledgerQuery}
                                     onChange={(e) => {
                                         setLedgerQuery(e.target.value);
-                                        setShowLedgerDropdown(true);
+                                        setLedgerQuery(value);
+
+                                        if(value === ''){
+                                            setForceOpen(false);
+                                            setShowLedgerDropdown(false)
+                                        } else{
+                                            setShowLedgerDropdown(true)
+                                        }
                                     }}
                                     onFocus={() => setShowLedgerDropdown(true)}
+                                    onKeyDown={handleKeyDown}
+                                    onBlur={()=>{
+                                        setTimeout(()=>{
+                                           setShowLedgerDropdown(false);
+                                           setForceOpen(false) 
+                                        },150)
+                                    }}
                                 />
 
                                 {/* Bootstrap Dropdown */}
-                                {showLedgerDropdown && ledgerQuery && (
+                                {showLedgerDropdown && (ledgerQuery !== '' || forceOpen)  && (
                                     <div
                                         className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm"
                                         style={{ maxHeight: "250px", overflowY: "auto", zIndex: 9999 }}
@@ -376,7 +401,9 @@ const ProjectMaster = () => {
                                                 onClick={() => {
                                                     setLedger(item.LedgerId);         // save ID
                                                     setLedgerQuery(item.LedgerName);  // show name
+
                                                     setShowLedgerDropdown(false);
+                                                    setForceOpen(false)
                                                 }}
                                                 onMouseEnter={e => e.currentTarget.classList.add("bg-light")}
                                                 onMouseLeave={e => e.currentTarget.classList.remove("bg-light")}
