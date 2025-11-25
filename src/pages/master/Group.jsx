@@ -12,6 +12,7 @@ const Group = () => {
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [showMessage, setShowMessage] = useState(false);
   const [message, setMessage] = useState('');
+  const [showPopup, setShowPopup] = useState(false)
 
   // Edit confirmation modal states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -26,7 +27,7 @@ const Group = () => {
     loadGroups();
   }, []);
 
-  const loadGroups = async () => {   
+  const loadGroups = async () => {
     try {
       const res = await axios.get(API);
       setGroups(res.data);
@@ -46,7 +47,7 @@ const Group = () => {
   // Add new group
   const handleAdd = async () => {
     if (!groupName.trim()) {
-      alert('Please enter group name');
+      setShowPopup(true);
       return;
     }
 
@@ -56,11 +57,11 @@ const Group = () => {
     };
 
     try {
-     const res = await axios.post(API, newGroup, {
+      const res = await axios.post(API, newGroup, {
         headers: { 'Content-Type': 'application/json' },
       });
-       console.log('API response:', res.data);
-       console.log('gId:',res.data.GroupID)
+      console.log('API response:', res.data);
+      console.log('gId:', res.data.GroupID)
       loadGroups();
       setGroupName('');
       showTempMessage('Group added successfully!');
@@ -268,6 +269,32 @@ const Group = () => {
                   className="btn-close"
                   onClick={() => setShowMessage(false)}
                 ></button>
+              </div>
+            </div>
+          )}
+
+
+          {showPopup && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Group</h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setShowPopup(false)}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <p>Group Name must be filled</p>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn btn-primary" onClick={()=>setShowPopup(false)}>
+                      Ok
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

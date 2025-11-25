@@ -37,6 +37,9 @@ const ProjectMaster = () => {
 
     const [forceOpen, setForceOpen] = useState(false);
 
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupMessage, setPopupMessage] = useState('');
+
 
 
 
@@ -83,8 +86,21 @@ const ProjectMaster = () => {
     };
 
     const handleAdd = async () => {
+        if (!projectNo.trim()) {
+            setShowPopup(true);
+            setPopupMessage('Project No must be filled')
+            return;
+        }
+
         if (!projectName.trim()) {
-            alert('Please enter group name');
+            setShowPopup(true);
+            setPopupMessage('Project Name must be filled')
+            return;
+        }
+
+        if (!ledger) {
+            setShowPopup(true);
+            setPopupMessage('Ledger  must be filled')
             return;
         }
 
@@ -326,7 +342,7 @@ const ProjectMaster = () => {
                                     <label className='form-label'>Project No</label>
                                     <input
                                         name='projectNo'
-                                        type='text'
+                                        type='number'
                                         className='form-control'
                                         value={projectNo}
                                         onChange={(e) => setProjectNo(e.target.value.replace(/\D/g, ""))}
@@ -538,6 +554,32 @@ const ProjectMaster = () => {
                             </div>
                         </div>
                     )}
+
+                    {showPopup && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Project</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={() => setShowPopup(false)}
+                                        ></button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <p>{popupMessage}</p>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="btn btn-primary" onClick={() => setShowPopup(false)}>
+                                            Ok
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
 
                     {/* Delete Modal */}
                     {showDeleteModal && (

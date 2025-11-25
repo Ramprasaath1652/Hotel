@@ -16,7 +16,9 @@ const Unit = () => {
   // New states for edit confirmation
   const [showEditModal, setShowEditModal] = useState(false);
   const [unitToEdit, setUnitToEdit] = useState(null);
-  
+
+   const [showPopup, setShowPopup] = useState(false)
+
   const gapi = import.meta.env.VITE_API_URL;
   const API = `${gapi}/unit`;
 
@@ -44,7 +46,7 @@ const Unit = () => {
   // Add new unit
   const handleAdd = async () => {
     if (!unitName.trim()) {
-      alert('Please enter unit name');
+      setShowPopup(true);
       return;
     }
 
@@ -135,10 +137,10 @@ const Unit = () => {
 
   const filteredUnits = Array.isArray(units)
     ? units.filter(
-        (item) =>
-          item?.UnitType &&
-          item.UnitType.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      (item) =>
+        item?.UnitType &&
+        item.UnitType.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     : [];
 
   return (
@@ -275,6 +277,34 @@ const Unit = () => {
                   className="btn-close"
                   onClick={() => setShowMessage(false)}
                 ></button>
+              </div>
+            </div>
+          )}
+
+          {showPopup && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Unit Master</h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setShowPopup(false)}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <p>
+                     Unit Name must be filled.
+                    </p>
+                  </div>
+                  <div className="modal-footer">
+                   
+                    <button className="btn btn-primary" onClick={()=>setShowPopup(false)}>
+                      Ok
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

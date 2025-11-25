@@ -46,6 +46,10 @@ const LedgerCreation = () => {
     const [showEditModal, setshowEditModal] = useState(false);
     const [ledgerToEdit, setledgerToEdit] = useState(null);
 
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupMessage, setPopupMessage] = useState('');
+
+
 
 
     const gapi = import.meta.env.VITE_API_URL;
@@ -112,10 +116,25 @@ const LedgerCreation = () => {
 
     //Add
     const handleAdd = async () => {
-        if (!formData.LedgerName.trim()) {
-            alert('please enter ledger Name');
+
+        if (!formData.AccId) {
+            setShowPopup(true);
+            setPopupMessage('Account Group must be selected')
             return;
         }
+
+        if (!formData.LedgerName.trim()) {
+            setShowPopup(true);
+            setPopupMessage('Ledger Name must be filled')
+            return;
+        }
+
+        if (!formData.EPlace.trim()) {
+            setShowPopup(true);
+            setPopupMessage('Place Name must be filled')
+            return;
+        }
+
 
         const newLedger = {
             LedgerId: 0,
@@ -230,7 +249,7 @@ const LedgerCreation = () => {
 
         };
 
-        
+
         console.log("URL:", `${API}/${editingIndex}`);
         console.log("About to PUT ledger:", updatedLedger);
 
@@ -281,7 +300,7 @@ const LedgerCreation = () => {
         if (!ledgerToEdit) return;
 
         setFormData({
-            LedgerId: ledgerToEdit.LedgerId, 
+            LedgerId: ledgerToEdit.LedgerId,
             AccId: ledgerToEdit.AccId ? ledgerToEdit.AccId : '',
             LedgerName: ledgerToEdit.LedgerName || "",
             TName: ledgerToEdit.TName || "",
@@ -498,20 +517,6 @@ const LedgerCreation = () => {
                             </div>
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>Mobile.No</label>
-                                <div className='col-sm-8'>
-                                    <input
-                                        className='form-control'
-                                        type='text'
-                                        placeholder='Enter Country here '
-                                        name='Mobile'
-                                        value={formData.Mobile}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="mb-3 row align-items-center">
                                 <label className='col-sm-4 col-form-label'>TNR #</label>
                                 <div className='col-sm-8'>
                                     <input
@@ -527,13 +532,48 @@ const LedgerCreation = () => {
                             </div>
 
 
+                           <div className='row mb-3 '>
+                                <div className='col-md-6 d-flex align-items-center mb-2'>
+                                    <label className='me-2' style={{ width: '100px' }}>Mobile</label>
+
+                                    <input
+                                        className='form-control'
+                                        type='number'
+                                        placeholder='Enter Mobile no here '
+                                        name='Mobile'
+                                        value={formData.Mobile}
+                                        onChange={handleChange}
+                                    />
+
+
+                                </div>
+
+                                <div className='col-md-6 d-flex align-items-center mb-2'>
+
+                                    <label className='me-2' style={{ width: '100px' }}>Phone</label>
+
+                                    <input
+                                        className='form-control'
+                                        type='number'
+                                        placeholder='Enter Phone no here '
+                                        name='Phone'
+                                        value={formData.Phone}
+                                        onChange={handleChange}
+                                    />
+
+
+                                </div>
+                            </div>
+
+                            
+
                             <div className='row mb-3 '>
                                 <div className='col-md-6 d-flex align-items-center mb-2'>
                                     <label className='me-2' style={{ width: '100px' }}>Debit</label>
 
                                     <input
                                         className='form-control'
-                                        type='text'
+                                        type='number'
                                         placeholder='Enter Debit here '
                                         name='Debit'
                                         value={formData.Debit}
@@ -549,7 +589,7 @@ const LedgerCreation = () => {
 
                                     <input
                                         className='form-control'
-                                        type='text'
+                                        type='number'
                                         placeholder='Enter Credit here '
                                         name='Credit'
                                         value={formData.Credit}
@@ -644,6 +684,32 @@ const LedgerCreation = () => {
                             )}
                         </div>
                     </div>
+
+                    {showPopup && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Ledger</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={() => setShowPopup(false)}
+                                        ></button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <p>{popupMessage}</p>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="btn btn-primary" onClick={() => setShowPopup(false)}>
+                                            Ok
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Delete Modal */}
                     {showDeleteModal && (
                         <div className="modal show d-block" tabIndex="-1">

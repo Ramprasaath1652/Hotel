@@ -41,8 +41,10 @@ const Product = () => {
     const [showGroupDropdown, setShowGroupDropdown] = useState(false);
 
     const [forceOpen, setForceOpen] = useState(false);
-    const [_puId , setPuId] = useState()
+    const [_puId, setPuId] = useState()
 
+    const [showPopup, setShowPopup] = useState(false);
+    const [ popupMessage , setPopupMessage] = useState('');
 
 
     const gapi = import.meta.env.VITE_API_URL;
@@ -115,7 +117,7 @@ const Product = () => {
             alert("Failed to add product.");
         }
     }
-    const handleUpdateProductUnit = async (puid,pid) => {
+    const handleUpdateProductUnit = async (puid, pid) => {
         const _updateUnit = {
             PUId: puid,
             ProductId: pid,
@@ -123,8 +125,8 @@ const Product = () => {
             UnitId: salesUnit
         }
         try {
-            const res = await axios.put(`${API_PUNIT}/${_puId}`, _updateUnit);            
-            console.log('put data :',res.data);
+            const res = await axios.put(`${API_PUNIT}/${_puId}`, _updateUnit);
+            console.log('put data :', res.data);
             await loadProduct();
             //alert("Product Updated Successfully!");
         } catch (err) {
@@ -134,11 +136,29 @@ const Product = () => {
     }
 
     const handleAdd = async () => {
-        if (!productName.trim()) {
-            alert('Please enter product name');
+        if (!productCode.trim()) {
+            setPopupMessage('Product Code must be filled')
+            setShowPopup(true)
             return;
-        }    
+        }
+        if (!productName.trim()) {
+            setPopupMessage('Product Name must be filled')
+            setShowPopup(true)
+            return;
+        }
+        if (!groupQuery.trim()) {
+            setPopupMessage('Select a group name')
+            setShowPopup(true)
+            return;
+        }
 
+        if (!salesUnit.trim()) {
+            setPopupMessage('Sales unit must be filled')
+            setShowPopup(true)
+            return;
+        }
+
+        
         const newProduct = {
             ProductID: 0,
             CGST: Number(CGST) || 0,
@@ -202,7 +222,7 @@ const Product = () => {
         setSGST(productToEdit.SGST);
         setHSNCode(productToEdit.HSNCode);
         setHSNId(productToEdit.HSNId);
-      
+
         setGroupQuery(productToEdit.GroupName);
         setSalesUnit(productToEdit.UnitId)
         setPacking(productToEdit.Packing);
@@ -214,12 +234,12 @@ const Product = () => {
         setSch(productToEdit.Sch);
 
 
-        setGroupId(productToEdit.GroupId);    
-        setPuId(productToEdit.PUId)    
+        setGroupId(productToEdit.GroupId);
+        setPuId(productToEdit.PUId)
 
         setShowEditModal(false);
     };
-   const resetForm = () => {
+    const resetForm = () => {
         setIGST('')
         setCGST('')
         setSGST('')
@@ -280,9 +300,9 @@ const Product = () => {
             // Update In Product Table
             const res = await axios.put(`${API}/${productId}`, updatedProduct);
             // Update in Product Unit Table
-            await handleUpdateProductUnit(_puId,productId);
-            
-            
+            await handleUpdateProductUnit(_puId, productId);
+
+
             loadProduct();
             resetForm();
             showTempMessage("Product updated successfully!");
@@ -423,9 +443,9 @@ const Product = () => {
                                                 className="d-flex px-2 py-2 border-bottom hover-bg"
                                                 style={{ cursor: "pointer" }}
 
-                                                onClick={() => {                                                                                                        
+                                                onClick={() => {
                                                     //alert(item.GroupID);
-                                                    setGroupId(item.GroupID);                       
+                                                    setGroupId(item.GroupID);
                                                     //console.log("Dropdown clicked, selected group:" + _groupId);
                                                     setGroupQuery(item.GroupName);    // Show selected name
                                                     setShowGroupDropdown(false);
@@ -544,6 +564,31 @@ const Product = () => {
                                     className="btn-close"
                                     onClick={() => setShowMessage(false)}
                                 ></button>
+                            </div>
+                        </div>
+                    )}
+
+                    {showPopup && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Product</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={() => setShowPopup(false)}
+                                        ></button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <p>{popupMessage}</p>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="btn btn-primary" onClick={() => setShowPopup(false)}>
+                                            Ok
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

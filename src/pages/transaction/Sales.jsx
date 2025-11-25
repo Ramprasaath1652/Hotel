@@ -111,7 +111,6 @@ const Sales = () => {
                             <div style={{ borderLeft: "1px solid #999", width: "1px" }}></div>
                         </div>
 
-
                         {/* MIDDLE SECTION */}
                         <div className="d-flex flex-column" style={{ width: "550px" }}>
 

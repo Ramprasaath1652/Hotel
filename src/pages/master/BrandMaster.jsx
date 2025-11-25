@@ -18,6 +18,8 @@ const BrandMaster = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [brandToEdit, setBrandToEdit] = useState(null);
 
+   const [showPopup, setShowPopup] = useState(false)
+
   const gapi = import.meta.env.VITE_API_URL;
   const API = `${gapi}/brand`;
 
@@ -26,7 +28,7 @@ const BrandMaster = () => {
     loadBrands();
   }, []);
 
- 
+
   const loadBrands = async () => {
     try {
       const res = await axios.get(API);
@@ -45,7 +47,7 @@ const BrandMaster = () => {
 
   const handleAdd = async () => {
     if (!brandName.trim()) {
-      alert("Please enter brand name");
+      setShowPopup(true);
       return;
     }
 
@@ -273,6 +275,34 @@ const BrandMaster = () => {
                   className="btn-close"
                   onClick={() => setShowMessage(false)}
                 ></button>
+              </div>
+            </div>
+          )}
+
+          {showPopup && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Unit Master</h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setShowPopup(false)}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <p>
+                    Brand Name must be filled.
+                    </p>
+                  </div>
+                  <div className="modal-footer">
+
+                    <button className="btn btn-primary" onClick={() => setShowPopup(false)}>
+                      Ok
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
