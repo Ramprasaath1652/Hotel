@@ -56,9 +56,11 @@ const Group = () => {
     };
 
     try {
-      await axios.post(API, newGroup, {
+     const res = await axios.post(API, newGroup, {
         headers: { 'Content-Type': 'application/json' },
       });
+       console.log('API response:', res.data);
+       console.log('gId:',res.data.GroupID)
       loadGroups();
       setGroupName('');
       showTempMessage('Group added successfully!');

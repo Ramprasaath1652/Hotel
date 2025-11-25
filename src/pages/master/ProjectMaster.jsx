@@ -127,6 +127,10 @@ const ProjectMaster = () => {
             setCountry('');
             setPin('');
             setMobile('');
+            setLedger(null);
+            setLedgerQuery('');
+            setShowLedgerDropdown(false)
+
             alert("Project added successfully!");
         } catch (err) {
             console.error('Add error:', err);
@@ -140,19 +144,7 @@ const ProjectMaster = () => {
 
         setProjectToEdit(project);
 
-        setProjectId(project.ProjId);
-        setProjectName(project.ProjName ?? '');
-        setProjectNo(project.ProjNo ?? '');
-        setDate(project.ProjDate ? project.ProjDate.split("T")[0] : '');
-        setLedger(project.LedgerId ?? '');
-        setRefPerson(project.RefName ?? '');
-        setDescription(project.Description ?? '');
-        setAdd1(project.Add1 ?? '');
-        setAdd2(project.Add2 ?? '');
-        setState(project.State ?? '');
-        setCountry(project.Country ?? '');
-        setPin(project.Pin ?? '');
-        setMobile(project.Mobile ?? '');
+
 
         setShowEditModal(true);   // 👈 MUST BE PRESENT
     }
@@ -164,12 +156,28 @@ const ProjectMaster = () => {
         // Set form into real edit mode
         setProjectId(projectToEdit.ProjId);
 
+        setProjectName(projectToEdit.ProjName ?? '');
+        setProjectNo(projectToEdit.ProjNo ?? '');
+        setDate(projectToEdit.ProjDate ? projectToEdit.ProjDate.split("T")[0] : '');
+        setLedger(projectToEdit.LedgerId ?? '');
+        setRefPerson(projectToEdit.RefName ?? '');
+        setDescription(projectToEdit.Description ?? '');
+        setAdd1(projectToEdit.Add1 ?? '');
+        setAdd2(projectToEdit.Add2 ?? '');
+        setState(projectToEdit.State ?? '');
+        setCountry(projectToEdit.Country ?? '');
+        setPin(projectToEdit.Pin ?? '');
+        setMobile(projectToEdit.Mobile ?? '');
+
+
         const index = projects.findIndex(p => p.ProjId === projectToEdit.ProjId);
         setEditingIndex(index);
 
+
+
         setShowEditModal(false);   // close modal
 
-        showTempMessage("Ready to update"); // optional
+
     };
 
 
@@ -276,14 +284,14 @@ const ProjectMaster = () => {
         item.LedgerName?.toLowerCase().includes(ledgerQuery.toLowerCase())
     );
 
-    const handleKeyDown = (e) =>{
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    const handleKeyDown = (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             setShowLedgerDropdown(true);
-            setForceOpen(true); 
+            setForceOpen(true);
         }
     }
 
-   
+
 
 
     return (
@@ -350,75 +358,70 @@ const ProjectMaster = () => {
 
                             <div className='mb-3 position-relative'>
                                 <label className='form-label'>Ledger</label>
-                               
+
                                 {/* Input Box */}
                                 <input
-                                    type='text'
-                                    className='form-control'
-                                    placeholder='Search Ledger...'
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Search Ledger..."
                                     value={ledgerQuery}
                                     onChange={(e) => {
-                                        setLedgerQuery(e.target.value);
+                                        const value = e.target.value;
                                         setLedgerQuery(value);
 
-                                        if(value === ''){
-                                            setForceOpen(false);
-                                            setShowLedgerDropdown(false)
-                                        } else{
-                                            setShowLedgerDropdown(true)
+                                        if (value.trim() === '') {
+                                            setShowLedgerDropdown(false);
+                                        } else {
+                                            setShowLedgerDropdown(true);
                                         }
                                     }}
-                                    onFocus={() => setShowLedgerDropdown(true)}
-                                    onKeyDown={handleKeyDown}
-                                    onBlur={()=>{
-                                        setTimeout(()=>{
-                                           setShowLedgerDropdown(false);
-                                           setForceOpen(false) 
-                                        },150)
+                                    onFocus={() => {
+                                        if (ledgerQuery.trim() !== '') setShowLedgerDropdown(true);
                                     }}
+                                    onKeyDown={handleKeyDown}
+                                    onBlur={() => {
+                                        setTimeout(() => {
+                                            setShowLedgerDropdown(false);
+                                        }, 150);
+                                    }}
+
                                 />
 
-                                {/* Bootstrap Dropdown */}
-                                {showLedgerDropdown && (ledgerQuery !== '' || forceOpen)  && (
+                                {/* Dropdown */}
+                                {showLedgerDropdown && filteredLedger.length > 0 && (
                                     <div
                                         className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm"
                                         style={{ maxHeight: "250px", overflowY: "auto", zIndex: 9999 }}
                                     >
                                         {/* Header */}
                                         <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
-                                            <div className="col-2">ID</div>
-                                            <div className="col-4">Name</div>
+                                            <div className="col-5">Name</div>
                                             <div className="col-3">Place</div>
-                                            <div className="col-3">State</div>
+                                            <div className="col-4">State</div>
                                         </div>
 
                                         {/* List Items */}
-                                        {filteredLedger.map(item => (
+                                        {filteredLedger.map((item) => (
                                             <div
                                                 key={item.LedgerId}
                                                 className="d-flex px-2 py-2 border-bottom hover-bg"
                                                 style={{ cursor: "pointer" }}
                                                 onClick={() => {
-                                                    setLedger(item.LedgerId);         // save ID
-                                                    setLedgerQuery(item.LedgerName);  // show name
-
+                                                    setLedger(item.LedgerId);           // Save ID
+                                                    setLedgerQuery(item.LedgerName);    // Show selected name
                                                     setShowLedgerDropdown(false);
-                                                    setForceOpen(false)
                                                 }}
-                                                onMouseEnter={e => e.currentTarget.classList.add("bg-light")}
-                                                onMouseLeave={e => e.currentTarget.classList.remove("bg-light")}
+                                                onMouseEnter={(e) => e.currentTarget.classList.add("bg-light")}
+                                                onMouseLeave={(e) => e.currentTarget.classList.remove("bg-light")}
                                             >
-                                                <div className="col-2">{item.LedgerId}</div>
-                                                <div className="col-4">{item.LedgerName}</div>
+                                                <div className="col-5">{item.LedgerName}</div>
                                                 <div className="col-3">{item.EPlace || "-"}</div>
-                                                <div className="col-3">{item.StateName || "-"}</div>
+                                                <div className="col-4">{item.StateName || "-"}</div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
-
-
                             <div className='mb-3'>
                                 <label className='form-label'>Ref Person</label>
                                 <input
