@@ -296,7 +296,7 @@ const Purchase = () => {
                             className="d-flex align-items-center justify-content-center"
                             style={{ flex: 2, fontSize: "14px" }}
                         >
-                            
+
                         </div>
 
                         {/* Divider */}
@@ -304,62 +304,189 @@ const Purchase = () => {
 
                         {/* COLUMN 2 */}
                         <div
-                            className="d-flex align-items-center justify-content-center"
+                            className="d-flex align-items-start justify-content-center mt-2"
                             style={{ flex: 1, fontSize: "14px" }}
                         >
-                            
+                            <div className="d-flex flex-column" style={{ gap: "4px" }}>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>Tot Item</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>Tot Qty</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>Free Qty</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>Dis Amt</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                            </div>
                         </div>
 
                         <div style={{ width: "1px", background: "#5d8aa8" }}></div>
 
                         {/* COLUMN 3 */}
                         <div
-                            className="d-flex align-items-center justify-content-center"
+                            className="d-flex align-items-center justify-content-center mt-2"
                             style={{ flex: 1, fontSize: "14px" }}
                         >
-                            <div className='row'>
-                                <div>
-                                    <label>Tot Item</label>
-                                    <input/>
+                            <div className="d-flex flex-column" style={{ gap: "4px" }}>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>Tot Amt</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
                                 </div>
 
-                                <div>
-                                    <label>Tot Qty</label>
-                                    <input/>
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>CGST Amt</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
                                 </div>
 
-                                <div>
-                                    <label>Free Qty</label>
-                                    <input/>
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>SGST Amt</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
                                 </div>
 
-                                <div>
-                                    <label>Dis Amt</label>
-                                    <input/>
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>IGST Amt</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
                                 </div>
+
                             </div>
-                           
+
                         </div>
 
                         <div style={{ width: "1px", background: "#5d8aa8" }}></div>
 
                         {/* COLUMN 4 */}
                         <div
-                            className="d-flex align-items-center justify-content-center"
+                            className="d-flex align-items-center justify-content-center mt-2"
                             style={{ flex: 1, fontSize: "14px" }}
                         >
-                           
+                            <div className="d-flex flex-column" style={{ gap: "4px" }}>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>TCS %</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>TCS RS</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>Dis %</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                                <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+                                    <label style={{ width: "70px", margin: 0 }}>Dis Amt</label>
+                                    <input className="form-control form-control-sm" style={{ height: "28px", width: "120px" }} />
+                                </div>
+
+                            </div>
                         </div>
 
                         <div style={{ width: "1px", background: "#5d8aa8" }}></div>
 
                         {/* COLUMN 5 */}
                         <div
-                            className="d-flex align-items-center justify-content-center"
-                            style={{ flex: 1, fontSize: "14px" }}
+                            className="d-flex flex-column"
+                            style={{ flex: 1, fontSize: "14px", width: "100%" }}
                         >
-                            
+
+                            {/* FIRST HORIZONTAL CONTAINER */}
+                            <div className="d-flex" style={{ width: "100%", padding: "6px 0" }}>
+
+                                {/* LEFT 50% BOX */}
+                                <div className="d-flex flex-column" style={{ width: "50%", gap: "4px" }}>
+
+                                    {/* Row 1 */}
+                                    <div className="d-flex align-items-center" style={{ gap: "6px" }}>
+                                        <label style={{ width: "60px", margin: 0, fontSize: "12px" }}>Act Amt</label>
+                                        <input
+                                            className="form-control"
+                                            style={{
+                                                height: "22px",
+                                                width: "90px",
+                                                padding: "2px 4px",
+                                                fontSize: "12px"
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Row 2 */}
+                                    <div className="d-flex align-items-center" style={{ gap: "6px" }}>
+                                        <label style={{ width: "60px", margin: 0, fontSize: "12px" }}>Round Off</label>
+                                        <input
+                                            className="form-control"
+                                            style={{
+                                                height: "22px",
+                                                width: "90px",
+                                                padding: "2px 4px",
+                                                fontSize: "12px"
+                                            }}
+                                        />
+                                    </div>
+
+                                </div>
+
+
+                                {/* VERTICAL LINE */}
+                                <div style={{ width: "1px", background: "#d3d3d3", margin: "0 10px" }}></div>
+
+                                {/* RIGHT 50% BOX (EMPTY) */}
+                                <div style={{ width: "50%" }}>
+                                    {/* intentionally empty */}
+                                </div>
+                            </div>
+
+                            {/* HORIZONTAL LINE */}
+                            <div style={{ width: "100%", height: "1px", background: "#d3d3d3" }}></div>
+
+                            {/* SECOND HORIZONTAL CONTAINER */}
+                            <div
+                                className="d-flex flex-column align-items-center"
+                                style={{ width: "100%", padding: "6px 0" }}
+                            >
+                                {/* SECOND HORIZONTAL CONTAINER */}
+                                <div
+                                    className="d-flex flex-column"
+                                    style={{ width: "100%", padding: "6px 0" }}
+                                >
+                                    <div
+                                        className="d-flex flex-wrap justify-content-center"
+                                        style={{ gap: "6px", padding: "0 8px" }}
+                                    >
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 1</button>
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 2</button>
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 3</button>
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 4</button>
+
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 5</button>
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 6</button>
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 7</button>
+                                        <button className="btn btn-primary btn-sm" style={{ flex: "0 0 22%", minWidth: "60px", height: "26px" }}>Btn 8</button>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+
                         </div>
+
+
                     </div>
 
                 </div>
