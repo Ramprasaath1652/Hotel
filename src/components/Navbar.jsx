@@ -69,7 +69,7 @@ const Navbar = () => {
                             >
                                 Transaction</span>
                             <ul className="dropdown-menu">
-                                <li><Link className="dropdown-item" to="/transaction/supp-quotation">Supp Quotation</Link></li>
+                                <li><Link className="dropdown-item" to="/transaction/suppquotation">Supp Quotation</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/quotation">Quotation</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/sales">Sales</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/purchase">Purchase</Link></li>

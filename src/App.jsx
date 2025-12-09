@@ -100,7 +100,7 @@ const App = ()=>{
              <Route path='/master/test' element={<Test/>} />
 
              {/* Transaction Master */}
-             <Route path='/transaction/supp-quotation' element={<SuppQuotation/>} />
+             <Route path='/transaction/suppquotation' element={<SuppQuotation/>} />
              <Route path='/transaction/quotation' element={<Quotation/>} />
              <Route path='/transaction/sales' element={<Sales/>} />
              <Route path='/transaction/purchase' element={<Purchase/>} />

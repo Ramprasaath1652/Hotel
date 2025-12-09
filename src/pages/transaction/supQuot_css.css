@@ -1,0 +1,10 @@
+.edit-highlight {
+    background-color: #ffcfcd !important; /* light yellow */
+}
+.edit-highlight td {
+    background-color: yellow !important;
+}
+
+.edit-row {
+  background-color: #ce0808 !important;
+}
