@@ -3,7 +3,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useReducer, useEffect } from 'react';
 import axios from 'axios'
 
-
+//http://192.168.31.101:85/api/tblQuodets
+//http://192.168.31.101:85/api/tblQuos
 
 
 const initialState = {
@@ -36,9 +37,11 @@ const initialState = {
         qty: '',
         rate: '',
         taxable: '',
-        varPer: '',
+        vatPer: '',
         vatAmt: '',
         amount: '',
+        unitType: '',
+        description: '',
     },
     projects: [],
     ledger: [],
@@ -63,8 +66,10 @@ const initialState = {
     showBrandDropdown: false,
 
     rows: [],
+    forceOpen: false,
 
-
+    suppQuot: [],
+    suppQuotDets: [],
 
 }
 
@@ -244,6 +249,34 @@ function reducer(state, action) {
                 }
             };
 
+        case "SET_ROWS_LIST":
+            return { ...state, rows: action.payload };
+
+        case "OPEN_LEDGER":
+            return { ...state, showLedgerDropdown: true };
+
+        case "OPEN_PROJECT":
+            return { ...state, showProjectDropdown: true };
+
+        case "OPEN_PRODUCT":
+            return { ...state, showProductDropdown: true };
+
+        case "OPEN_BRAND":
+            return { ...state, showBrandDropdown: true };
+
+        case "FORCE_OPEN":
+            return { ...state, forceOpen: true };
+
+        case "SET_SUPPQUOT_LIST":
+            return { ...state, suppQuot: action.payload };
+
+        case "SET_SUPPQUOTDETS_LIST":
+            return { ...state, suppQuotDets: action.payload };
+
+
+
+
+
 
         default:
             return state;
@@ -271,6 +304,8 @@ const Quotation = () => {
         loadProduct();
         loadUnit();
         loadBrands();
+        loadQuot();
+        loadQuotDets();
     }, []);
 
     const loadProjects = async () => {
@@ -334,7 +369,82 @@ const Quotation = () => {
         }
     };
 
+    const loadQuot = async () => {
+        try {
+            const res = await axios.get(`${gapi}/tblQuos`);
+            dispatch({ type: 'SET_SUPPQUOT_LIST' })
+            console.log(res.data);
+        } catch (err) {
+            console.error("Error fetching suppQuo:", err);
+            alert("Could not load Quotation. Please check API connection.");
+        }
+    }
 
+    const loadQuotDets = async () => {
+        try {
+            const res = await axios.get(`${gapi}/tblQuodets`);
+            dispatch({ type: 'SET_SUPPQUOTDETS_LIST' })
+            console.log(res.data);
+        } catch (err) {
+            console.error("Error fetching suppQuo:", err);
+            alert("Could not load QuotationDetails. Please check API connection.");
+        }
+    }
+
+    const handleKeyDown = (e, type) => {
+        console.log("KEY PRESSED:", e.key, " -- type:", type);
+
+        if (["ArrowDown", "ArrowUp", "Backspace"].includes(e.key)) {
+            dispatch({ type: "FORCE_OPEN" });
+
+            if (type === "ledger") dispatch({ type: "OPEN_LEDGER" });
+            if (type === "project") dispatch({ type: "OPEN_PROJECT" });
+            if (type === "product") dispatch({ type: "OPEN_PRODUCT" });
+            if (type === "brand") dispatch({ type: "OPEN_BRAND" });
+        }
+    };
+
+
+
+    const saveQuoDetails = async () => {
+        const bd = state.bottomData;
+
+        if (!bd.productId) {
+            alert("Please select a product.");
+            return;
+        }
+
+        const newRow = {
+            QDetsId: 0,
+            QId: Number(state.headerData?.QId) || 0,
+            SNo: state.rows.length + 1,
+            ProductId: Number(bd.productId) || 0,
+            ProdDes: bd.description || "",
+            UnitId: Number(bd.unitId) || 0,
+            BrandId: Number(bd.brandId) || 0,
+            Qty: Number(bd.qty) || 0,
+            Rate: Number(bd.rate) || 0,
+            Taxable: Number(bd.taxable) || 0,
+            VatPer: Number(bd.vatPer) || 0,
+            VatAmt: Number(bd.vatAmt) || 0,
+            NetAmt: Number(bd.amount) || 0,
+            NRate: Number(bd.sRate) || 0,
+        };
+
+        try {
+            const response = await axios.post(`${gapi}/tblQuodets`, newRow);
+            if (response.status === 200 || response.status === 201) {
+                alert("Row saved successfully!");
+                // Optionally update your rows state here
+                // setRows([...rows, newRow]);
+            } else {
+                alert("Failed to save row.");
+            }
+        } catch (error) {
+            console.error("Error saving Quodets:", error);
+            alert("An error occurred while saving.");
+        }
+    };
 
 
 
@@ -357,6 +467,9 @@ const Quotation = () => {
             value: e.target.value,
         })
     }
+
+
+
 
     return (
         <div className='container-fluid mt-2'>
@@ -411,18 +524,26 @@ const Quotation = () => {
                             <div className="d-flex mb-3 align-items-center gap-3 flex-wrap">
 
                                 {/* Q.No */}
-                                <div className="d-flex align-items-center flex-column" style={{ flex: "0 0 140px" }}>
+                                <div className="d-flex align-items-center" style={{ flex: "0 0 140px" }}>
                                     <label
                                         className="me-2 mb-0 fw-bold "
-                                        style={{ fontSize: '15px', }}
+                                        style={{ fontSize: '15px' }}
                                     >
                                         Q.No
                                     </label>
 
                                     <input
                                         type="number"
-                                        className="form-control form-control-sm"
-                                        style={{  height: "28px" }}
+                                        className="form-control"
+                                        style={{
+                                            height: "20px",
+                                            padding: '2px 6px',
+                                            padding: "2px 6px",
+                                            fontSize: "13px",
+                                            border: "1px solid #ced4da",
+                                            borderRadius: "4px",
+                                            width: "100%"
+                                        }}
                                         name='qNo'
                                         value={topData.qNo}
                                         onChange={handleTopChange}
@@ -430,7 +551,7 @@ const Quotation = () => {
                                 </div>
 
                                 {/* Project */}
-                                <div className="d-flex flex-column" style={{ flex: "1 0 280px" }}>
+                                <div className="d-flex " style={{ flex: "1 0 280px" }}>
                                     <label className='fw-bold required' style={{ fontSize: "15px" }}>
                                         Project Name
                                     </label>
@@ -449,6 +570,7 @@ const Quotation = () => {
                                                 if (state.projectQuery.trim() !== "")
                                                     dispatch({ type: "SET_SHOW_PROJECT_DROPDOWN", payload: true });
                                             }}
+                                            onKeyDown={(e) => handleKeyDown(e, 'project')}
                                             onBlur={() => {
                                                 setTimeout(() => {
                                                     dispatch({ type: "SET_SHOW_PROJECT_DROPDOWN", payload: false });
@@ -484,7 +606,7 @@ const Quotation = () => {
                                 </div>
 
                                 {/* Ledger */}
-                                <div className="d-flex flex-column" style={{ flex: "1 0 280px" }}>
+                                <div className="d-flex " style={{ flex: "1 0 280px" }}>
                                     <label className="fw-bold" style={{ fontSize: "15px" }}>
                                         Ledger
                                     </label>
@@ -503,6 +625,8 @@ const Quotation = () => {
                                                 if (state.ledgerQuery.trim() !== "")
                                                     dispatch({ type: "SET_SHOW_LEDGER_DROPDOWN", payload: true });
                                             }}
+                                            onKeyDown={(e) => handleKeyDown(e, 'ledger')}
+
                                             onBlur={() => {
                                                 setTimeout(() => {
                                                     dispatch({ type: "SET_SHOW_LEDGER_DROPDOWN", payload: false });
@@ -583,6 +707,7 @@ const Quotation = () => {
                                             if (state.productQuery.trim() !== "")
                                                 dispatch({ type: "SET_SHOW_PRODUCT_DROPDOWN", payload: true });
                                         }}
+                                        onKeyDown={(e) => handleKeyDown(e, 'product')}
                                         onBlur={() => {
                                             setTimeout(() => {
                                                 dispatch({ type: "SET_SHOW_PRODUCT_DROPDOWN", payload: false });
@@ -673,6 +798,8 @@ const Quotation = () => {
                                             if (state.brandQuery.trim() !== "")
                                                 dispatch({ type: "SET_SHOW_BRAND_DROPDOWN", payload: true });
                                         }}
+                                        onKeyDown={(e) => handleKeyDown(e, 'brand')}
+
                                         onBlur={() => {
                                             setTimeout(() => {
                                                 dispatch({ type: "SET_SHOW_BRAND_DROPDOWN", payload: false });
@@ -786,7 +913,7 @@ const Quotation = () => {
 
                             </div>
 
-                            <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
                                 <textarea
                                     className='form-control form-control-sm mt-1 '
                                     rows={2}
@@ -795,6 +922,12 @@ const Quotation = () => {
                                         marginLeft: '2%'
                                     }}
                                 />
+                                <button
+                                    className='btn btn-primary btn-sm'
+
+                                >
+                                    Add
+                                </button>
                             </div>
 
                             <hr className='mt-1' />
@@ -815,25 +948,25 @@ const Quotation = () => {
                                 <div style={{ width: '100%' }}>
                                     {/* future content */}
                                     <table className="table table-bordered table-sm" style={{ fontSize: "12px", minWidth: "900px" }}>
-                            <thead className="table-light">
-                                <tr>
-                                    <th style={{ width: "50px" }} className="text-center">S.No</th>
-                                    <th style={{ width: "100px" }}>Product</th>
-                                    <th style={{ width: "50px" }} className='text-center'>Unit</th>
-                                    <th style={{ width: "100px" }}>Brand</th>
-                                    <th style={{ width: "70px" }} className="text-center">Qty</th>
-                                    <th style={{ width: "80px" }} className="text-end">Rate</th>
-                                    <th style={{ width: "80px" }} className="text-end">Taxable</th>
-                                    <th style={{ width: "60px" }} className="text-center">VAT %</th>
-                                    <th style={{ width: "80px" }} className="text-end">VAT Amt</th>
-                                    <th style={{ width: "80px" }} className="text-end">Amount</th>
-                                    <th style={{ width: "80px" }} className="text-end">Actions</th>
+                                        <thead className="table-light">
+                                            <tr>
+                                                <th style={{ width: "50px" }} className="text-center">S.No</th>
+                                                <th style={{ width: "100px" }}>Product</th>
+                                                <th style={{ width: "50px" }} className='text-center'>Unit</th>
+                                                <th style={{ width: "100px" }}>Brand</th>
+                                                <th style={{ width: "70px" }} className="text-center">Qty</th>
+                                                <th style={{ width: "80px" }} className="text-end">Rate</th>
+                                                <th style={{ width: "80px" }} className="text-end">Taxable</th>
+                                                <th style={{ width: "60px" }} className="text-center">VAT %</th>
+                                                <th style={{ width: "80px" }} className="text-end">VAT Amt</th>
+                                                <th style={{ width: "80px" }} className="text-end">Amount</th>
+                                                <th style={{ width: "80px" }} className="text-end">Actions</th>
 
-                                </tr>
-                            </thead>
+                                            </tr>
+                                        </thead>
 
-                            <tbody>
-                                {/* {rows.map((r, index) => (
+                                        <tbody>
+                                            {/* {rows.map((r, index) => (
                                     <tr key={index}
                                         className={editIndex === index ? "edit-highlight" : ""}
                              >
@@ -852,8 +985,8 @@ const Quotation = () => {
                                        
                                     </tr>
                                 ))} */}
-                            </tbody>
-                        </table>
+                                        </tbody>
+                                    </table>
 
                                 </div>
                             </div>
@@ -1073,7 +1206,9 @@ const Quotation = () => {
                                 Edit
                             </button>
 
-                            <button className="btn btn-sm" style={{ backgroundColor: "#5d8aa8", color: "white", whiteSpace: "nowrap" }}>
+                            <button className="btn btn-sm"
+                                onClick={saveQuoDetails}
+                                style={{ backgroundColor: "#5d8aa8", color: "white", whiteSpace: "nowrap" }}>
                                 Save
                             </button>
 
