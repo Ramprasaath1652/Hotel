@@ -12,40 +12,34 @@ const initialState = {
 function reducer(state, action) {
     switch (action.type) {
         case 'SET_PDATA':
-            return { ...state, pData: action.value };
-
+            return { ...state, pData: action.value }
         case 'SET_SDATA':
-            return { ...state, sData: action.value };
-
+            return { ...state, sData: action.value }
         case 'LOAD_PRIMARY':
-            return { ...state, papi: action.value };
-
+            return { ...state, papi: action.value }
         case 'LOAD_SECONDARY':
-            return { ...state, sapi: action.value };
-
+            return { ...state, sapi: action.value }
         case 'ADD_SECONDARY':
             return {
                 ...state,
                 tempSecondary: [...state.tempSecondary, state.sData],
                 sData: ''
             }
-
-        case "CLEAR_ALL":
+        case 'CLEAR_ALL':
             return {
                 ...state,
-                pData: "",
-                sData: "",
+                pData: '',
+                sData: '',
                 tempSecondary: []
-            };
-
+            }
         default:
             return state;
     }
+
 }
 
-
-const GroupReduce = () => {
-    const [state, dispatch] = useReducer(reducer, initialState)
+const ReducerTest = () => {
+    const [state, dispatch] = useReducer(reducer, initialState);
 
     useEffect(() => {
         loadPrimary();
@@ -58,7 +52,7 @@ const GroupReduce = () => {
     }
 
     const loadSecondary = async () => {
-        const res = await axios.get("http://192.168.31.101:85/api/tblsdatas")
+        const res = await axios.get("http://192.168.31.101:85/api/tblpdatas")
         dispatch({ type: 'LOAD_SECONDARY', value: res.data })
     }
 
@@ -75,7 +69,7 @@ const GroupReduce = () => {
         return pid;
     }
 
-    const saveSecondary = async (pid , sData) => {
+    const saveSecondary = async (pid, sData) => {
         const body = {
             pid: pid,
             sdata: sData,
@@ -99,13 +93,14 @@ const GroupReduce = () => {
             await saveSecondary(pid, item);
         }
 
-        alert(`Saved! PID = ${pid}`);
+       
 
         loadPrimary();
         loadSecondary();
 
         dispatch({ type: "CLEAR_ALL" });
     };
+
     return (
         <div className='mt-3'>
             <label className='form-label'>pData:</label>
@@ -117,7 +112,6 @@ const GroupReduce = () => {
                 }
             />
             {state.pData}
-
             <div>
                 <label>sData</label>
                 <input
@@ -128,7 +122,7 @@ const GroupReduce = () => {
                     }}
                 />
                 {state.sData}
-                <button className='m-2' onClick={() =>dispatch({ type: 'ADD_SECONDARY' })}>
+                <button className='m-2' onClick={() => dispatch({ type: 'ADD_SECONDARY' })}>
                     Add
                 </button>
             </div>
@@ -155,4 +149,4 @@ const GroupReduce = () => {
     )
 }
 
-export default GroupReduce;
+export default ReducerTest;

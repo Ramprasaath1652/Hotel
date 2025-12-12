@@ -39,6 +39,7 @@ const SuppQuotation = () => {
         unitType: "",
         productId: '',
         brandId: "",
+        
 
     })
 

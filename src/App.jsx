@@ -18,6 +18,9 @@ import LedgerCreation from './pages/master/LedgerCreation';
 import ProjectMaster from './pages/master/ProjectMaster';
 import LedgerReduce from './pages/master/LedgerReduce';
 import Test from './pages/master/test';
+import GroupUse from './pages/master/GroupUse';
+import StateTest from './pages/master/stateTest';
+import ReducerTest from './pages/master/ReducerTest';
 
 //Transaction Master
 import SuppQuotation from './pages/transaction/SuppQuotation';
@@ -98,6 +101,12 @@ const App = ()=>{
              <Route path='/master/ledger-reducer' element={<LedgerReduce/>} />
              <Route path='/master/project-master' element={<ProjectMaster/>} />
              <Route path='/master/test' element={<Test/>} />
+             <Route path='/master/group-use' element={<GroupUse/>} />
+             <Route path='/master/test-usestate' element={<StateTest/>} />
+             <Route path='/master/test-reducer' element={<ReducerTest/>} />
+
+
+
 
              {/* Transaction Master */}
              <Route path='/transaction/suppquotation' element={<SuppQuotation/>} />

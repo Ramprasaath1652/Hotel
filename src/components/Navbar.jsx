@@ -47,6 +47,7 @@ const Navbar = () => {
                             <ul className="dropdown-menu">
                                 <li><Link className="dropdown-item" to="/master/group">Group</Link></li>
                                 <li><Link className="dropdown-item" to="/master/group-reducer">Group Reduser</Link></li>
+                                <li><Link className="dropdown-item" to="/master/group-use">Group Use</Link></li>
                                 <li><Link className="dropdown-item" to="/master/brand-master">Brand Master</Link></li>
                                 <li><Link className="dropdown-item" to="/master/unit">Unit</Link></li>
                                 <li><Link className="dropdown-item" to="/master/product">Product</Link></li>
@@ -54,6 +55,10 @@ const Navbar = () => {
                                 <li><Link className="dropdown-item" to="/master/ledger-reducer">Ledger Reduce</Link></li>
                                 <li><Link className="dropdown-item" to="/master/project-master">Project Master</Link></li>
                                 <li><Link className="dropdown-item" to="/master/test">Test</Link></li>
+                                <li><Link className="dropdown-item" to="/master/test-usestate">State Test</Link></li>
+                                <li><Link className="dropdown-item" to="/master/test-reducer">Reducer Test</Link></li>
+
+
 
                             </ul>
                         </li>

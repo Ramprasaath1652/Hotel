@@ -14,14 +14,17 @@ const initialState = {
         projectId: '',
         ledger: '',
         ledgerId: '',
+        qDate: '',
+        subject: '',
+        rNo: '',
         notes: '',
         inclusion: '',
         exclusion: '',
-        warrenty: '',
+        warranty: '',
         scope: '',
         delivery: '',
         payment: '',
-        quotationValidity: '',
+        qValidity: '',
         item: '',
         totalAmount: '',
         vatAmt: '',
@@ -30,17 +33,19 @@ const initialState = {
     },
 
     bottomData: {
-        sNo: '',
-        product: '',
-        unit: '',
-        brand: '',
+        sNo: 1,
+        productId: '',
+        productName: '',
+        unitId: '',
+        unitType: '',
+        brandId: '',
+        brandName: '',
         qty: '',
         rate: '',
         taxable: '',
         vatPer: '',
         vatAmt: '',
         amount: '',
-        unitType: '',
         description: '',
     },
     projects: [],
@@ -79,12 +84,6 @@ function reducer(state, action) {
             return {
                 ...state,
                 topData: { ...state.topData, [action.field]: action.value },
-            }
-
-        case 'SET_BOTTOM_FIELD':
-            return {
-                ...state,
-                bottomData: { ...state.bottomData, [action.field]: action.value },
             }
 
         case 'SET_TOP_DATA':
@@ -273,8 +272,136 @@ function reducer(state, action) {
         case "SET_SUPPQUOTDETS_LIST":
             return { ...state, suppQuotDets: action.payload };
 
+        case 'RESET_BOTTOM_DATA':
+            return { ...state, bottomData: initialState.bottomData };
+
+        case 'SET_SAVING':
+            return { ...state, saving: action.payload };
+
+        // update logic like 1 st top field + auto calc logic
+        case 'SET_BOTTOM_FIELD':
+            const updated = { ...state.bottomData, [action.field]: action.value };
+
+            // Auto-calc logic
+            const qtyNum = Number(updated.qty) || 0;
+            const rateNum = Number(updated.rate) || 0;
+            const taxableNum = qtyNum * rateNum;
+            const vatNum = (taxableNum * (Number(updated.vatPer) || 0)) / 100;
+            const netNum = taxableNum + vatNum;
+
+            return {
+                ...state,
+                bottomData: {
+                    ...updated,
+                    taxable: taxableNum,
+                    vatAmt: vatNum,
+                    amount: netNum
+                }
+            };
+        case 'ADD_ROW': {
+            const bd = state.bottomData;
+
+            if (!bd.productId) {
+                alert("Please select a product");
+                return state;
+            }
+            if (!bd.qty || bd.qty === "0") {
+                alert("Please enter qty");
+                return state;
+            }
 
 
+
+            const newRow = {
+                ...bd,
+                sNo: state.rows.length + 1
+            };
+
+            const newRows = [...state.rows, newRow];
+
+            // Auto-calc topData totals
+            const totalVatAmt = newRows.reduce((sum, r) => sum + Number(r.vatAmt || 0), 0);
+            const totalTaxable = newRows.reduce((sum, r) => sum + Number(r.taxable || 0), 0);
+            const totalAmount = newRows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+            return {
+                ...state,
+                rows: newRows,
+
+                // RESET CORRECT FIELDS
+                bottomData: {
+                    sNo: newRows.length + 1,
+                    productId: '',
+                    productName: '',
+                    brandId: '',
+                    brandName: '',
+                    unitId: '',
+                    unitType: '',
+                    qty: '',
+                    rate: '',
+                    taxable: '',
+                    vatPer: '',
+                    vatAmt: '',
+                    amount: '',
+                    description: ''
+                },
+
+                // Reset dropdown search text
+                productQuery: "",
+                brandQuery: "",
+
+                showProductDropdown: false,
+                showBrandDropdown: false,
+
+                // Update topData totals
+                topData: {
+                    ...state.topData,
+                    vatAmt: totalVatAmt,
+                    totalAmount: totalTaxable,
+                    actAmt: totalAmount
+                }
+            };
+        }
+        case "RESET_AFTER_SAVE":
+            return {
+                ...state,
+                topData: {
+                    ledgerId: "",
+                    projectId: "",
+                    qNo: "",
+                    qDate: "",
+                    narration: "",
+                    terms: "",
+                    taxable: "",
+                    vatAmt: "",
+                    amount: "",
+                    warranty: '',
+                    qValidity:'',
+
+
+                },
+                rows: [],
+                bottomData: {
+                    sNo: '',
+                    productId: '',
+                    productName: '',
+                    unitId: '',
+                    unitType: '',
+                    brandId: '',
+                    brandName: '',
+                    qty: '',
+                    rate: '',
+                    taxable: '',
+                    vatPer: '',
+                    vatAmt: '',
+                    amount: '',
+                    description: '',
+                },
+                productQuery: "",
+                brandQuery: "",
+                showProductDropdown: false,
+                showBrandDropdown: false,
+            };
 
 
 
@@ -312,7 +439,7 @@ const Quotation = () => {
 
         try {
             const res = await axios.get(`${gapi}/project`)
-            console.log(res.data);
+            //console.log(res.data);
 
             dispatch({ type: 'SET_PROJECTS', payload: res.data })
         } catch (err) {
@@ -324,7 +451,7 @@ const Quotation = () => {
 
         try {
             const res = await axios.get(`${gapi}/ledger`)
-            console.log(res.data);
+            //console.log(res.data);
 
             dispatch({ type: 'SET_LEDGER', payload: res.data })
         } catch (err) {
@@ -336,7 +463,7 @@ const Quotation = () => {
 
         try {
             const res = await axios.get(`${gapi}/productmasters`)
-            console.log(res.data);
+            //console.log(res.data);
 
             dispatch({ type: 'SET_PRODUCT', payload: res.data })
         } catch (err) {
@@ -349,7 +476,7 @@ const Quotation = () => {
 
         try {
             const res = await axios.get(`${gapi}/unit`)
-            console.log(res.data);
+            //console.log(res.data);
 
             dispatch({ type: 'SET_UNIT', payload: res.data })
         } catch (err) {
@@ -361,7 +488,7 @@ const Quotation = () => {
 
         try {
             const res = await axios.get(`${gapi}/brand`)
-            console.log(res.data);
+            // console.log(res.data);
 
             dispatch({ type: 'SET_BRAND', payload: res.data })
         } catch (err) {
@@ -373,7 +500,7 @@ const Quotation = () => {
         try {
             const res = await axios.get(`${gapi}/tblQuos`);
             dispatch({ type: 'SET_SUPPQUOT_LIST' })
-            console.log(res.data);
+            //console.log(res.data);
         } catch (err) {
             console.error("Error fetching suppQuo:", err);
             alert("Could not load Quotation. Please check API connection.");
@@ -384,7 +511,7 @@ const Quotation = () => {
         try {
             const res = await axios.get(`${gapi}/tblQuodets`);
             dispatch({ type: 'SET_SUPPQUOTDETS_LIST' })
-            console.log(res.data);
+            //console.log(res.data);
         } catch (err) {
             console.error("Error fetching suppQuo:", err);
             alert("Could not load QuotationDetails. Please check API connection.");
@@ -392,7 +519,7 @@ const Quotation = () => {
     }
 
     const handleKeyDown = (e, type) => {
-        console.log("KEY PRESSED:", e.key, " -- type:", type);
+        //console.log("KEY PRESSED:", e.key, " -- type:", type);
 
         if (["ArrowDown", "ArrowUp", "Backspace"].includes(e.key)) {
             dispatch({ type: "FORCE_OPEN" });
@@ -409,14 +536,15 @@ const Quotation = () => {
     const saveQuoDetails = async () => {
         const bd = state.bottomData;
 
+        // Basic validation
         if (!bd.productId) {
             alert("Please select a product.");
             return;
         }
 
+        // Prepare data to send
         const newRow = {
             QDetsId: 0,
-            QId: Number(state.headerData?.QId) || 0,
             SNo: state.rows.length + 1,
             ProductId: Number(bd.productId) || 0,
             ProdDes: bd.description || "",
@@ -428,29 +556,119 @@ const Quotation = () => {
             VatPer: Number(bd.vatPer) || 0,
             VatAmt: Number(bd.vatAmt) || 0,
             NetAmt: Number(bd.amount) || 0,
-            NRate: Number(bd.sRate) || 0,
+            NRate: Number(bd.rate) || 0,
         };
 
         try {
+            dispatch({ type: 'SET_SAVING', payload: true });
+            // Send POST
             const response = await axios.post(`${gapi}/tblQuodets`, newRow);
+
+            // If succeeded
             if (response.status === 200 || response.status === 201) {
-                alert("Row saved successfully!");
-                // Optionally update your rows state here
-                // setRows([...rows, newRow]);
+                alert("Saved Successfully!");
             } else {
-                alert("Failed to save row.");
+                alert("Save Failed!");
             }
+
         } catch (error) {
-            console.error("Error saving Quodets:", error);
-            alert("An error occurred while saving.");
+            console.error("Error saving:", error);
+            alert("API Error occurred!");
+        } finally {
+            dispatch({ type: 'SET_SAVING', payload: false });
         }
     };
 
+    const saveQuotationTop = async () => {
+        const td = state.topData;
 
+        // Basic validation
+        if (!td.projectId) {
+            alert("Please select a project");
+            return;
+        }
 
+        // Prepare payload matching DB
+        const payload = {
+            QId: td.qId ? Number(td.qId) : 0, // if new, server auto-increment
+            QNo: Number(td.qNo) || 0,
+            QDate: td.qDate || new Date().toISOString(), // iso string
+            QRevNo: Number(td.revNo) || 0,
+            ProjId: Number(td.projectId) || 0,
+            Subject: td.subject || "",
+            Scope: td.scope || "",
+            Notes: td.notes || "",
+            Warranty: td.warranty || "",
+            Indusion: td.inclusion || "",
+            Exdusion: Number(td.exclusion) || 0,
+            TotTaxableAmt: Number(td.totalAmount) || 0,
+            TotVatAmt: Number(td.vatAmt) || 0,
+            NetAmount: td.actAmt || "",
+            Terms: td.payment || "",
+            Delivery: td.delivery || "",
+            Validity: Number(td.qValidity) || 0,
+            CreateBy: 1, // your user id
+            CreateOn: new Date().toISOString(),
+        };
 
+        try {
+            const response = await axios.post(`${gapi}/tblQuos`, payload);
 
+            if (response.status === 200 || response.status === 201) {
+                const savedData = response.data; // server response contains QId etc.
+                dispatch({ type: "SET_TOP_DATA", payload: savedData });
+                alert("Quotation header saved successfully!");
+                return savedData.QId; // return QId for next bottomData API
+            } else {
+                alert("Failed to save quotation header");
+            }
 
+        } catch (err) {
+            console.error("Error saving quotation header:", err);
+            alert("API error occurred");
+        }
+    };
+
+    const handleClose= async() => {
+        const top = state.topData;
+        console.log("Top Data View :" + state.topData);
+    }
+
+    const handleSave = async () => {
+        const top = state.topData;
+        
+        try {
+            console.log("🔥 Saving Quotation...");
+            
+            // 1️⃣ Save tblQuo (Header)
+            const resHeader = await axios.post(`${gapi}/tblQuos`, {
+                ...top
+            });
+            console.log("Rseult 1 :" + resHeader);
+            console.log("Rseult 2 :" + resHeader.data);
+            const qId = resHeader.data.QId;
+            console.log("✔ Saved Header → qId:", qId);
+
+            // 2️⃣ Save tblQuoDets (Rows)
+
+            // for (const r of state.rows) {
+            //     await axios.post(`${gapi}/tblQuodets`, {
+            //         ...r,
+            //         qId: qId
+            //     });
+            // }
+
+            //console.log("✔ Saved All Detail Rows");
+            alert("Saved Successfully!");
+
+            // 3️⃣ Reset reducer state
+            dispatch({ type: "RESET_AFTER_SAVE" });
+
+        } catch (err) {
+            //console.error("❌ Save failed:", err);
+            alert("Save failed! " + (err.response?.data || err.message));
+        }
+    };
 
 
     const handleBottomChange = (e) => {
@@ -470,7 +688,7 @@ const Quotation = () => {
 
 
 
-
+// Design
     return (
         <div className='container-fluid mt-2'>
             <div
@@ -519,58 +737,46 @@ const Quotation = () => {
                                 flex: "0 0 70%"  // ⬅️ required
                             }}
                         >
-
-                            {/* First 3 Inputs */}
+                            {/* 1st Row */}
                             <div className="d-flex mb-3 align-items-center gap-3 flex-wrap">
 
                                 {/* Q.No */}
-                                <div className="d-flex align-items-center" style={{ flex: "0 0 140px" }}>
-                                    <label
-                                        className="me-2 mb-0 fw-bold "
-                                        style={{ fontSize: '15px' }}
-                                    >
-                                        Q.No
-                                    </label>
-
+                                <div className="d-flex align-items-center gap-2" style={{ flex: "0 0 140px" }}>
+                                    <label className="fw-bold mb-0" style={{ fontSize: "15px" }}>Q.No</label>
                                     <input
                                         type="number"
-                                        className="form-control"
+                                        className="form-control form-control-sm"
                                         style={{
                                             height: "20px",
-                                            padding: '2px 6px',
                                             padding: "2px 6px",
                                             fontSize: "13px",
                                             border: "1px solid #ced4da",
                                             borderRadius: "4px",
                                             width: "100%"
                                         }}
-                                        name='qNo'
-                                        value={topData.qNo}
+                                        name="qNo"
+                                        value={state.topData.qNo}
                                         onChange={handleTopChange}
                                     />
                                 </div>
 
                                 {/* Project */}
-                                <div className="d-flex " style={{ flex: "1 0 280px" }}>
-                                    <label className='fw-bold required' style={{ fontSize: "15px" }}>
-                                        Project Name
-                                    </label>
+                                <div className="d-flex align-items-center gap-2" style={{ flex: "1 0 280px" }}>
+                                    <label className="fw-bold required mb-0" style={{ fontSize: "15px", width: "120px" }}>Project</label>
 
-                                    <div style={{ position: 'relative' }}>
+                                    <div style={{ position: "relative", width: "100%" }}>
                                         <input
                                             type="text"
                                             className="form-control form-control-sm"
                                             style={{ height: "28px" }}
                                             placeholder="Search Project..."
                                             value={state.projectQuery}
-                                            onChange={(e) =>
-                                                dispatch({ type: "SET_PROJECT_QUERY", payload: e.target.value })
-                                            }
+                                            onChange={(e) => dispatch({ type: "SET_PROJECT_QUERY", payload: e.target.value })}
                                             onFocus={() => {
                                                 if (state.projectQuery.trim() !== "")
                                                     dispatch({ type: "SET_SHOW_PROJECT_DROPDOWN", payload: true });
                                             }}
-                                            onKeyDown={(e) => handleKeyDown(e, 'project')}
+                                            onKeyDown={(e) => handleKeyDown(e, "project")}
                                             onBlur={() => {
                                                 setTimeout(() => {
                                                     dispatch({ type: "SET_SHOW_PROJECT_DROPDOWN", payload: false });
@@ -578,6 +784,7 @@ const Quotation = () => {
                                             }}
                                         />
 
+                                        {/* Dropdown same */}
                                         {state.showProjectDropdown && state.filteredProject.length > 0 && (
                                             <div
                                                 className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm"
@@ -605,28 +812,25 @@ const Quotation = () => {
                                     </div>
                                 </div>
 
-                                {/* Ledger */}
-                                <div className="d-flex " style={{ flex: "1 0 280px" }}>
-                                    <label className="fw-bold" style={{ fontSize: "15px" }}>
-                                        Ledger
-                                    </label>
 
-                                    <div style={{ position: 'relative' }}>
+
+                                {/* Ledger */}
+                                <div className="d-flex align-items-center gap-2" style={{ flex: "1 0 280px" }}>
+                                    <label className="fw-bold mb-0" style={{ fontSize: "15px", width: "120px" }}>Ledger</label>
+
+                                    <div style={{ position: 'relative', width: '100%' }}>
                                         <input
                                             type="text"
                                             className="form-control form-control-sm"
                                             style={{ height: "28px" }}
                                             placeholder="Search Ledger..."
                                             value={state.ledgerQuery}
-                                            onChange={(e) =>
-                                                dispatch({ type: "SET_LEDGER_QUERY", payload: e.target.value })
-                                            }
+                                            onChange={(e) => dispatch({ type: "SET_LEDGER_QUERY", payload: e.target.value })}
                                             onFocus={() => {
                                                 if (state.ledgerQuery.trim() !== "")
                                                     dispatch({ type: "SET_SHOW_LEDGER_DROPDOWN", payload: true });
                                             }}
                                             onKeyDown={(e) => handleKeyDown(e, 'ledger')}
-
                                             onBlur={() => {
                                                 setTimeout(() => {
                                                     dispatch({ type: "SET_SHOW_LEDGER_DROPDOWN", payload: false });
@@ -634,6 +838,7 @@ const Quotation = () => {
                                             }}
                                         />
 
+                                        {/* Dropdown same */}
                                         {state.showLedgerDropdown && state.filteredLedger.length > 0 && (
                                             <div
                                                 className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm"
@@ -664,7 +869,35 @@ const Quotation = () => {
                                         )}
                                     </div>
                                 </div>
+
                             </div>
+
+
+                            {/* 2nd Row */}
+                            <div className="d-flex mb-3 align-items-center gap-3 flex-wrap">
+
+                                {/* R.No */}
+                                <div className="d-flex align-items-center gap-2" style={{ flex: "1 0 200px" }}>
+                                    <label className="fw-bold mb-0" style={{ fontSize: "15px", width: "120px" }}>Q.Date</label>
+                                    <input type="date" className="form-control form-control-sm" style={{ height: "28px" }} name="qDate" value={state.topData.qDate} onChange={handleTopChange} />
+                                </div>
+
+                                {/* Subject */}
+                                <div className="d-flex align-items-center gap-2" style={{ flex: "1 0 120px" }}>
+                                    <label className="fw-bold mb-0" style={{ fontSize: "15px", width: "120px" }}>R.No</label>
+                                    <input type="number" className="form-control form-control-sm" style={{ height: "28px" }} name="rNo" value={state.topData.revNo} onChange={handleTopChange} />
+                                </div>
+
+                                {/* Subject */}
+                                <div className="d-flex align-items-center gap-2" style={{ flex: "1 0 200px" }}>
+                                    <label className="fw-bold mb-0" style={{ fontSize: "15px", width: "120px" }}>Subject</label>
+                                    <input type="text" className="form-control form-control-sm" style={{ height: "28px" }} name="subject" value={state.topData.subject} onChange={handleTopChange} />
+                                </div>
+
+                            </div>
+
+
+
 
 
                             <hr className='mt-0' />
@@ -683,7 +916,7 @@ const Quotation = () => {
                                         style={{ height: '28px' }}
                                         type='text'
                                         name='sNo'
-                                        value={bottomData.sNo}
+                                        value={state.bottomData.sNo}
                                         onChange={handleBottomChange}
                                     />
 
@@ -846,7 +1079,7 @@ const Quotation = () => {
                                         style={{ height: '28px' }}
                                         type='number'
                                         name='qty'
-                                        value={bottomData.qty}
+                                        value={state.bottomData.qty}
                                         onChange={handleBottomChange}
                                     />
 
@@ -858,7 +1091,7 @@ const Quotation = () => {
                                         className='form-control form-control-sm'
                                         type='number'
                                         name='rate'
-                                        value={bottomData.rate}
+                                        value={state.bottomData.rate}
                                         onChange={handleBottomChange}
                                     />
                                 </div>
@@ -869,7 +1102,7 @@ const Quotation = () => {
                                         className='form-control form-control-sm'
                                         type='number'
                                         name='taxable'
-                                        value={bottomData.taxable}
+                                        value={state.bottomData.taxable}
                                         onChange={handleBottomChange}
                                     />
 
@@ -881,8 +1114,9 @@ const Quotation = () => {
                                         className='form-control form-control-sm'
                                         type='number'
                                         name='vatPer'
-                                        value={bottomData.vatPer}
+                                        value={state.bottomData.vatPer}
                                         onChange={handleBottomChange}
+                                        readOnly
                                     />
 
                                 </div>
@@ -893,8 +1127,9 @@ const Quotation = () => {
                                         className='form-control form-control-sm'
                                         type='number'
                                         name='vatAmt'
-                                        value={bottomData.vatAmt}
+                                        value={state.bottomData.vatAmt}
                                         onChange={handleBottomChange}
+
                                     />
 
                                 </div>
@@ -905,7 +1140,7 @@ const Quotation = () => {
                                         className='form-control form-control-sm'
                                         type='number'
                                         name='amount'
-                                        value={bottomData.amount}
+                                        value={state.bottomData.amount}
                                         onChange={handleBottomChange}
                                     />
 
@@ -921,10 +1156,16 @@ const Quotation = () => {
                                         width: '50%',
                                         marginLeft: '2%'
                                     }}
+                                    name='description'
+                                    value={state.bottomData.description}
+                                    onChange={handleBottomChange}
                                 />
                                 <button
                                     className='btn btn-primary btn-sm'
-
+                                    onClick={() => {
+                                        console.log("bottomData before ADD_ROW:", state.bottomData);
+                                        dispatch({ type: 'ADD_ROW' })
+                                    }}
                                 >
                                     Add
                                 </button>
@@ -934,7 +1175,7 @@ const Quotation = () => {
 
                             {/* Big empty grid box */}
                             <div
-                                className="d-flex mt-0"
+                                className="d-flex  px-2"
                                 style={{
                                     border: '2px solid #5d8aa8',
                                     borderRadius: '5px',
@@ -945,47 +1186,40 @@ const Quotation = () => {
                                     overflow: 'auto'
                                 }}
                             >
-                                <div style={{ width: '100%' }}>
+                                <div className='mt-2' style={{ width: '100%' }}>
                                     {/* future content */}
                                     <table className="table table-bordered table-sm" style={{ fontSize: "12px", minWidth: "900px" }}>
                                         <thead className="table-light">
                                             <tr>
-                                                <th style={{ width: "50px" }} className="text-center">S.No</th>
-                                                <th style={{ width: "100px" }}>Product</th>
-                                                <th style={{ width: "50px" }} className='text-center'>Unit</th>
-                                                <th style={{ width: "100px" }}>Brand</th>
+                                                <th style={{ width: "60px" }} className="text-center">S.No</th>
+                                                <th style={{ width: "150px" }}>Product</th>
+                                                <th style={{ width: "100px" }} className="text-center">Unit</th>
+                                                <th style={{ width: "120px" }}>Brand</th>
                                                 <th style={{ width: "70px" }} className="text-center">Qty</th>
-                                                <th style={{ width: "80px" }} className="text-end">Rate</th>
-                                                <th style={{ width: "80px" }} className="text-end">Taxable</th>
-                                                <th style={{ width: "60px" }} className="text-center">VAT %</th>
-                                                <th style={{ width: "80px" }} className="text-end">VAT Amt</th>
-                                                <th style={{ width: "80px" }} className="text-end">Amount</th>
-                                                <th style={{ width: "80px" }} className="text-end">Actions</th>
-
+                                                <th style={{ width: "100px" }} className="text-end">Rate</th>
+                                                <th style={{ width: "120px" }} className="text-end">Taxable</th>
+                                                <th style={{ width: "70px" }} className="text-center">VAT %</th>
+                                                <th style={{ width: "100px" }} className="text-end">VAT Amt</th>
+                                                <th style={{ width: "120px" }} className="text-end">Amount</th>
                                             </tr>
                                         </thead>
-
                                         <tbody>
-                                            {/* {rows.map((r, index) => (
-                                    <tr key={index}
-                                        className={editIndex === index ? "edit-highlight" : ""}
-                             >
-                                        <td className="text-center">{index + 1}</td>
-                                        <td>{r.productName}</td>
-                                        <td className='text-center'>{r.unitType}</td>
-                                        <td>{r.brandName}</td>
-                                        <td className="text-center">{r.qty}</td>
-                                        <td className="text-end">{r.rate}</td>
-                                        <td className="text-center">{r.marPer}</td>
-                                        <td className="text-end">{r.sRate}</td>
-                                        <td className="text-end">{r.taxable}</td>
-                                        <td className="text-center">{r.vatPer}</td>
-                                        <td className="text-end">{r.vatAmt}</td>
-                                        <td className="text-end">{r.amount}</td>
-                                       
-                                    </tr>
-                                ))} */}
+                                            {state.rows.map((r, index) => (
+                                                <tr key={index}>
+                                                    <td className="text-center">{r.sNo}</td>
+                                                    <td>{r.productName}</td>
+                                                    <td className="text-center">{r.unitType}</td>
+                                                    <td>{r.brandName}</td>
+                                                    <td className="text-center">{r.qty}</td>
+                                                    <td className="text-end">{r.rate}</td>
+                                                    <td className="text-end">{r.taxable}</td>
+                                                    <td className="text-center">{r.vatPer}</td>
+                                                    <td className="text-end">{r.vatAmt}</td>
+                                                    <td className="text-end">{r.amount}</td>
+                                                </tr>
+                                            ))}
                                         </tbody>
+
                                     </table>
 
                                 </div>
@@ -1018,7 +1252,7 @@ const Quotation = () => {
                                     type="text"
                                     className="form-control form-control-sm"
                                     name='payment'
-                                    value={topData.payment}
+                                    value={state.topData.payment}
                                     onChange={handleTopChange}
                                 />
 
@@ -1030,7 +1264,7 @@ const Quotation = () => {
                                     type="text"
                                     className="form-control form-control-sm"
                                     name='delivery'
-                                    value={topData.delivery}
+                                    value={state.topData.delivery}
                                     onChange={handleTopChange}
                                 />
 
@@ -1042,7 +1276,7 @@ const Quotation = () => {
                                     type="text"
                                     className="form-control form-control-sm"
                                     name='quotationValidity'
-                                    value={topData.quotationValidity}
+                                    value={state.topData.qValidity}
                                     onChange={handleTopChange}
                                 />
 
@@ -1060,7 +1294,7 @@ const Quotation = () => {
                                         className="form-control form-control-sm"
                                         style={{ width: "80px" }}
                                         name='item'
-                                        value={topData.item}
+                                        value={state.topData.item}
                                         onChange={handleTopChange}
                                     />
                                 </div>
@@ -1072,7 +1306,7 @@ const Quotation = () => {
                                         className="form-control form-control-sm"
                                         style={{ width: "80px" }}
                                         name='totalAmount'
-                                        value={topData.totalAmount}
+                                        value={state.topData.totalAmount}
                                         onChange={handleTopChange}
                                     />
                                 </div>
@@ -1084,7 +1318,7 @@ const Quotation = () => {
                                         className="form-control form-control-sm"
                                         style={{ width: "80px" }}
                                         name='vatAmt'
-                                        value={topData.vatAmt}
+                                        value={state.topData.vatAmt}
                                         onChange={handleTopChange}
                                     />
                                 </div>
@@ -1096,7 +1330,7 @@ const Quotation = () => {
                                         className="form-control form-control-sm"
                                         style={{ width: "80px" }}
                                         name='actAmt'
-                                        value={topData.actAmt}
+                                        value={state.topData.actAmt}
                                         onChange={handleTopChange}
                                     />
                                 </div>
@@ -1108,7 +1342,7 @@ const Quotation = () => {
                                         className="form-control form-control-sm"
                                         style={{ width: "80px" }}
                                         name='roundOff'
-                                        value={topData.roundOff}
+                                        value={state.topData.roundOff}
                                         onChange={handleTopChange}
                                     />
                                 </div>
@@ -1129,7 +1363,7 @@ const Quotation = () => {
                                 className="form-control form-control-sm"
                                 rows={2}
                                 name='notes'
-                                value={topData.notes}
+                                value={state.topData.notes}
                                 onChange={handleTopChange}
                             />
 
@@ -1141,8 +1375,8 @@ const Quotation = () => {
                             <textarea
                                 className="form-control form-control-sm"
                                 rows={2}
-                                name='warrenty'
-                                value={topData.warrenty}
+                                name='warranty'
+                                value={state.topData.warranty}
                                 onChange={handleTopChange}
                             />
 
@@ -1155,7 +1389,7 @@ const Quotation = () => {
                                 className="form-control form-control-sm"
                                 rows={2}
                                 name='inclusion'
-                                value={topData.inclusion}
+                                value={state.topData.inclusion}
                                 onChange={handleTopChange}
                             />
                         </div>
@@ -1167,7 +1401,7 @@ const Quotation = () => {
                                 className="form-control form-control-sm"
                                 rows={2}
                                 name='exclusion'
-                                value={topData.exclusion}
+                                value={state.topData.exclusion}
                                 onChange={handleTopChange}
                             />
                         </div>
@@ -1179,7 +1413,7 @@ const Quotation = () => {
                                 className="form-control form-control-sm"
                                 rows={2}
                                 name='scope'
-                                value={topData.scope}
+                                value={state.topData.scope}
                                 onChange={handleTopChange}
                             />
                         </div>
@@ -1207,7 +1441,7 @@ const Quotation = () => {
                             </button>
 
                             <button className="btn btn-sm"
-                                onClick={saveQuoDetails}
+                                onClick={handleSave}
                                 style={{ backgroundColor: "#5d8aa8", color: "white", whiteSpace: "nowrap" }}>
                                 Save
                             </button>
@@ -1228,7 +1462,9 @@ const Quotation = () => {
                                 Reset
                             </button>
 
-                            <button className="btn btn-sm" style={{ backgroundColor: "#5d8aa8", color: "white", whiteSpace: "nowrap" }}>
+                            <button 
+                            onClick={handleClose}                            
+                             className="btn btn-sm" style={{ backgroundColor: "#5d8aa8", color: "white", whiteSpace: "nowrap" }}>                                
                                 Close
                             </button>
 
@@ -1239,8 +1475,8 @@ const Quotation = () => {
 
 
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
