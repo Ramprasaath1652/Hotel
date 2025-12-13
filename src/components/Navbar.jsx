@@ -75,7 +75,9 @@ const Navbar = () => {
                                 Transaction</span>
                             <ul className="dropdown-menu">
                                 <li><Link className="dropdown-item" to="/transaction/suppquotation">Supp Quotation</Link></li>
+                                <li><Link className="dropdown-item" to="/transaction/squot">SQuot</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/quotation">Quotation</Link></li>
+                                <li><Link className="dropdown-item" to="/transaction/quot">Quot</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/sales">Sales</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/purchase">Purchase</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/stock-entry">Stock Entry</Link></li>

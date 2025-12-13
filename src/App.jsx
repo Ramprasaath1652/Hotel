@@ -29,6 +29,8 @@ import Sales from './pages/transaction/Sales';
 import Purchase from './pages/transaction/Purchase';
 import StockEntry from './pages/transaction/StockEntry';
 import StockDecrease from './pages/transaction/StockDecrease';
+import Quot from './pages/transaction/Quot';
+import SQuot from './pages/transaction/SQuot';
 
 //Accounts
 import DaybookEntry from './pages/accounts/DaybookEntry';
@@ -115,6 +117,10 @@ const App = ()=>{
              <Route path='/transaction/purchase' element={<Purchase/>} />
              <Route path='/transaction/stock-entry' element={<StockEntry/>} />
              <Route path='/transaction/stock-decrease' element={<StockDecrease/>} />
+             <Route path='/transaction/quot' element={<Quot/>} />
+             <Route path='/transaction/squot' element={<SQuot/>} />
+
+
 
              {/* Accounts*/}
              <Route path='/accounts/daybook-entry' element={<DaybookEntry/>} />
