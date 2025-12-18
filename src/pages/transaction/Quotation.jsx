@@ -536,11 +536,7 @@ const Quotation = () => {
     const saveQuoDetails = async () => {
         const bd = state.bottomData;
 
-        // Basic validation
-        if (!bd.productId) {
-            alert("Please select a product.");
-            return;
-        }
+       
 
         // Prepare data to send
         const newRow = {
@@ -590,7 +586,7 @@ const Quotation = () => {
 
         // Prepare payload matching DB
         const payload = {
-            QId: td.qId ? Number(td.qId) : 0, // if new, server auto-increment
+            QId:  0, // if new, server auto-increment
             QNo: Number(td.qNo) || 0,
             QDate: td.qDate || new Date().toISOString(), // iso string
             QRevNo: Number(td.revNo) || 0,
@@ -788,7 +784,7 @@ const Quotation = () => {
                                         {state.showProjectDropdown && state.filteredProject.length > 0 && (
                                             <div
                                                 className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm"
-                                                style={{ maxHeight: "250px", overflowY: "auto", zIndex: 9999 }}
+                                                style={{ maxHeight: "280px", overflowY: "auto", zIndex: 9999 }}
                                             >
                                                 <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
                                                     <div className="col-5">Name</div>
@@ -1010,6 +1006,7 @@ const Quotation = () => {
                                             </option>
                                         ))}
                                     </select>
+                                        
                                 </div>
 
 

@@ -25,6 +25,7 @@ import ReducerTest from './pages/master/ReducerTest';
 //Transaction Master
 import SuppQuotation from './pages/transaction/SuppQuotation';
 import Quotation from './pages/transaction/Quotation';
+import FindQuot from './pages/transaction/FindQuot';
 import Sales from './pages/transaction/Sales';
 import Purchase from './pages/transaction/Purchase';
 import StockEntry from './pages/transaction/StockEntry';
@@ -113,6 +114,7 @@ const App = ()=>{
              {/* Transaction Master */}
              <Route path='/transaction/suppquotation' element={<SuppQuotation/>} />
              <Route path='/transaction/quotation' element={<Quotation/>} />
+             <Route path='/transaction/quotation/find' element={<FindQuot/>} />
              <Route path='/transaction/sales' element={<Sales/>} />
              <Route path='/transaction/purchase' element={<Purchase/>} />
              <Route path='/transaction/stock-entry' element={<StockEntry/>} />

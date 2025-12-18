@@ -78,6 +78,7 @@ const Navbar = () => {
                                 <li><Link className="dropdown-item" to="/transaction/squot">SQuot</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/quotation">Quotation</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/quot">Quot</Link></li>
+                                
                                 <li><Link className="dropdown-item" to="/transaction/sales">Sales</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/purchase">Purchase</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/stock-entry">Stock Entry</Link></li>
@@ -133,7 +134,7 @@ const Navbar = () => {
                                 <li><Link className="dropdown-item" to="/reports/credit-note-report"> Credit Note Report</Link></li>
                                 <li><Link className="dropdown-item" to="/reports/debit-note-report">Debit Note Report</Link></li>
                                 <li><Link className="dropdown-item" to="/reports/stock"> Stock</Link></li>
-                                <li><Link className="dropdown-item" to="/reports/ledgerob-report"> Ledger OB Report</Link></li>             
+                                <li><Link className="dropdown-item" to="/reports/ledgerob-report"> Ledger OB Report</Link></li>
                             </ul>
                         </li>
 
@@ -161,7 +162,7 @@ const Navbar = () => {
                                 <li><Link className="dropdown-item" to="/admin/financial-year-change">Financial Year Change</Link></li>
                                 <li><Link className="dropdown-item" to="/admin/financial-year-creation">Financial Year Creation</Link></li>
                                 <li><Link className="dropdown-item" to="/admin/printer-settings">Printer Settings</Link></li>
-                                
+
                             </ul>
                         </li>
 
@@ -181,12 +182,12 @@ const Navbar = () => {
                                 <li><Link className="dropdown-item" to="/help/gst-purchase-report">GST PURCHASE REPORT</Link></li>
                                 <li><Link className="dropdown-item" to="/help/product-history">Product History</Link></li>
                                 <li><Link className="dropdown-item" to="/help/about">About</Link></li>
-                                
+
 
                             </ul>
                         </li>
 
-                
+
 
                         {/* Logout */}
                         <li className="nav-item">
