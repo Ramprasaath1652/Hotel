@@ -78,7 +78,7 @@ const Navbar = () => {
                                 <li><Link className="dropdown-item" to="/transaction/squot">SQuot</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/quotation">Quotation</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/quot">Quot</Link></li>
-                                
+                                <li><Link className="dropdown-item" to="/transaction/sample">Sample</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/sales">Sales</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/purchase">Purchase</Link></li>
                                 <li><Link className="dropdown-item" to="/transaction/stock-entry">Stock Entry</Link></li>
@@ -193,6 +193,10 @@ const Navbar = () => {
                         <li className="nav-item">
                             <span className="nav-link" onClick={handleLogout} style={{ cursor: "pointer" }}>Logout</span>
                         </li>
+
+                       
+
+
 
                     </ul>
                 </div>

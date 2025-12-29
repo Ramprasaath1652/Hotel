@@ -1,0 +1,257 @@
+/* ===== OUTER BACKGROUND (screen only) ===== */
+.report-wrapper {
+    background: #e5e5e5;
+    padding: 20px 0;
+}
+
+/* ===== A4 PAGE ===== */
+.a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: auto;
+    background: white;
+
+    border: 1px solid #000;
+    padding: 15mm;
+
+    box-sizing: border-box;
+    font-family: serif;
+}
+
+/* ===== SCREEN VIEW ===== */
+@media screen {
+    .a4-page {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* ===== PRINT VIEW ===== */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .a4-page,
+    .a4-page * {
+        visibility: visible;
+    }
+
+    .a4-page {
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        box-shadow: none;
+    }
+}
+
+
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.report-header {
+    width: 210mm;
+    /* A4 width */
+    padding: 10px 20px;
+    border: 1px solid black;
+    box-sizing: border-box;
+    margin: 10px auto;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.header-title {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.header-title .sub-title {
+    font-size: 14px;
+    border: 1px solid black;
+    display: inline-block;
+    padding: 2px 10px;
+    margin-bottom: 5px;
+    border-radius: 10px;
+}
+
+.rate {
+    font-size: 14px;
+    border: 1px solid black;
+    display: inline-block;
+    padding: 2px 10px;
+    margin-bottom: 5px;
+    border-radius: 10px;
+}
+
+
+.header-title h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.header-title .address {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+hr {
+    margin-top: 10px;
+    border: 1px solid black;
+}
+
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+
+.details-section {
+    margin-top: 10px;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.detail-label {
+    width: 90px;
+    font-weight: bold;
+}
+
+.detail-value {
+    flex: 1;
+    border-bottom: 1px dotted #000;
+    padding-left: 6px;
+    min-height: 18px;
+}
+
+.two-col {
+    display: flex;
+    gap: 20px;
+}
+
+.event-col {
+    display: flex;
+    align-items: center;
+    width: 50%;
+}
+
+.item-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+.item-table th,
+.item-table td {
+    padding: 6px;
+    height: 28px;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+}
+
+
+.item-table thead th {
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+    text-align: center;
+
+}
+
+.item-table th {
+    text-align: center;
+    font-weight: bold;
+}
+
+.item-table tbody tr:last-child td {
+    border-bottom: 1px solid #000;
+}
+
+.item-table td {
+    height: 28px;
+}
+
+.center {
+    text-align: center;
+}
+
+.right {
+    text-align: right;
+}
+
+.right-label {
+    text-align: right;
+    font-weight: 500;
+}
+
+.grand-total td {
+    font-weight: bold;
+}
+
+.main-row td {
+    vertical-align: top;
+    border-bottom: 1px solid #000;
+    height: 260px;
+}
+
+.sno {
+    text-align: center;
+    font-weight: bold;
+}
+
+.desc {
+    position: relative;
+    font-weight: bold;
+}
+
+.amount {
+    position: relative;
+    text-align: right;
+    font-weight: bold;
+}
+
+.gst-labels {
+    position: absolute;
+    bottom: 10px;
+    right: 0;
+    font-weight: bold;
+}
+
+.gst-amounts {
+    position: absolute;
+    bottom: 10px;
+    right: 0;
+    border-top: 1px solid #000;
+    padding-top: 4px;
+    font-weight: bold;
+}
+
+.rate-row {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    /* 👈 idhu dhaan space */
+}
+.rate {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.sign{
+    justify-content: space-between;
+    margin-top: 30px;
+}

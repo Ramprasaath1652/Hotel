@@ -1,17 +1,21 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+
+
+
 
 
 const initialFormState = {
-    rows: [],
+
     topData: {
-        vatAmt: '',
-        totalAmt: '',
-        actAmt: '',
-        qNo: '',
-        rNo: '',
+        vatAmt: null,
+        totalAmt: null,
+        actAmt: null,
+        qNo: null,
+        rNo: null,
         project: '',//selected project name
         ledger: '',
         qDate: '',
@@ -41,6 +45,7 @@ const initialFormState = {
         amount: '',
         description: ''
     },
+    rows: [],
     editIndex: null,
     rowToDelete: null,
     showDeleteModal: false,
@@ -59,6 +64,8 @@ const initialFormState = {
     projectName: '',
     projectQuery: '',
     showProjectDropdown: false,
+    isEditMode: false,
+    isLoadedFromApi: false
 };
 
 const initialState = {
@@ -141,7 +148,10 @@ const initialState = {
     qId: null,
     findData: [],
     loading: false,
-    showFindPage: false
+    showFindPage: false,
+
+    isEditMode: false,
+    editQId: null,
 }
 
 function reducer(state, action) {
@@ -234,8 +244,8 @@ function reducer(state, action) {
 
             return {
                 ...state,
-                bottomData: {
-                    ...state.bottomData,
+                topData: {
+                    ...state.topData,
                     project: selected.ProjName,
                     projectId: selected.ProjId
                 },
@@ -592,24 +602,9 @@ function reducer(state, action) {
             return { ...state, saving: action.payload };
 
         case "RESET_AFTER_SAVE":
+            console.log("RESET HIT");
             return {
                 ...state,
-                topData: {
-                    ledgerId: "",
-                    projectId: "",
-                    qNo: "",
-                    qDate: "",
-                    narration: "",
-                    terms: "",
-                    taxable: "",
-                    vatAmt: "",
-                    amount: "",
-                    warranty: '',
-                    qValidity: '',
-
-
-                },
-                rows: [],
                 bottomData: {
                     sNo: '',
                     productId: '',
@@ -626,6 +621,7 @@ function reducer(state, action) {
                     amount: '',
                     description: '',
                 },
+                rows: [],
                 productQuery: "",
                 brandQuery: "",
                 showProductDropdown: false,
@@ -755,7 +751,24 @@ function reducer(state, action) {
                 i === state.editIndex
                     ? {
                         ...row,
-                        ...state.bottomData
+                        productId: state.bottomData.productId,
+                        productName: state.bottomData.product,
+
+                        brandId: state.bottomData.brandId,
+                        brandName: state.bottomData.brandName,
+
+                        unitId: state.bottomData.unitId,
+                        unitType: state.bottomData.unitType,
+
+                        qty: state.bottomData.qty,
+                        rate: state.bottomData.rate,
+
+                        taxable: state.bottomData.taxable,
+                        vatPer: state.bottomData.vatPer,
+                        vatAmt: state.bottomData.vatAmt,
+                        amount: state.bottomData.amount,
+
+                        description: state.bottomData.description
                     }
                     : row
             );
@@ -804,11 +817,93 @@ function reducer(state, action) {
                 }
             };
         }
-        case 'RESET_PAGE':
+        case 'RESET_PAGE': return {
+            ...initialFormState,
+            rows: [],
+            isLoadedFromApi: false,
+            isEditMode: false,
+            editQId: null
+        }
+
+        case 'LOAD_QUOT_FOR_EDIT': {
+            const d = action.payload;
+
             return {
                 ...state,
-                ...initialFormState
-            }
+                isEditMode: true,
+                editQId: action.payload.QId,
+
+                // 🔹 PROJECT
+                projectId: d.ProjId,
+                projectName: d.ProjName,
+                projectQuery: d.ProjName,
+
+
+                // 🔹 LEDGER
+                ledgerId: d.LedgerId,
+                ledgerName: d.LedgerName,
+                ledgerQuery: d.LedgerName,
+
+                // 🔹 TOP DATA
+                topData: {
+                    ...state.topData,
+                    subject: d.Subject,
+                    notes: d.Notes,
+                    warranty: d.Warranty,
+                    inclusion: d.Inclusion,
+                    exclusion: d.Exclusion,
+                    scope: d.Scope,
+                    delivery: d.Delivery,
+                    qValidity: d.Validity,
+                    vatAmt: d.TotVatamt,
+                    totalAmt: d.TotTaxableAmt,
+                    actAmt: d.NetAmount,
+                    rNo: d.QRevNo,
+                    qDate: d.QDate.split('T')[0],
+                    qNo: d.QNo
+                }
+            };
+        }
+
+        case 'LOAD_QUOT_DETAILS_FOR_EDIT': {
+            return {
+                ...state,
+                rows: action.payload
+            };
+        }
+
+
+        case 'UPDATE_QUOTATION_SUCCESS':
+            // console.log('RESET HIT');
+            return {
+                ...state,
+                isEditMode: false,
+                editQId: null,
+                topData: { ...initialFormState.topData },
+                // 👇 LEDGER
+                ledgerId: '',
+                ledgerName: '',
+                ledgerQuery: '',
+                showLedgerDropdown: false,
+
+                // 👇 PROJECT
+                projectId: '',
+                projectName: '',
+                projectQuery: '',
+                showProjectDropdown: false,
+            };
+
+        case "SET_ROWS":
+            return {
+                ...state,
+                rows: action.payload
+            };
+
+        case 'SET_LOADED_FROM_API':
+            return {
+                ...state,
+                isLoadedFromApi: true
+            };
 
         default:
             return state;
@@ -816,11 +911,13 @@ function reducer(state, action) {
     }
 
 }
+const API_BASE = 'http://192.168.31.101:85/api';
 
 const Quot = () => {
 
 
     const [state, dispatch] = useReducer(reducer, initialState);
+
 
     const gapi = import.meta.env.VITE_API_URL;
 
@@ -835,6 +932,126 @@ const Quot = () => {
         loadQuot();
         loadQuotDets();
     }, [])
+    const ignoreRowsLoadRef = useRef(false);
+    const { qId } = useParams();
+    // console.log('QID FROM URL = ', qId);
+
+
+    useEffect(() => {
+        if (!qId) return;              // 🔒
+        if (state.isLoadedFromApi) return;
+
+        if (qId && !state.isLoadedFromApi) {
+            ignoreRowsLoadRef.current = false;
+            loadQuotationById(qId);
+            loadQuotationDetailsByQId(qId);
+            dispatch({
+                type: 'SET_LOADED_FROM_API'
+            });
+        }
+    }, [qId]);
+
+
+
+    const loadQuotationDetailsByQId = async (qId) => {
+        try {
+            const res = await axios.get('http://192.168.31.101:85/api/QuoDetsInfoes');
+            console.log("ALL DATA", res.data);
+            if (ignoreRowsLoadRef.current) return;
+            const filteredRows = (Array.isArray(res.data) ? res.data : [])
+                .filter(r => r.QId === Number(qId));
+
+            // Map to your FE state format
+            const mappedRows = filteredRows.map((r, index) => ({
+                sNo: index + 1,
+
+                productId: r.ProductId,
+                productName: r.ProductName || '',
+                description: r.ProdDes || '',
+
+                brandId: r.BrandId,
+                brandName: r.BrandName || '',
+
+                unitId: r.UnitId,
+                unitType: r.UnitType || '',
+
+                qty: r.Qty,
+                rate: r.Rate,
+
+                taxable: r.Taxable,
+                vatPer: r.VatPer,
+                vatAmt: r.VatAmt,
+                amount: r.NetAmt,
+
+                QDetsId: r.QDetsId
+            }));
+
+            dispatch({
+                type: 'LOAD_QUOT_DETAILS_FOR_EDIT',
+                payload: mappedRows
+            });
+        } catch (err) {
+            console.error("Failed to load secondary data:", err);
+        }
+    };
+
+
+    const loadQuotationById = async (id) => {
+        const res = await axios.get(`http://192.168.31.101:85/api/quoinfo/${id}`);
+        console.log('EDIT API DATA =', res.data);
+        dispatch({
+            type: 'LOAD_QUOT_FOR_EDIT',
+            payload: res.data
+        });
+    };
+
+    const updateQuotation = async () => {
+        try {
+            const payload = {
+                QId: state.editQId,
+                QNo: state.topData.qNo,
+                QRevNo: state.topData.rNo,
+
+                ProjId: state.projectId,
+                ProjName: state.projectQuery,   // 👈 IMPORTANT
+
+                LedgerId: state.ledgerId,
+                LedgerName: state.ledgerQuery,  // 👈 IMPORTANT
+
+                QDate: state.topData.qDate,
+                Subject: state.topData.subject,
+                Notes: state.topData.notes,
+                Scope: state.topData.scope,
+                Inclusion: state.topData.inclusion,
+                Exclusion: state.topData.exclusion,
+                Delivery: state.topData.delivery,
+                Warranty: state.topData.warranty,
+                Validity: state.topData.qValidity,
+
+                TotTaxableAmt: state.topData.totalAmt,
+                TotVatamt: state.topData.vatAmt,
+                NetAmount: state.topData.actAmt,
+
+
+            };
+
+
+            console.log('UPDATE PAYLOAD =', payload);
+
+            await axios.put(
+                `${API_BASE}/tblQuos/${state.editQId}`,
+                payload
+            );
+
+            alert('Quotation updated successfully');
+
+            dispatch({ type: 'RESET_PAGE' });
+            navigate('/transaction/quot');
+        } catch (err) {
+            console.error('UPDATE FAILED', err);
+            alert('Update failed');
+        }
+    };
 
 
     const loadProject = async () => {
@@ -922,14 +1139,18 @@ const Quot = () => {
     }
 
     const handleTopChange = (e) => {
+        const { name, value } = e.target;
+
         dispatch({
             type: 'SET_TOP_FIELD',
-            field: e.target.name,
-            value: e.target.value,
-        })
-    }
+            field: name,
+            value: value
+        });
+    };
+
 
     const handleProjectChange = (e) => {
+
         dispatch({
             type: 'SET_PROJECT_QUERY',
             payload: e.target.value
@@ -1073,7 +1294,7 @@ const Quot = () => {
             NetAmount: td.actAmt || "",
             Terms: td.payment || "",
             Delivery: td.delivery || "",
-            Validity: Number(td.qValidity) || 0,
+            Validity: td.qValidity || '',
             CreateBy: 1, // your user id
             CreateOn: new Date().toISOString(),
         };
@@ -1098,16 +1319,7 @@ const Quot = () => {
     };
 
 
-
-
     const saveQuoDetails = async (qId, row, index) => {
-        // Validation
-        if (!qId) {
-            alert("Quotation not saved. QId missing!");
-            return;
-        }
-
-
         // Prepare payload
         const newRow = {
             QDetsId: 0,
@@ -1152,6 +1364,24 @@ const Quot = () => {
 
         } finally {
             dispatch({ type: "SET_SAVING", payload: false });
+        }
+    };
+
+    const handleReset = () => {
+        ignoreRowsLoadRef.current = true;
+        dispatch({ type: 'RESET_PAGE' })
+        navigate('/transaction/quot/')
+    }
+
+    const handlePrint = () => {
+        const popup = window.open(
+            '/reports/gst-report',
+            'GSTReportPopup',
+            'width=900,height=1200,scrollbars=yes'
+        );
+
+        if (popup) {
+            popup.focus();
         }
     };
 
@@ -1202,6 +1432,8 @@ const Quot = () => {
                         >
                             {/* Row 1 */}
                             <div className='d-flex align-items-center gap-5 '>
+
+
                                 <div className='d-flex align-items-center '
                                     style={{
                                         width: '200px',
@@ -1214,10 +1446,12 @@ const Quot = () => {
                                         type='number'
                                         className='form-control form-control-sm'
                                         name='qNo'
-                                        value={state.topData.qNo}
+                                        value={state.topData.qNo ?? ''}
                                         onChange={handleTopChange}
                                     />
                                 </div>
+
+
 
                                 <div className='d-flex align-items-center'
                                     style={{
@@ -1230,10 +1464,11 @@ const Quot = () => {
                                         type='number'
                                         className='form-control form-control-sm'
                                         name='rNo'
-                                        value={state.topData.rNo}
+                                        value={state.topData.rNo ?? ''}
                                         onChange={handleTopChange}
                                     />
                                 </div>
+
 
 
                                 <div
@@ -1306,6 +1541,7 @@ const Quot = () => {
                                         </div>
                                     )}
                                 </div>
+
 
 
                                 <div
@@ -1385,20 +1621,24 @@ const Quot = () => {
                                         </div>
                                     )}
                                 </div>
+
                             </div>
 
                             {/* Row 2 */}
+
                             <div className='d-flex align-items-center gap-5 mt-2'>
+
                                 <div className='d-flex align-items-center'>
                                     <label className='form-label fw-bold me-2 mb-1'>Q.Date</label>
                                     <input
                                         type='date'
                                         className='form-control form-control-sm'
                                         name='qDate'
-                                        value={state.topData.qDate}
+                                        value={state.topData.qDate || ''}
                                         onChange={handleTopChange}
                                     />
                                 </div>
+
 
                                 <div className='d-flex align-items-center'
                                     style={{
@@ -1415,6 +1655,7 @@ const Quot = () => {
                                     />
                                 </div>
                             </div>
+
 
                             <hr className='mt-1 mb-1' />
                             {/* 10 Bottom Input Boxes */}
@@ -1534,11 +1775,14 @@ const Quot = () => {
                                         }}
                                     >
                                         <option value="">--</option>
-                                        {state.unitList.map(u => (
-                                            <option key={u.UnitId} value={u.UnitId}>
-                                                {u.UnitType}
-                                            </option>
-                                        ))}
+                                        {Array.isArray(state.unitList) &&
+                                            state.unitList.map(u => (
+                                                <option key={u.UnitId} value={u.UnitId}>
+                                                    {u.UnitType}
+                                                </option>
+                                            ))
+                                        }
+
                                     </select>
                                 </div>
 
@@ -1708,14 +1952,25 @@ const Quot = () => {
                                 <button
                                     className='btn btn-primary btn-sm'
                                     onClick={() => {
-                                        dispatch({
-                                            type: state.editIndex !== null ? 'UPDATE_ROW' : 'ADD_ROW'
-                                        })
+                                        if (state.editIndex !== null) {
+                                            dispatch({ type: 'UPDATE_ROW' });
+                                        } else {
+                                            dispatch({ type: 'ADD_ROW' });
+                                        }
                                     }}
                                 >
-                                    {state.editIndex !== null ? 'Update' : 'Add'}
+                                    {state.editIndex
+                                        ? 'Update'
+                                        : state.isEditMode
+                                            ? 'Update'
+                                            : 'Add'
+                                    }
                                 </button>
+
                             </div>
+
+
+
                             <hr className='mt-1' />
 
                             {/* Container inside card */}
@@ -1751,61 +2006,57 @@ const Quot = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {state.rows.map((r, index) => (
-                                                <tr key={index}>
-                                                    <td className="text-center">{r.sNo}</td>
-                                                    <td>{r.productName}</td>
-                                                    <td className="text-center">{r.unitType}</td>
-                                                    <td>{r.brandName}</td>
-                                                    <td className="text-center">{r.qty}</td>
-                                                    <td className="text-end">{r.rate}</td>
-                                                    <td className="text-end">{r.taxable}</td>
-                                                    <td className="text-center">{r.vatPer}</td>
-                                                    <td className="text-end">{r.vatAmt}</td>
-                                                    <td className="text-end">{r.amount}</td>
-                                                    <td className="text-center">
-                                                        {state.editIndex === index ? (
-                                                            <>
+                                            {state.rows.map((r, index) => {
+                                                console.log("RENDER ROWS", state.rows);
 
+                                                return (
+                                                    <tr key={index}>
+                                                        <td className="text-center">{r.sNo}</td>
+                                                        <td>{r.productName}</td>
+                                                        <td className="text-center">{r.unitType}</td>
+                                                        <td>{r.brandName}</td>
+                                                        <td className="text-center">{r.qty}</td>
+                                                        <td className="text-end">{r.rate}</td>
+                                                        <td className="text-end">{r.taxable}</td>
+                                                        <td className="text-center">{r.vatPer}</td>
+                                                        <td className="text-end">{r.vatAmt}</td>
+                                                        <td className="text-end">{r.amount}</td>
+                                                        <td className="text-center">
+                                                            {state.editIndex === index ? (
+                                                                <>
+                                                                    <button
+                                                                        className="btn btn-sm btn-warning"
+                                                                        style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
+                                                                        onClick={() => dispatch({ type: "CANCEL_EDIT" })}
+                                                                    >
+                                                                        Cancel Edit
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        className="btn btn-sm btn-secondary me-1"
+                                                                        style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
+                                                                        onClick={() => dispatch({ type: "EDIT_ROW", index })}
+                                                                    >
+                                                                        Edit
+                                                                    </button>
 
-                                                                <button
-                                                                    className="btn btn-sm btn-warning"
-                                                                    style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
-                                                                    onClick={() =>
-                                                                        dispatch({ type: "CANCEL_EDIT" })
-                                                                    }
-                                                                >
-                                                                    Cancel Edit
-                                                                </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <button
-                                                                    className="btn btn-sm btn-secondary me-1"
-                                                                    style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
-                                                                    onClick={() =>
-                                                                        dispatch({ type: "EDIT_ROW", index })
-                                                                    }
-                                                                >
-                                                                    Edit
-                                                                </button>
-
-                                                                <button
-                                                                    className="btn btn-sm btn-danger"
-                                                                    style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
-                                                                    onClick={() =>
-                                                                        dispatch({ type: "ASK_DELETE_ROW", index })
-                                                                    }
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </td>
-
-                                                </tr>
-                                            ))}
+                                                                    <button
+                                                                        className="btn btn-sm btn-danger"
+                                                                        style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
+                                                                        onClick={() => dispatch({ type: "ASK_DELETE_ROW", index })}
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
+
 
                                     </table>
 
@@ -1928,7 +2179,7 @@ const Quot = () => {
                                         className='form-control form-control-sm'
                                         style={{ width: '80px' }}
                                         name='totalAmt'
-                                        value={state.topData.totalAmt}
+                                        value={state.topData.totalAmt ?? ''}
                                         onChange={handleTopChange}
                                         disabled
                                     />
@@ -1941,7 +2192,7 @@ const Quot = () => {
                                         className='form-control form-control-sm'
                                         style={{ width: '80px' }}
                                         name='vatAmt'
-                                        value={state.topData.vatAmt}
+                                        value={state.topData.vatAmt ?? ''}
                                         onChange={handleTopChange}
                                         disabled
                                     />
@@ -1954,7 +2205,7 @@ const Quot = () => {
                                         className='form-control form-control-sm'
                                         style={{ width: '80px' }}
                                         name='actAmt'
-                                        value={state.topData.actAmt}
+                                        value={state.topData.actAmt ?? ''}
                                         onChange={handleTopChange}
                                         disabled
                                     />
@@ -2044,14 +2295,26 @@ const Quot = () => {
                             overflowX: 'auto'
                         }}>
                             <button className='btn btn-sm btn-danger' onClick={() => navigate('/transaction/quotation/find')}>Find</button>
-                            <button className='btn btn-sm btn-danger' onClick={handleSave}>Save</button>
-                            <button className='btn btn-sm btn-danger' >Print</button>
-                            <button className='btn btn-sm btn-danger' onClick={() => dispatch({ type: 'RESET_PAGE' })} >Reset</button>
+                            <button className='btn btn-sm btn-danger'
+                                onClick={() => {
+                                    if (state.isEditMode) {
+                                        updateQuotation()
+                                    } else {
+                                        handleSave()
+                                    }
+                                }}
+                            >{state.isEditMode ? 'Update' : 'Save'}</button>
+                            <button className='btn btn-sm btn-danger' onClick={handlePrint} >Print</button>
+                            <button className='btn btn-sm btn-danger' onClick={() => navigate('/transaction/quotation/find')}>Delete</button>
+                            <button className='btn btn-sm btn-danger'
+                                onClick={handleReset}
+                            >Reset</button>
 
                         </div>
 
 
                     </div>
+
 
                     {state.showFindModal && (
                         <FindModal state={state} dispatch={dispatch} />
