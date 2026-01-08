@@ -83,7 +83,7 @@ const LoginCard = () => {
                             Password
                         </label>
 
-                        <div className="password-wrapper">
+                        <div className="password-wrapper position-relative">
                             <input
                                 type={showPassword ? "text" : "password"}
                                 id="password"
@@ -94,7 +94,7 @@ const LoginCard = () => {
                                 onChange={handleChange}
                             />
                             <i
-                                className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"} position-absolute end-0 me-3 text-secondary`}
+                                className={`bi ${showPassword ? "bi-eye" : "bi-eye-slash"} position-absolute end-0 me-3 text-secondary`}
                                 style={{
                                     cursor: "pointer",
                                     top: "50%",

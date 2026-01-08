@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faRulerCombined } from '@fortawesome/free-solid-svg-icons'
+
 
 const Unit = () => {
   const [units, setUnits] = useState([]);
@@ -15,9 +18,11 @@ const Unit = () => {
 
   // New states for edit confirmation
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+
   const [unitToEdit, setUnitToEdit] = useState(null);
 
-   const [showPopup, setShowPopup] = useState(false)
+  const [showPopup, setShowPopup] = useState(false)
 
   const gapi = import.meta.env.VITE_API_URL;
   const API = `${gapi}/unit`;
@@ -94,6 +99,7 @@ const Unit = () => {
       setUnitName('');
       setUnitId(0);
       setEditingIndex(null);
+      setShowUpdateModal(false);
       showTempMessage('Unit updated successfully!');
     } catch (err) {
       console.error('Update error:', err);
@@ -143,6 +149,23 @@ const Unit = () => {
     )
     : [];
 
+  const highlightText = (text, search) => {
+    if (!search) return text;
+
+    const regex = new RegExp(`(${search})`, 'ig');
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+      part.toLowerCase() === search.toLowerCase() ? (
+        <span key={index} style={{ backgroundColor: '#ffc107', fontWeight: 'bold' }}>
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
+  };
+
   return (
     <div className="container-fluid mt-2">
       <div
@@ -160,7 +183,7 @@ const Unit = () => {
             padding: '20px',
           }}
         >
-          <h4 className="mb-0">Unit Master</h4>
+          <h4 className="mb-0"><FontAwesomeIcon icon={faRulerCombined} className="me-2" />Unit Master</h4>
         </div>
 
         {/* Body */}
@@ -176,7 +199,7 @@ const Unit = () => {
               </h5>
 
               <div className="mb-3">
-                <label className="form-label">Unit Name</label>
+                <label className="form-label">Unit Name <span className='required'>*</span></label>
                 <input
                   type="text"
                   className="form-control"
@@ -188,7 +211,13 @@ const Unit = () => {
 
               <button
                 className="btn btn-primary btn-sm"
-                onClick={editingIndex !== null ? handleUpdate : handleAdd}
+                onClick={() => {
+                  if (editingIndex !== null) {
+                    setShowUpdateModal(true);   // ✅ open confirmation modal
+                  } else {
+                    handleAdd();
+                  }
+                }}
               >
                 {editingIndex !== null ? 'Update' : 'Insert'}
               </button>
@@ -201,7 +230,7 @@ const Unit = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Search Units..."
+                  placeholder="🔎 Search Units..."
                   style={{ width: '250px' }}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -231,7 +260,7 @@ const Unit = () => {
                     <tbody>
                       {filteredUnits.map((item) => (
                         <tr key={item.UnitId}>
-                          <td>{item.UnitType}</td>
+                          <td>{highlightText(item.UnitType, searchTerm)}</td>
                           <td>
                             <button
                               className="btn btn-warning btn-sm me-2"
@@ -295,12 +324,12 @@ const Unit = () => {
                   </div>
                   <div className="modal-body">
                     <p>
-                     Unit Name must be filled.
+                      Unit Name must be filled.
                     </p>
                   </div>
                   <div className="modal-footer">
-                   
-                    <button className="btn btn-primary" onClick={()=>setShowPopup(false)}>
+
+                    <button className="btn btn-primary" onClick={() => setShowPopup(false)}>
                       Ok
                     </button>
                   </div>
@@ -377,6 +406,43 @@ const Unit = () => {
               </div>
             </div>
           )}
+          {/* Update Confirmation Modal */}
+          {showUpdateModal && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Confirm Update</h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setShowUpdateModal(false)}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <p>
+                      Are you sure you want to update "{unitName}"?
+                    </p>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setShowUpdateModal(false)}
+                    >
+                      No
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleUpdate}
+                    >
+                      Yes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

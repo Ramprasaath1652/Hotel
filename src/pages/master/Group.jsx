@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import CommonTable from '../../components/CommonTable';
+import CommonTableLayout from '../../components/CommonTableLayout';
+import CommonModals from '../../components/CommonModals ';
+
 
 const Group = () => {
   const [groups, setGroups] = useState([]);
@@ -18,6 +22,8 @@ const Group = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [groupToEdit, setGroupToEdit] = useState(null);
   const gapi = import.meta.env.VITE_API_URL;
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+
 
   const API = `${gapi}/group`; // Change to your actual API
 
@@ -91,10 +97,11 @@ const Group = () => {
       await axios.put(`${API}/${groupId}`, updatedGroup, {
         headers: { 'Content-Type': 'application/json' },
       });
-      loadGroups();
+      await loadGroups();
       setGroupName('');
       setGroupId(0);
       setEditingIndex(null);
+      setShowUpdateModal(false);
       showTempMessage('Group updated successfully!');
     } catch (err) {
       console.error('Update error:', err);
@@ -144,6 +151,39 @@ const Group = () => {
     )
     : [];
 
+  const highlightText = (text, search) => {
+    if (!search || !text) return text;
+
+    const regex = new RegExp(`(${search})`, "ig");
+    const parts = text.toString().split(regex);
+
+    return parts.map((part, index) =>
+      part.toLowerCase() === search.toLowerCase() ? (
+        <span
+          key={index}
+          style={{
+            backgroundColor: "#ffc107",
+            fontWeight: "bold",
+            padding: "0 2px",
+          }}
+        >
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
+  };
+
+  const groupColumns = [
+    {
+      header: "Group Name",
+      accessor: "GroupName",
+      render: (value) => highlightText(value, searchTerm),
+    },
+  ];
+
+
   return (
     <div className="container-fluid mt-2">
       <div
@@ -171,7 +211,7 @@ const Group = () => {
               </h5>
 
               <div className="mb-3">
-                <label className="form-label">Group Name</label>
+                <label className="form-label">Group Name <span className='required'>*</span></label>
                 <input
                   type="text"
                   className="form-control"
@@ -183,81 +223,69 @@ const Group = () => {
 
               <button
                 className="btn btn-primary btn-sm"
-                onClick={editingIndex !== null ? handleUpdate : handleAdd}
+                onClick={() => {
+                  if (editingIndex !== null) {
+                    setShowUpdateModal(true);   // 🔥 update confirm
+                  } else {
+                    handleAdd();
+                  }
+                }}
               >
                 {editingIndex !== null ? 'Update' : 'Insert'}
               </button>
             </div>
 
             {/* Right - Table with Search */}
-            <div className="col-md-8">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Group List</h5>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Groups..."
-                  style={{ width: '250px' }}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              {filteredGroups.length === 0 ? (
-                <p className="text-center text-muted">No records found.</p>
-              ) : (
-                <div
-                  style={{
-                    maxHeight: 'calc(100vh - 350px)',
-                    overflowY: 'auto',
-                    overflowX: 'auto',
-                  }}
-                >
-                  <table className="table table-bordered table-striped text-center align-middle">
-                    <thead
-                      className="table-light"
-                      style={{ position: 'sticky', top: 0 }}
-                    >
-                      <tr>
-                        <th>Group Name</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredGroups.map((item) => (
-                        <tr key={item.GroupID}>
-                          <td>{item.GroupName}</td>
-                          <td>
-                            <button
-                              className="btn btn-warning btn-sm me-2"
-                              onClick={() => handleEdit(item)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => {
-                                setGroupToDelete(item);
-                                setShowDeleteModal(true);
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <CommonTableLayout
+              title="Group List"
+              placeholder="🔎 Search Groups..."
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              dataLength={filteredGroups.length}
+            >
+              <CommonTable
+                columns={groupColumns}
+                data={filteredGroups}
+                rowKey="GroupID"
+                onEdit={(row) => {
+                  setGroupToEdit(row);
+                  setShowEditModal(true);
+                }}
+                onDelete={(row) => {
+                  setGroupToDelete(row);
+                  setShowDeleteModal(true);
+                }}
+              />
+            </CommonTableLayout>
           </div>
 
-          {/* Success Message */}
+          <CommonModals
+            showDelete={showDeleteModal}
+            showUpdate={showUpdateModal}
+            showEdit={showEditModal}
+            showAlert={showPopup}
+            deleteText={`Are you sure you want to delete "${groupToDelete?.GroupName}"?`}
+            editText={`Are you sure you want to edit "${groupToEdit?.GroupName}"?`}
+            updateText={`Are you sure you want to update "${groupName}"?`}   // ✅
+            alertText="Group Name must be filled"
+            onConfirmDelete={handleDelete}
+            onConfirmEdit={confirmEdit}
+            onConfirmUpdate={handleUpdate}
+            onClose={() => {
+              setShowDeleteModal(false);
+              setShowEditModal(false);
+              setShowUpdateModal(false);
+              setShowPopup(false);
+            }}
+          />
+
           {showMessage && (
             <div
               className="position-fixed top-0 start-50 translate-middle-x mt-3"
-              style={{ zIndex: 9999, minWidth: '300px' }}
+              style={{
+                zIndex: 9999,
+                minWidth: '300px',
+              }}
             >
               <div
                 className="alert alert-success alert-dismissible fade show mb-0"
@@ -273,98 +301,6 @@ const Group = () => {
             </div>
           )}
 
-
-          {showPopup && (
-            <div className="modal show d-block" tabIndex="-1">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Group</h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={() => setShowPopup(false)}
-                    ></button>
-                  </div>
-                  <div className="modal-body">
-                    <p>Group Name must be filled</p>
-                  </div>
-                  <div className="modal-footer">
-                    <button className="btn btn-primary" onClick={()=>setShowPopup(false)}>
-                      Ok
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Modal */}
-          {showDeleteModal && (
-            <div className="modal show d-block" tabIndex="-1">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Confirm Delete</h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={cancelDelete}
-                    ></button>
-                  </div>
-                  <div className="modal-body">
-                    <p>
-                      Are you sure you want to delete "
-                      {groupToDelete?.GroupName}"?
-                    </p>
-                  </div>
-                  <div className="modal-footer">
-                    <button
-                      className="btn btn-secondary"
-                      onClick={cancelDelete}
-                    >
-                      No
-                    </button>
-                    <button className="btn btn-danger" onClick={handleDelete}>
-                      Yes
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Edit Confirmation Modal */}
-          {showEditModal && (
-            <div className="modal show d-block" tabIndex="-1">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Confirm Edit</h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={() => setShowEditModal(false)}
-                    ></button>
-                  </div>
-                  <div className="modal-body">
-                    <p>Are you sure you want to edit "{groupToEdit?.GroupName}"?</p>
-                  </div>
-                  <div className="modal-footer">
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => setShowEditModal(false)}
-                    >
-                      No
-                    </button>
-                    <button className="btn btn-primary" onClick={confirmEdit}>
-                      Yes
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

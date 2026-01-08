@@ -3,10 +3,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-
-
-
-
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import GSTReport from '../reports/GSTReport';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faReceipt } from '@fortawesome/free-solid-svg-icons';
 
 const initialFormState = {
 
@@ -16,7 +17,7 @@ const initialFormState = {
         actAmt: null,
         qNo: null,
         rNo: null,
-        project: '',//selected project name
+        project: '',
         ledger: '',
         qDate: '',
         subject: '',
@@ -192,7 +193,7 @@ function reducer(state, action) {
                     p.ProjName.toLowerCase().includes(action.payload.toLowerCase())
                 ),
                 showProjectDropDown: action.payload.trim() !== '',
-                highlightedProjectIndex: -1 // 👈 reset
+                highlightedProjectIndex: -1
             }
 
         case 'SELECT_PROJECT':
@@ -913,8 +914,8 @@ function reducer(state, action) {
 }
 const API_BASE = 'http://192.168.31.101:85/api';
 
-const Quot = () => {
-
+const Quot = ({ gstReportData }) => {
+    const reportRef = useRef(null);
 
     const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -938,7 +939,7 @@ const Quot = () => {
 
 
     useEffect(() => {
-        if (!qId) return;              // 🔒
+        if (!qId) return;
         if (state.isLoadedFromApi) return;
 
         if (qId && !state.isLoadedFromApi) {
@@ -1013,10 +1014,10 @@ const Quot = () => {
                 QRevNo: state.topData.rNo,
 
                 ProjId: state.projectId,
-                ProjName: state.projectQuery,   // 👈 IMPORTANT
+                ProjName: state.projectQuery,  
 
                 LedgerId: state.ledgerId,
-                LedgerName: state.ledgerQuery,  // 👈 IMPORTANT
+                LedgerName: state.ledgerQuery, 
 
                 QDate: state.topData.qDate,
                 Subject: state.topData.subject,
@@ -1031,8 +1032,6 @@ const Quot = () => {
                 TotTaxableAmt: state.topData.totalAmt,
                 TotVatamt: state.topData.vatAmt,
                 NetAmount: state.topData.actAmt,
-
-
             };
 
 
@@ -1373,18 +1372,41 @@ const Quot = () => {
         navigate('/transaction/quot/')
     }
 
-    const handlePrint = () => {
-        const popup = window.open(
-            '/reports/gst-report',
-            'GSTReportPopup',
-            'width=900,height=1200,scrollbars=yes'
-        );
 
-        if (popup) {
-            popup.focus();
-        }
+    const handlePrint = async () => {
+        if (!reportRef.current) return;
+
+        const canvas = await html2canvas(reportRef.current, {
+            scale: 2,
+            useCORS: true,
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = 210;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+        window.open(pdf.output("bloburl"), "_blank");
     };
 
+    const highlightText = (text = '', query = '') => {
+        if (!query) return text;
+
+        const regex = new RegExp(`(${query})`, 'ig');
+
+        return text.split(regex).map((part, index) =>
+            part.toLowerCase() === query.toLowerCase() ? (
+                <span key={index} style={{ backgroundColor: '#ffc107', fontWeight: 'bold' }}>
+                    {part}
+                </span>
+            ) : (
+                part
+            )
+        );
+    };
 
 
     return (
@@ -1404,7 +1426,7 @@ const Quot = () => {
                         padding: '20px'
                     }}
                 >
-                    <h4 className='mb-0'>Quot</h4>
+                    <h4 className='mb-0'><FontAwesomeIcon icon={faReceipt} className="me-2" />Quot</h4>
                 </div>
                 {/* Body */}
                 <div className='card-body mb-0'
@@ -1484,6 +1506,7 @@ const Quot = () => {
                                         className="form-control form-control-sm"
                                         name="project"
                                         value={state.projectQuery}
+                                        placeholder="🔎 Search Project..."
                                         onChange={handleProjectChange}
                                         onKeyDown={handleProjectKeyDown}
                                         onFocus={() =>
@@ -1535,7 +1558,7 @@ const Quot = () => {
                                                         })
                                                     }
                                                 >
-                                                    {item.ProjName}
+                                                    {highlightText(item.ProjName, state.projectQuery)}
                                                 </div>
                                             ))}
                                         </div>
@@ -1557,6 +1580,7 @@ const Quot = () => {
                                         className="form-control form-control-sm"
                                         name="ledger"
                                         value={state.ledgerQuery ?? ''}
+                                        placeholder="🔎 Search Ledger..."
                                         onChange={handleLedgerChange}
                                         onKeyDown={handleLedgerKeyDown}
                                         onFocus={() =>
@@ -1612,9 +1636,9 @@ const Quot = () => {
                                                         })
                                                     }
                                                 >
-                                                    <div className="col-5">{item.LedgerName}</div>
-                                                    <div className="col-3">{item.EPlace || "-"}</div>
-                                                    <div className="col-4">{item.StateName || "-"}</div>
+                                                    <div className="col-5"> {highlightText(item.LedgerName, state.ledgerQuery)}</div>
+                                                    <div className="col-3">{highlightText(item.EPlace || "-", state.ledgerQuery)}</div>
+                                                    <div className="col-4">{highlightText(item.StateName || "-", state.ledgerQuery)}</div>
 
                                                 </div>
                                             ))}
@@ -1687,6 +1711,7 @@ const Quot = () => {
                                         className="form-control form-control-sm"
                                         name="product"
                                         value={state.productQuery}
+                                        placeholder="🔎 Search Product..."
                                         onChange={handleProductChange}
                                         onKeyDown={handleProductKeyDown}
                                         onFocus={() =>
@@ -1742,7 +1767,7 @@ const Quot = () => {
                                                         })
                                                     }
                                                 >
-                                                    {item.ProductName}
+                                                    {highlightText(item.ProductName, state.productQuery)}
                                                 </div>
                                             ))}
                                         </div>
@@ -1802,6 +1827,7 @@ const Quot = () => {
                                         value={state.brandQuery}
                                         onChange={handleBrandChange}
                                         onKeyDown={handleBrandKeyDown}
+                                        placeholder="🔎 Search Brand..."
                                         onFocus={() =>
                                             dispatch({ type: 'SET_SHOW_BRAND_DROPDOWN', payload: true })
                                         }
@@ -1854,7 +1880,7 @@ const Quot = () => {
                                                         })
                                                     }
                                                 >
-                                                    {item.BrandName}
+                                                    {highlightText(item.BrandName, state.brandQuery)}
                                                 </div>
                                             ))}
                                         </div>
@@ -2311,8 +2337,21 @@ const Quot = () => {
                             >Reset</button>
 
                         </div>
+                        <>
 
-
+                            <div
+                                style={{
+                                    position: "fixed",
+                                    top: 0,
+                                    left: 0,
+                                    opacity: 0,
+                                    pointerEvents: "none",
+                                    width: "210mm",
+                                }}
+                            >
+                                <GSTReport ref={reportRef} reportData={gstReportData || []} />
+                            </div>
+                        </>
                     </div>
 
 

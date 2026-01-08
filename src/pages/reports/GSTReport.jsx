@@ -1,40 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, forwardRef } from 'react';
 import axios from 'axios';
 import './GSTReport.css';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 
-const GSTReport = () => {
+
+const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
     const [reportData, setReportData] = useState([]);
-    const navigate = useNavigate();
 
-    const previewPDF = async () => {
-        const report = document.getElementById('gst-report');
+    const [searchParams] = useSearchParams();
+    const hasPrintedRef = useRef(false);
 
-        const canvas = await html2canvas(report, {
-            scale: 2,
-            useCORS: true
-        });
 
-        const imgData = canvas.toDataURL('image/png');
-
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-        const pdfBlobUrl = pdf.output('bloburl');
-
-        // 👉 Navigate to PDF viewer
-        navigate('/pdf-viewer', {
-            state: { pdfUrl: pdfBlobUrl }
-        });
-    };
 
     useEffect(() => {
+        const mode = new URLSearchParams(window.location.search).get('mode');
+        if (mode === 'print') {
+            generatePDF();
+        }
+    }, []);
+
+    useEffect(() => {
+        loadReport();
+    }, []);
+
+    useEffect(() => {
+        if (
+            searchParams.get('print') === 'true' &&
+            reportData.length > 0 &&
+            !hasPrintedRef.current
+        ) {
+            hasPrintedRef.current = true; // 🔒 lock
+            previewPDF();
+        }
+    }, [searchParams, reportData]);
+
+
+    useEffect(() => {
+
         loadReport()
     }, [])
 
@@ -70,22 +73,20 @@ const GSTReport = () => {
     }, [])
 
 
-
-
-
     const loadReport = async () => {
         try {
             const res = await axios.get('http://192.168.31.101:85/api/QUOBILLS/')
-            console.log('repport:', res)
+            // console.log('repport:', res)
             setReportData(res.data)
         } catch (err) {
             console.error(err)
         }
     }
-    const summary = reportData.length > 0 ? reportData[0] : {};
+    const summary = gstReportData.length > 0 ? gstReportData[0] : {};
+
 
     return (
-        <div id="gst-report">
+        <div id="gst-report" ref={ref}>
 
             <div className='page-a4'>
 
@@ -242,17 +243,13 @@ const GSTReport = () => {
                     <div className="invoice-header footer">
                         <img src="/Footer_2024.jpeg" alt="Invoice Header" />
                     </div>
-                    <>
-                        <button onClick={previewPDF}>
-                            View PDF
-                        </button>
-                    </>
+                    
 
                 </div>
 
             </div>
         </div>
     )
-}
+});
 
 export default GSTReport;

@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBook } from '@fortawesome/free-solid-svg-icons';
 
 
 const LedgerCreation = () => {
@@ -351,15 +351,46 @@ const LedgerCreation = () => {
     }
 
 
-    //Filter List for search
+    // Filter List for search
     const filteredLedgers = Array.isArray(ledgers)
         ? ledgers.filter((item) => {
-            const ledgerName = item?.LedgerName?.toLowerCase() || '';
-            const search = searchTerm?.toLowerCase() || '';
-            return ledgerName.includes(search);
+            const q = searchTerm?.toLowerCase() || '';
+
+            return (
+                item?.LedgerName?.toLowerCase().includes(q) ||
+                item?.Add1?.toLowerCase().includes(q) ||
+                item?.Add2?.toLowerCase().includes(q) ||
+                item?.StateName?.toLowerCase().includes(q) ||
+                item?.AccName?.toLowerCase().includes(q) ||
+                item?.Debit?.toString().toLowerCase().includes(q) ||
+                item?.Credit?.toString().toLowerCase().includes(q)
+            );
         })
         : [];
 
+    const highlightText = (text, search) => {
+        if (!search || !text) return text;
+
+        const regex = new RegExp(`(${search})`, 'ig');
+        const parts = text.toString().split(regex);
+
+        return parts.map((part, index) =>
+            part.toLowerCase() === search.toLowerCase() ? (
+                <span
+                    key={index}
+                    style={{
+                        backgroundColor: '#ffc107',
+                        fontWeight: 'bold',
+                        padding: '0 2px'
+                    }}
+                >
+                    {part}
+                </span>
+            ) : (
+                part
+            )
+        );
+    };
 
     return (
         <div className='container-fluid mt-2'>
@@ -375,7 +406,7 @@ const LedgerCreation = () => {
                         padding: '20px'
                     }}
                 >
-                    <h4 className='mb-0'>Ledger Master</h4>
+                    <h4 className='mb-0'> <FontAwesomeIcon icon={faBook} className="me-2" />Ledger Master</h4>
                 </div>
                 {/* Body */}
                 <div className='card-body' style={{ height: 'calc(100vh - 200px', overflow: 'auto' }}>
@@ -386,7 +417,7 @@ const LedgerCreation = () => {
                                 {editingIndex !== null ? 'Edit Ledger' : 'Add Ledger'}
                             </h4>
                             <div className="row mb-3 align-items-center">
-                                <label className="col-sm-4 col-form-label">Account Group</label>
+                                <label className="col-sm-4 col-form-label">Account Group <span className='required'>*</span></label>
                                 <div className="col-sm-8">
                                     <select
                                         className="form-select"
@@ -404,7 +435,7 @@ const LedgerCreation = () => {
                             </div>
 
                             <div className="row mb-3 align-items-center">
-                                <label className="col-sm-4 col-form-label">Name</label>
+                                <label className="col-sm-4 col-form-label">Name <span className='required'>*</span></label>
                                 <div className="col-sm-8">
                                     <input
                                         className="form-control"
@@ -452,7 +483,7 @@ const LedgerCreation = () => {
 
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>Place</label>
+                                <label className='col-sm-4 col-form-label'>Place <span className='required'>*</span></label>
                                 <div className='col-sm-8'>
                                     <input
                                         className='form-control'
@@ -482,7 +513,7 @@ const LedgerCreation = () => {
                             </div>
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>State</label>
+                                <label className='col-sm-4 col-form-label'>State <span className='required'>*</span></label>
                                 <div className='col-sm-8'>
                                     <select className='form-select'
                                         name='State'
@@ -532,7 +563,7 @@ const LedgerCreation = () => {
                             </div>
 
 
-                           <div className='row mb-3 '>
+                            <div className='row mb-3 '>
                                 <div className='col-md-6 d-flex align-items-center mb-2'>
                                     <label className='me-2' style={{ width: '100px' }}>Mobile</label>
 
@@ -565,7 +596,7 @@ const LedgerCreation = () => {
                                 </div>
                             </div>
 
-                            
+
 
                             <div className='row mb-3 '>
                                 <div className='col-md-6 d-flex align-items-center mb-2'>
@@ -617,7 +648,7 @@ const LedgerCreation = () => {
                                 <input
                                     type='text'
                                     className='form-control w-50'
-                                    placeholder='search ledgers...'
+                                    placeholder='🔎 search ledgers...'
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -649,13 +680,13 @@ const LedgerCreation = () => {
                                         <tbody>
                                             {filteredLedgers.map((l) => (
                                                 <tr key={l.LedgerId}>
-                                                    <td>{l.LedgerName}</td>
-                                                    <td>{l.Add1}</td>
-                                                    <td>{l.Add2}</td>
-                                                    <td>{l.StateName}</td>
-                                                    <td>{l.AccName}</td>
-                                                    <td>{l.Debit}</td>
-                                                    <td>{l.Credit}</td>
+                                                    <td>{highlightText(l.LedgerName, searchTerm)}</td>
+                                                    <td>{highlightText(l.Add1, searchTerm)}</td>
+                                                    <td>{highlightText(l.Add2, searchTerm)}</td>
+                                                    <td>{highlightText(l.StateName, searchTerm)}</td>
+                                                    <td>{highlightText(l.AccName, searchTerm)}</td>
+                                                    <td>{highlightText(l.Debit?.toString(), searchTerm)}</td>
+                                                    <td>{highlightText(l.Credit?.toString(), searchTerm)}</td>
                                                     <td>
                                                         <button
                                                             className="btn btn-warning btn-sm me-2"

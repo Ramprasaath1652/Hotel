@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTags, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+
+
 
 const BrandMaster = () => {
   const [brands, setBrands] = useState([]);
@@ -18,7 +22,7 @@ const BrandMaster = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [brandToEdit, setBrandToEdit] = useState(null);
 
-   const [showPopup, setShowPopup] = useState(false)
+  const [showPopup, setShowPopup] = useState(false)
 
   const gapi = import.meta.env.VITE_API_URL;
   const API = `${gapi}/brand`;
@@ -63,6 +67,7 @@ const BrandMaster = () => {
       });
       loadBrands();
       setBrandName("");
+      setShowUpdateModal(false);
       showTempMessage("Brand added successfully!");
     } catch (err) {
       console.error("Add error:", err);
@@ -94,6 +99,7 @@ const BrandMaster = () => {
       setBrandName("");
       setBrandId(0);
       setEditingIndex(null);
+      setShowUpdateModal(false);
       showTempMessage("Brand updated successfully!");
     } catch (err) {
       console.error("Update error:", err);
@@ -144,6 +150,28 @@ const BrandMaster = () => {
     )
     : [];
 
+  const highlightText = (text, query) => {
+    if (!query) return text;
+
+    const regex = new RegExp(`(${query})`, "gi");
+
+    return text.split(regex).map((part, index) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <span
+          key={index}
+          style={{
+            backgroundColor: "#ffc107",
+            fontWeight: "bold",
+          }}
+        >
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
+  };
+
   return (
     <div className="container-fluid mt-2">
       <div
@@ -155,7 +183,7 @@ const BrandMaster = () => {
           className="card-header text-white"
           style={{ backgroundColor: "#5d8aa8", padding: "20px" }}
         >
-          <h4 className="mb-0">Brand Master</h4>
+          <h4 className="mb-0"><FontAwesomeIcon icon={faTags} className="me-2" />Brand Master</h4>
         </div>
 
         {/* Body */}
@@ -171,7 +199,7 @@ const BrandMaster = () => {
               </h5>
 
               <div className="mb-3">
-                <label className="form-label">Brand Name</label>
+                <label className="form-label">Brand Name <span className='required'>*</span></label>
                 <input
                   type="text"
                   className="form-control"
@@ -203,7 +231,7 @@ const BrandMaster = () => {
                   type="text"
                   className="form-control"
                   style={{ width: "250px" }}
-                  placeholder="Search..."
+                  placeholder="🔎 Search Brands..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -232,7 +260,7 @@ const BrandMaster = () => {
                     <tbody>
                       {filteredBrands.map((item) => (
                         <tr key={item.BrandId}>
-                          <td>{item.BrandName}</td>
+                          <td>{highlightText(item.BrandName, searchTerm)}</td>
                           <td>
                             <button
                               className="btn btn-warning btn-sm me-2"
@@ -293,7 +321,7 @@ const BrandMaster = () => {
                   </div>
                   <div className="modal-body">
                     <p>
-                    Brand Name must be filled.
+                      Brand Name must be filled.
                     </p>
                   </div>
                   <div className="modal-footer">

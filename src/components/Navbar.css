@@ -2,6 +2,13 @@
 .bg-airforceblue {
   background-color: #5d8aa8 !important; /* Air Force Blue */
 }
+.nav-link svg {
+  display: inline-block !important;
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  fill: white !important;
+}
 
 /* Section font size & bold */
 .navbar-nav .nav-link {

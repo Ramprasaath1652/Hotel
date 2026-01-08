@@ -1,7 +1,10 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useReducer, useEffect } from 'react';
-import axios from 'axios'
+import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileLines } from '@fortawesome/free-solid-svg-icons'
+
 
 //http://192.168.31.101:85/api/tblQuodets
 //http://192.168.31.101:85/api/tblQuos
@@ -703,7 +706,7 @@ const Quotation = () => {
                         padding: '20px'
                     }}
                 >
-                    <h4 className='mb-0'>Quotation</h4>
+                    <h4 className='mb-0'><FontAwesomeIcon icon={faFileLines} className="me-2" />Quotation</h4>
                 </div>
 
                 {/* Body */}
@@ -758,7 +761,7 @@ const Quotation = () => {
 
                                 {/* Project */}
                                 <div className="d-flex align-items-center gap-2" style={{ flex: "1 0 280px" }}>
-                                    <label className="fw-bold required mb-0" style={{ fontSize: "15px", width: "120px" }}>Project</label>
+                                    <label className="fw-bold  mb-0" style={{ fontSize: "15px", width: "120px" }}>Project <span className='required'>*</span></label>
 
                                     <div style={{ position: "relative", width: "100%" }}>
                                         <input
@@ -812,7 +815,7 @@ const Quotation = () => {
 
                                 {/* Ledger */}
                                 <div className="d-flex align-items-center gap-2" style={{ flex: "1 0 280px" }}>
-                                    <label className="fw-bold mb-0" style={{ fontSize: "15px", width: "120px" }}>Ledger</label>
+                                    <label className="fw-bold mb-0" style={{ fontSize: "15px", width: "120px" }}>Ledger <span className='required'>*</span></label>
 
                                     <div style={{ position: 'relative', width: '100%' }}>
                                         <input

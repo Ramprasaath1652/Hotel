@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBriefcase } from '@fortawesome/free-solid-svg-icons'
+
+
 
 const ProjectMaster = () => {
-
-
     const [projectNo, setProjectNo] = useState('')
     const [date, setDate] = useState('')
     const [projectName, setProjectName] = useState('')
@@ -27,18 +29,31 @@ const ProjectMaster = () => {
     const [showMessage, setShowMessage] = useState(false);
     const [message, setMessage] = useState('');
 
-
     const [projectToEdit, setProjectToEdit] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
     const [ledgerList, setLedgerList] = useState([]);
     const [ledgerQuery, setLedgerQuery] = useState("");
     const [showLedgerDropdown, setShowLedgerDropdown] = useState(false);
+    const [activeLedgerIndex, setActiveLedgerIndex] = useState(-1);
+
 
     const [forceOpen, setForceOpen] = useState(false);
 
     const [showPopup, setShowPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState('');
+
+    const [showLedgerModal, setShowLedgerModal] = useState(false);
+    const [ledgerName, setLedgerName] = useState('');
+    const [ledgerPlace, setLedgerPlace] = useState('');
+    const [ledgerGroup, setLedgerGroup] = useState('');
+    const [ledgerState, setLedgerState] = useState('');
+    const [accountGroups, setAccountGroups] = useState([]);
+    const [statesList, setStatesList] = useState([]);
+
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+
+
 
 
 
@@ -48,12 +63,16 @@ const ProjectMaster = () => {
     const API = `${gapi}/project`;
 
     useEffect(() => {
-        console.log('main url : ' + gapi + '/project');
+        // console.log('main url : ' + gapi + '/project');
         // console.log(API);
         loadProjects();
         loadLedger();
     }, []);
 
+    useEffect(() => {
+        axios.get(`${gapi}/accountgroups`).then(res => setAccountGroups(res.data));
+        axios.get(`${gapi}/statemasters`).then(res => setStatesList(res.data));
+    }, []);
 
     const loadLedger = async () => {
         try {
@@ -70,7 +89,7 @@ const ProjectMaster = () => {
     const loadProjects = async () => {
         try {
             const res = await axios.get(API);
-            console.log("LOAD PROJECTS RESPONSE:", res.data);
+            // console.log("LOAD PROJECTS RESPONSE:", res.data);
             setProjects(res.data);
         } catch (err) {
             console.error('Error fetching groups:', err);
@@ -105,7 +124,7 @@ const ProjectMaster = () => {
         }
 
         const newProject = {
-            ProjId: 0,                          // ← IMPORTANT
+            ProjId: 0,
             ProjNo: Number(projectNo),
             ProjDate: date && date.trim() !== "" ? `${date}T00:00:00` : "2025-01-01T00:00:00",
             ProjName: projectName,
@@ -119,13 +138,13 @@ const ProjectMaster = () => {
             Pin: pin,
             Mobile: mobile,
         };
-        console.log("DATA SENT TO API:", newProject);
+        // console.log("DATA SENT TO API:", newProject);
         try {
             const result = await axios.post(API, newProject, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
-            console.log("Result RESPONSE:", result.data);
+            // console.log("Result RESPONSE:", result.data);
 
             await loadProjects();
 
@@ -157,11 +176,7 @@ const ProjectMaster = () => {
 
     const handleEdit = (project) => {
         console.log("EDIT OBJECT:", project);
-
         setProjectToEdit(project);
-
-
-
         setShowEditModal(true);   // 👈 MUST BE PRESENT
     }
 
@@ -255,7 +270,7 @@ const ProjectMaster = () => {
             setProjectId(0);
             setEditingIndex(null);
             showTempMessage('Project updated successfully!');
-
+            setShowUpdateModal(false);
             resetForm();
         } catch (err) {
             console.error('Update error:', err);
@@ -288,25 +303,152 @@ const ProjectMaster = () => {
     };
 
     //Filtered list for search
-    const filteredProject = Array.isArray(projects)
-        ? projects.filter(
-            (item) =>
-                item?.ProjName &&
-                item.ProjName.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+    // const filteredProject = Array.isArray(projects)
+    //     ? projects.filter(
+    //         (item) =>
+    //             item?.ProjName &&
+    //             item.ProjName.toLowerCase().includes(searchTerm.toLowerCase())
+    //     )
+    //     : [];
+
+    const filteredLedger = Array.isArray(ledgerList)
+        ? ledgerList.filter(item => {
+            const query = ledgerQuery.toLowerCase();
+
+            const name = item?.LedgerName?.toLowerCase() || '';
+            const place = item?.EPlace?.toLowerCase() || '';
+            const state = item?.StateName?.toLowerCase() || '';
+
+            return (
+                name.includes(query) ||
+                place.includes(query) ||
+                state.includes(query)
+            );
+        })
         : [];
 
-    const filteredLedger = ledgerList.filter(item =>
-        item.LedgerName?.toLowerCase().includes(ledgerQuery.toLowerCase())
-    );
+    const filteredProject = projects.filter(item => {
+        const q = searchTerm.toLowerCase();
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            setShowLedgerDropdown(true);
-            setForceOpen(true);
+        return (
+            item?.ProjNo?.toString().toLowerCase().includes(q) ||
+            item?.ProjName?.toLowerCase().includes(q) ||
+            item?.LedgerName?.toLowerCase().includes(q) ||
+            item?.RefName?.toLowerCase().includes(q)
+        );
+    });
+
+
+
+    const handleLedgerKeyDown = (e) => {
+        if (!showLedgerDropdown || filteredLedger.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActiveLedgerIndex(prev =>
+                prev < filteredLedger.length - 1 ? prev + 1 : prev
+            );
         }
-    }
 
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActiveLedgerIndex(prev =>
+                prev > 0 ? prev - 1 : 0
+            );
+        }
+
+        if (e.key === "Enter") {
+            e.preventDefault();
+            if (activeLedgerIndex >= 0) {
+                const selected = filteredLedger[activeLedgerIndex];
+                setLedger(selected.LedgerId);
+                setLedgerQuery(selected.LedgerName);
+                setShowLedgerDropdown(false);
+                setActiveLedgerIndex(-1);
+            }
+        }
+    };
+
+    const handleAddLedger = async () => {
+        if (!ledgerName.trim() || !ledgerGroup || !ledgerState) {
+            alert("Please fill required fields!");
+            return;
+        }
+
+        try {
+            const res = await axios.post(
+                `${gapi}/ledger`,
+                {
+                    LedgerId: 0,
+                    CategoryId: 1,
+                    LedgerName: ledgerName.trim(),
+                    AccId: ledgerGroup,      // ✅ backend match
+                    State: ledgerState,      // ✅ backend match
+                    EPlace: ledgerPlace || ""
+                },
+                {
+                    headers: { "Content-Type": "application/json" }
+                }
+            );
+
+            console.log("LEDGER RES 👉", res.data);
+
+            // 🔥 SUCCESS CONDITION (THIS IS THE FIX)
+            if (res.data?.LedgerId) {
+
+                const newLedger = {
+
+                    LedgerId: res.data.LedgerId,
+                    LedgerName: res.data.LedgerName,
+                    EPlace: res.data.EPlace || "-",
+                    StateName:
+                        statesList.find(s => s.StateId == res.data.State)?.StateName || "-"
+                };
+
+                // 🔥 instant dropdown update
+                setLedgerList(prev => [...prev, newLedger]);
+
+                // 🔥 auto select
+                setLedger(newLedger.LedgerId);
+                setLedgerQuery(newLedger.LedgerName);
+
+                // 🔥 reset + close
+                setLedgerName("");
+                setLedgerGroup("");
+                setLedgerState("");
+                setLedgerPlace("");
+                setLedgerQuery("");
+                setShowLedgerModal(false);
+                setShowLedgerDropdown(false);
+
+
+                showTempMessage("Ledger added successfully ✅");
+            } else {
+                showTempMessage("Ledger save failed ❌");
+            }
+
+        } catch (err) {
+            console.error("Add Ledger Error", err);
+            showTempMessage("Failed to add ledger ❌");
+        }
+    };
+
+    const highlightText = (text, search) => {
+        if (!search || !text) return text;
+
+        const regex = new RegExp(`(${search})`, 'ig');
+        const parts = text.split(regex);
+
+        return parts.map((part, index) =>
+            part.toLowerCase() === search.toLowerCase() ? (
+                <span key={index} style={{ backgroundColor: '#ffc107', fontWeight: 'bold' }}>
+                    {part}
+                </span>
+            ) : (
+                part
+            )
+        );
+    };
 
 
 
@@ -325,7 +467,7 @@ const ProjectMaster = () => {
                         padding: '20px'
                     }}
                 >
-                    <h4 className='mb-0'>Project Master</h4>
+                    <h4 className='mb-0'><FontAwesomeIcon icon={faBriefcase} className="me-2" />Project Master</h4>
 
                 </div>
                 {/* Body */}
@@ -339,7 +481,7 @@ const ProjectMaster = () => {
 
                             <div className='row mb-3'>
                                 <div className='col-md-6'>
-                                    <label className='form-label'>Project No</label>
+                                    <label className='form-label'>Project No <span className='required'>*</span></label>
                                     <input
                                         name='projectNo'
                                         type='number'
@@ -362,7 +504,7 @@ const ProjectMaster = () => {
                             </div>
 
                             <div className='mb-3'>
-                                <label className='form-label'>Project Name</label>
+                                <label className='form-label'>Project Name <span className='required'>*</span></label>
                                 <input
                                     name='projectName'
                                     type='text'
@@ -373,7 +515,13 @@ const ProjectMaster = () => {
                             </div>
 
                             <div className='mb-3 position-relative'>
-                                <label className='form-label'>Ledger</label>
+                                <label className='form-label'>
+                                    Ledger <span className='required'>*</span>
+                                </label>
+                                <label className='form-label'>{ledger}</label>
+
+                                {/* <label className='form-label'>{ledger}</label> */}
+
 
                                 {/* Input Box */}
                                 <input
@@ -384,60 +532,84 @@ const ProjectMaster = () => {
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setLedgerQuery(value);
-
-                                        if (value.trim() === '') {
-                                            setShowLedgerDropdown(false);
-                                        } else {
-                                            setShowLedgerDropdown(true);
-                                        }
+                                        setShowLedgerDropdown(value.trim() !== "");
+                                        setActiveLedgerIndex(-1);
                                     }}
                                     onFocus={() => {
                                         if (ledgerQuery.trim() !== '') setShowLedgerDropdown(true);
                                     }}
-                                    onKeyDown={handleKeyDown}
+                                    onKeyDown={handleLedgerKeyDown}
                                     onBlur={() => {
                                         setTimeout(() => {
                                             setShowLedgerDropdown(false);
                                         }, 150);
                                     }}
-
                                 />
 
                                 {/* Dropdown */}
-                                {showLedgerDropdown && filteredLedger.length > 0 && (
+                                {showLedgerDropdown && (
                                     <div
                                         className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm"
-                                        style={{ maxHeight: "250px", overflowY: "auto", zIndex: 9999 }}
+                                        style={{
+                                            maxHeight: "250px", overflowY: "auto", zIndex: 9999, pointerEvents: "auto", position: "absolute"
+                                        }}
                                     >
                                         {/* Header */}
-                                        <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
-                                            <div className="col-5">Name</div>
-                                            <div className="col-3">Place</div>
-                                            <div className="col-4">State</div>
-                                        </div>
+                                        {filteredLedger.length > 0 ? (
+                                            <>
+                                                {/* Header */}
+                                                <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
+                                                    <div className="col-5">Name</div>
+                                                    <div className="col-3">Place</div>
+                                                    <div className="col-4">State</div>
+                                                </div>
 
-                                        {/* List Items */}
-                                        {filteredLedger.map((item) => (
+                                                {/* List */}
+                                                {filteredLedger.map((item, index) => (
+                                                    <div
+                                                        key={item.LedgerId}
+                                                        className={`d-flex px-2 py-2 border-bottom ${index === activeLedgerIndex
+                                                            ? "bg-secondary text-white"
+                                                            : ""
+                                                            }`}
+                                                        style={{ cursor: "pointer" }}
+                                                        onMouseEnter={() => setActiveLedgerIndex(index)}
+                                                        onMouseDown={(e) => {
+                                                            console.log("CLICK FIRED", item.LedgerName);
+                                                            e.preventDefault();
+                                                            setLedger(item.LedgerId);
+                                                            setLedgerQuery(item.LedgerName);
+                                                            setShowLedgerDropdown(false);
+                                                            setActiveLedgerIndex(-1);
+                                                        }}
+                                                    >
+                                                        <div className="col-5"> {highlightText(item.LedgerName, ledgerQuery)}</div>
+                                                        <div className="col-3">{highlightText(item.EPlace || "-", ledgerQuery)}</div>
+                                                        <div className="col-4">{highlightText(item.StateName || "-", ledgerQuery)}</div>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            /* 🔹 NO RESULT → ADD LEDGER */
                                             <div
-                                                key={item.LedgerId}
-                                                className="d-flex px-2 py-2 border-bottom hover-bg"
+                                                className="d-flex align-items-center px-2 py-2 text-primary fw-bold"
                                                 style={{ cursor: "pointer" }}
+                                                onMouseDown={(e) => e.preventDefault()}
                                                 onClick={() => {
-                                                    setLedger(item.LedgerId);           // Save ID
-                                                    setLedgerQuery(item.LedgerName);    // Show selected name
+                                                    // STEP-2 la idha use pannuvom
+                                                    setShowLedgerModal(true);
                                                     setShowLedgerDropdown(false);
+                                                    setLedgerName(ledgerQuery);
                                                 }}
-                                                onMouseEnter={(e) => e.currentTarget.classList.add("bg-light")}
-                                                onMouseLeave={(e) => e.currentTarget.classList.remove("bg-light")}
                                             >
-                                                <div className="col-5">{item.LedgerName}</div>
-                                                <div className="col-3">{item.EPlace || "-"}</div>
-                                                <div className="col-4">{item.StateName || "-"}</div>
+                                                <span className="me-2">+</span>
+                                                <span>Add Ledger</span><span className='ms-2'><i> (Click here to add a new Ledger)</i></span>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 )}
                             </div>
+
                             <div className='mb-3'>
                                 <label className='form-label'>Ref Person</label>
                                 <input
@@ -462,9 +634,16 @@ const ProjectMaster = () => {
                                 />
 
                             </div>
+
                             <button
                                 className='btn btn-primary btn-sm'
-                                onClick={editingIndex !== null ? handleUpdate : handleAdd}
+                                onClick={() => {
+                                    if (editingIndex !== null) {
+                                        setShowUpdateModal(true);   // ✅ open update confirm modal
+                                    } else {
+                                        handleAdd();
+                                    }
+                                }}
                             >
                                 {editingIndex !== null ? 'Update' : 'Insert'}
                             </button>
@@ -476,7 +655,7 @@ const ProjectMaster = () => {
                                 <input
                                     type='text'
                                     className='form-control w-50'
-                                    placeholder='search ledgers...'
+                                    placeholder='🔎 search ledgers...'
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -504,10 +683,10 @@ const ProjectMaster = () => {
                                         <tbody>
                                             {filteredProject.map((item) => (
                                                 <tr key={item.ProjId}>
-                                                    <td>{item.ProjNo}</td>
-                                                    <td>{item.ProjName}</td>
-                                                    <td>{item.LedgerName}</td>
-                                                    <td>{item.RefName}</td>
+                                                    <td>{highlightText(item.ProjNo?.toString(), searchTerm)}</td>
+                                                    <td>{highlightText(item.ProjName, searchTerm)}</td>
+                                                    <td>{highlightText(item.LedgerName, searchTerm)}</td>
+                                                    <td>{highlightText(item.RefName, searchTerm)}</td>
                                                     <td>
                                                         <button
                                                             className="btn btn-warning btn-sm me-2"
@@ -640,6 +819,114 @@ const ProjectMaster = () => {
                                             No
                                         </button>
                                         <button className="btn btn-primary" onClick={confirmEdit}>
+                                            Yes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showLedgerModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog modal-lg">
+                                <div className="modal-content">
+                                    <div className="modal-header" style={{ backgroundColor: '#5d8aa8' }}>
+                                        <h5 className="modal-title" style={{ color: 'white' }}>Add Ledger</h5>
+                                        <button className="btn-close" style={{ backgroundColor: 'white' }} onClick={() => setShowLedgerModal(false)}></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <div className="mb-3">
+                                            <label className="form-label" >Ledger Name </label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={ledgerName}
+                                                onChange={e => setLedgerName(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Account Group </label>
+                                            <select
+                                                className="form-control"
+                                                value={ledgerGroup}
+                                                onChange={e => setLedgerGroup(e.target.value)}
+                                            >
+                                                <option value="">-- Select Group --</option>
+                                                {accountGroups.map(g => (
+                                                    <option key={g.AccId} value={g.AccId}>{g.AccName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">State </label>
+                                            <select
+                                                className="form-control"
+                                                value={ledgerState}
+                                                onChange={e => setLedgerState(e.target.value)}
+                                            >
+                                                <option value="">-- Select State --</option>
+                                                {statesList.map(s => (
+                                                    <option key={s.StateId} value={s.StateId}>{s.StateName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Place</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={ledgerPlace}
+                                                onChange={e => setLedgerPlace(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="modal-footer">
+                                        <button className="btn btn-secondary" onClick={() => setShowLedgerModal(false)}>Cancel</button>
+                                        <button type="button" className="btn btn-primary" onClick={handleAddLedger}>Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Update Confirmation Modal */}
+                    {showUpdateModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Confirm Update</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={() => setShowUpdateModal(false)}
+                                        ></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <p>
+                                            Are you sure you want to update "
+                                            <strong>{projectName}</strong>"?
+                                        </p>
+                                    </div>
+
+                                    <div className="modal-footer">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowUpdateModal(false)}
+                                        >
+                                            No
+                                        </button>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={handleUpdate}
+                                        >
                                             Yes
                                         </button>
                                     </div>

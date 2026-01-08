@@ -24,6 +24,7 @@ import ReducerTest from './pages/master/ReducerTest';
 
 //Transaction Master
 import SuppQuotation from './pages/transaction/SuppQuotation';
+import FindSQuot from './pages/transaction/FindSQuot';
 import Quotation from './pages/transaction/Quotation';
 import FindQuot from './pages/transaction/FindQuot';
 import Sales from './pages/transaction/Sales';
@@ -84,8 +85,7 @@ import GSTPurchaseReport from './pages/help/GSTPurchaseReport';
 import ProductHistory from './pages/help/ProductHistory';
 import About from './pages/help/About';
 
-//Pdf
-import PDFPage from './pdf/PDFPage';
+
 
 
 
@@ -101,23 +101,18 @@ const App = () => {
 
                     {/*Master Section */}
                     <Route path='/master/group' element={<Group />} />
-                    <Route path='/master/group-reducer' element={<GroupReduce />} />
                     <Route path='/master/brand-master' element={<BrandMaster />} />
                     <Route path='/master/unit' element={<Unit />} />
                     <Route path='/master/product' element={<Product />} />
                     <Route path='/master/ledger-creation' element={<LedgerCreation />} />
-                    <Route path='/master/ledger-reducer' element={<LedgerReduce />} />
                     <Route path='/master/project-master' element={<ProjectMaster />} />
-                    <Route path='/master/test' element={<Test />} />
-                    <Route path='/master/group-use' element={<GroupUse />} />
-                    <Route path='/master/test-usestate' element={<StateTest />} />
-                    <Route path='/master/test-reducer' element={<ReducerTest />} />
 
 
 
 
                     {/* Transaction Master */}
                     <Route path='/transaction/suppquotation' element={<SuppQuotation />} />
+                    <Route path='/transaction/quotation/sfind' element={<FindSQuot />} />
                     <Route path='/transaction/quotation' element={<Quotation />} />
                     <Route path='/transaction/quotation/find' element={<FindQuot />} />
                     <Route path='/transaction/sales' element={<Sales />} />
@@ -127,13 +122,11 @@ const App = () => {
                     <Route path='/transaction/quot' element={<Quot />} />
                     <Route path="/transaction/quot/:qId" element={<Quot />} />
                     <Route path='/transaction/squot' element={<SQuot />} />
-                    <Route path='/transaction/sample' element={<Sample />} />
-                    <Route path='/transaction/sample/:QId' element={<Sample />} />
-                    <Route path='/transaction/samplepage' element={<SamplePage />} />
+                    <Route path='/transaction/squot/:sqId' element={<SQuot />} />
 
 
-                    {/* Pdf */}
-                    <Route path='/pdf-viewer' element={<PDFPage />} />
+
+                   
 
 
 

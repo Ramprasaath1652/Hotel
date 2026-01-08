@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./supQuot_css.css";
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileInvoice } from '@fortawesome/free-solid-svg-icons'
+
 
 
 
@@ -39,7 +42,7 @@ const SuppQuotation = () => {
         unitType: "",
         productId: '',
         brandId: "",
-        
+
 
     })
 
@@ -630,7 +633,7 @@ const SuppQuotation = () => {
                     className="card-header text-white"
                     style={{ backgroundColor: '#5d8aa8', padding: '20px' }}
                 >
-                    <h4 className="mb-0">Supplier Quotation</h4>
+                    <h4 className="mb-0"><FontAwesomeIcon icon={faFileInvoice} className="me-2" />Supplier Quotation</h4>
                 </div>
 
                 {/* Body */}
@@ -645,20 +648,20 @@ const SuppQuotation = () => {
                             {/* Q.No */}
                             <div className='col-lg-2 col-md-6 col-sm-12'>
                                 {/* <label style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>Q.No</label> */}
-                                <label className='form-label fw-bold required '>QNo</label>
+                                <label className='form-label fw-bold  '>QNo <span className='required'>*</span></label>
                                 <input type="text" className="form-control" value={topData.qNo} onChange={e => setTopData({ ...topData, qNo: e.target.value })} />
                             </div>
 
                             {/* Q.Date */}
                             <div className='col-lg-2 col-md-6 col-sm-12 '>
                                 {/* <label style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>Q.Date</label> */}
-                                <label className='form-label fw-bold required'>Q.Date</label>
+                                <label className='form-label fw-bold '>Q.Date <span className='required'>*</span></label>
                                 <input type="date" className="form-control" value={topData.qDate} onChange={e => setTopData({ ...topData, qDate: e.target.value })} />
                             </div>
 
                             {/* Ledger */}
                             <div className='col-lg-4 col-md-6 col-sm-12'>
-                                <label className='form-label fw-bold required'>Ledger</label>
+                                <label className='form-label fw-bold '>Ledger <span className='required'>*</span></label>
 
                                 {/* Ledger Input Box */}
                                 <div style={{ position: 'relative' }}>
@@ -729,7 +732,7 @@ const SuppQuotation = () => {
 
                             {/* Project Name */}
                             <div className='col-lg-4 col-md-6 col-sm-12'>
-                                <label className='form-label fw-bold required'>Project Name</label>
+                                <label className='form-label fw-bold '>Project Name <span className='required'>*</span></label>
 
                                 {/* Project Input Box */}
                                 <div style={{ position: 'relative' }}>
@@ -889,14 +892,10 @@ const SuppQuotation = () => {
                                                     taxable: prev.taxable || "",
                                                     vatAmt: prev.vatAmt || "",
                                                     amount: prev.amount || "",
-
-
                                                 }));
                                                 setProductId(item.ProductID);
                                                 setProductQuery(item.ProductName);
                                                 setShowProductDropdown(false);
-
-
                                             }}
                                         >
                                             <div className="col-5">{item.ProductName}</div>
@@ -1046,8 +1045,6 @@ const SuppQuotation = () => {
                                         document.getElementById("rateInput")?.focus();
                                     }
                                 }}
-
-
                             />
                         </div>
 
