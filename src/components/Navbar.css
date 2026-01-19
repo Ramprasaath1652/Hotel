@@ -1,53 +1,42 @@
-/* Navbar background */
 .bg-airforceblue {
-  background-color: #5d8aa8 !important; /* Air Force Blue */
-}
-.nav-link svg {
-  display: inline-block !important;
-  width: 1em;
-  height: 1em;
-  vertical-align: middle;
-  fill: white !important;
+  background-color: #6a1b9a !important;
 }
 
-/* Section font size & bold */
+/* Nav links */
 .navbar-nav .nav-link {
-  font-size: 1.4rem;      /* slightly bigger font */
-  font-weight: 700;       /* bold */
+  font-size: 1.3rem;
+  font-weight: 700;
   color: white !important;
-  margin-right: 20px;     /* space between sections */
+  cursor: pointer;
+  margin-right: 18px;
 }
 
-/* Remove last margin */
-.navbar-nav .nav-item:last-child .nav-link {
-  margin-right: 0;
+/* Active menu */
+.navbar-nav .nav-link.active {
+  color: yellow !important;
 }
 
-/* Dropdown menu hidden by default */
-.navbar-nav .dropdown-menu {
-  display: none;
+/* Dropdown animation */
+.dropdown-menu {
+  display: block;
   opacity: 0;
   transform: translateY(-10px);
-  transition: all 0.3s ease;
+  transition: 0.25s ease;
 }
 
-/* Show dropdown on hover */
-.navbar-nav .dropdown:hover > .dropdown-menu {
-  display: block;
+.dropdown-menu.show {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Dropdown items styling */
+/* Dropdown item */
 .dropdown-item {
-  font-size: 1.2rem;  /* slightly bigger font */
+  font-size: 1.1rem;
   font-weight: 500;
-  transition: all 0.2s ease;
 }
 
-/* Shuttle effect on hover */
 .dropdown-item:hover {
-  background-color: #4a6f91;
+  background-color: #6a1b9a;
   color: white;
-  transform: translateX(5px);
 }
+

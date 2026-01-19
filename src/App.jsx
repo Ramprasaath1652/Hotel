@@ -4,6 +4,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginCard from './components/LoginCard';
+
 //pages
 import Home from './pages/Home';
 
@@ -78,6 +79,9 @@ import OpeningStockReport from './pages/admin/OpeningStockReport';
 import FinancialYearChange from './pages/admin/FinancialYearChange';
 import FinancialYearCreation from './pages/admin/FinancialYearCreation';
 import PrinterSettings from './pages/admin/PrinterSettings';
+import UserMaster from './pages/admin/UserMaster';
+import UserPermission from './pages/admin/UserPermission';
+import UserType from './pages/admin/UserType';
 
 //Help
 import GSTSalesReport from './pages/help/GSTSalesReport';
@@ -85,6 +89,10 @@ import GSTPurchaseReport from './pages/help/GSTPurchaseReport';
 import ProductHistory from './pages/help/ProductHistory';
 import About from './pages/help/About';
 
+//Spinner
+import { useState, useEffect } from "react";
+import GlobalLoader from './components/GlobalLoader';
+import { registerLoader } from './utils/loader';
 
 
 
@@ -92,100 +100,112 @@ import About from './pages/help/About';
 
 
 const App = () => {
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        registerLoader(setLoading);
+    }, []);
     return (
-        <Router>
-            <Routes>
-                <Route path='/' element={<LoginCard />} />
-                <Route element={<Layout />}>
-                    <Route path='/home' element={<Home />} />
+        <>
+            {loading && <GlobalLoader />}
+            <Router>
+                <Routes>
+                    <Route path='/' element={<LoginCard />} />
+                    <Route element={<Layout />}>
+                        <Route path='/home' element={<Home />} />
 
-                    {/*Master Section */}
-                    <Route path='/master/group' element={<Group />} />
-                    <Route path='/master/brand-master' element={<BrandMaster />} />
-                    <Route path='/master/unit' element={<Unit />} />
-                    <Route path='/master/product' element={<Product />} />
-                    <Route path='/master/ledger-creation' element={<LedgerCreation />} />
-                    <Route path='/master/project-master' element={<ProjectMaster />} />
-
-
-
-
-                    {/* Transaction Master */}
-                    <Route path='/transaction/suppquotation' element={<SuppQuotation />} />
-                    <Route path='/transaction/quotation/sfind' element={<FindSQuot />} />
-                    <Route path='/transaction/quotation' element={<Quotation />} />
-                    <Route path='/transaction/quotation/find' element={<FindQuot />} />
-                    <Route path='/transaction/sales' element={<Sales />} />
-                    <Route path='/transaction/purchase' element={<Purchase />} />
-                    <Route path='/transaction/stock-entry' element={<StockEntry />} />
-                    <Route path='/transaction/stock-decrease' element={<StockDecrease />} />
-                    <Route path='/transaction/quot' element={<Quot />} />
-                    <Route path="/transaction/quot/:qId" element={<Quot />} />
-                    <Route path='/transaction/squot' element={<SQuot />} />
-                    <Route path='/transaction/squot/:sqId' element={<SQuot />} />
+                        {/*Master Section */}
+                        <Route path='/master/group' element={<Group />} />
+                        <Route path='/master/brand-master' element={<BrandMaster />} />
+                        <Route path='/master/unit' element={<Unit />} />
+                        <Route path='/master/product' element={<Product />} />
+                        <Route path='/master/ledger-creation' element={<LedgerCreation />} />
+                        <Route path='/master/project-master' element={<ProjectMaster />} />
 
 
 
-                   
 
-
-
-                    {/* Accounts*/}
-                    <Route path='/accounts/daybook-entry' element={<DaybookEntry />} />
-                    <Route path='/accounts/receipt' element={<Receipt />} />
-                    <Route path='/accounts/payment' element={<Payment />} />
-                    <Route path='/accounts/customer-balance' element={<CustomerBalance />} />
-                    <Route path='/accounts/category-statement' element={<CategoryStatement />} />
-                    <Route path='/accounts/category-balance' element={<CategoryBalance />} />
-                    <Route path='/accounts/supplier-balance' element={<SupplierBalance />} />
-                    <Route path='/accounts/daybook' element={<Daybook />} />
-                    <Route path='/accounts/ledger-statement' element={<LedgerStatement />} />
-
-                    {/* Reports */}
-                    <Route path='/reports/address' element={<Address />} />
-                    <Route path='/reports/gst-report' element={<GSTReport />} />
-                    <Route path='/reports/receipt-report' element={<ReceiptReport />} />
-                    <Route path='/reports/receipt-detail-report' element={<ReceiptDetailsReport />} />
-                    <Route path='/reports/payment-reports' element={<PaymentReports />} />
-                    <Route path='/reports/purchase-report' element={<PurchaseReport />} />
-                    <Route path='/reports/sales-report' element={<SalesReport />} />
-                    <Route path='/reports/sales-return' element={<SalesReturn />} />
-                    <Route path='/reports/purchase-return' element={<PurchaseReturn />} />
-                    <Route path='/reports/stock-entry-report' element={<StockEntryReport />} />
-                    <Route path='/reports/outstanding' element={<OutStanding />} />
-                    <Route path='/reports/credit-note-report' element={<CreditNoteReport />} />
-                    <Route path='/reports/debit-note-report' element={<DebitNoteReport />} />
-                    <Route path='/reports/stock' element={<Stock />} />
-                    <Route path='/reports/ledgerob-report' element={<LedgerOBReport />} />
-
-                    {/* Admin */}
-                    <Route path='/admin/company' element={<Company />} />
-                    <Route path='/admin/backup' element={<BackUp />} />
-                    <Route path='/admin/change-password' element={<ChangePassword />} />
-                    <Route path='/admin/user-creation' element={<UserCreation />} />
-                    <Route path='/admin/rate-changes' element={<RateChanges />} />
-                    <Route path='/admin/gst-tax-updation' element={<GSTTaxUpdation />} />
-                    <Route path='/admin/stock-update' element={<StockUpdate />} />
-                    <Route path='/admin/stock-value-report' element={<StockValueReport />} />
-                    <Route path='/admin/opening-stock-report' element={<OpeningStockReport />} />
-                    <Route path='/admin/financial-year-change' element={<FinancialYearChange />} />
-                    <Route path='/admin/financial-year-creation' element={<FinancialYearCreation />} />
-                    <Route path='/admin/printer-settings' element={<PrinterSettings />} />
-
-                    {/* Help */}
-                    <Route path='/help/gst-sales-report' element={<GSTSalesReport />} />
-                    <Route path='/help/gst-purchase-report' element={<GSTPurchaseReport />} />
-                    <Route path='/help/product-history' element={<ProductHistory />} />
-                    <Route path='/help/about' element={<About />} />
+                        {/* Transaction Master */}
+                        <Route path='/transaction/suppquotation' element={<SuppQuotation />} />
+                        <Route path='/transaction/quotation/sfind' element={<FindSQuot />} />
+                        <Route path='/transaction/quotation' element={<Quotation />} />
+                        <Route path='/transaction/quotation/find' element={<FindQuot />} />
+                        <Route path='/transaction/sales' element={<Sales />} />
+                        <Route path='/transaction/purchase' element={<Purchase />} />
+                        <Route path='/transaction/stock-entry' element={<StockEntry />} />
+                        <Route path='/transaction/stock-decrease' element={<StockDecrease />} />
+                        <Route path='/transaction/quot' element={<Quot />} />
+                        <Route path="/transaction/quot/:qId" element={<Quot />} />
+                        <Route path='/transaction/squot' element={<SQuot />} />
+                        <Route path='/transaction/squot/:id' element={<SQuot />} />
 
 
 
 
 
 
-                </Route>
-            </Routes>
-        </Router>
+
+                        {/* Accounts*/}
+                        <Route path='/accounts/daybook-entry' element={<DaybookEntry />} />
+                        <Route path='/accounts/receipt' element={<Receipt />} />
+                        <Route path='/accounts/payment' element={<Payment />} />
+                        <Route path='/accounts/customer-balance' element={<CustomerBalance />} />
+                        <Route path='/accounts/category-statement' element={<CategoryStatement />} />
+                        <Route path='/accounts/category-balance' element={<CategoryBalance />} />
+                        <Route path='/accounts/supplier-balance' element={<SupplierBalance />} />
+                        <Route path='/accounts/daybook' element={<Daybook />} />
+                        <Route path='/accounts/ledger-statement' element={<LedgerStatement />} />
+
+                        {/* Reports */}
+                        <Route path='/reports/address' element={<Address />} />
+                        <Route path='/reports/gst-report' element={<GSTReport />} />
+                        <Route path='/reports/receipt-report' element={<ReceiptReport />} />
+                        <Route path='/reports/receipt-detail-report' element={<ReceiptDetailsReport />} />
+                        <Route path='/reports/payment-reports' element={<PaymentReports />} />
+                        <Route path='/reports/purchase-report' element={<PurchaseReport />} />
+                        <Route path='/reports/sales-report' element={<SalesReport />} />
+                        <Route path='/reports/sales-return' element={<SalesReturn />} />
+                        <Route path='/reports/purchase-return' element={<PurchaseReturn />} />
+                        <Route path='/reports/stock-entry-report' element={<StockEntryReport />} />
+                        <Route path='/reports/outstanding' element={<OutStanding />} />
+                        <Route path='/reports/credit-note-report' element={<CreditNoteReport />} />
+                        <Route path='/reports/debit-note-report' element={<DebitNoteReport />} />
+                        <Route path='/reports/stock' element={<Stock />} />
+                        <Route path='/reports/ledgerob-report' element={<LedgerOBReport />} />
+
+                        {/* Admin */}
+                        <Route path='/admin/company' element={<Company />} />
+                        <Route path='/admin/backup' element={<BackUp />} />
+                        <Route path='/admin/change-password' element={<ChangePassword />} />
+                        <Route path='/admin/user-creation' element={<UserCreation />} />
+                        <Route path='/admin/rate-changes' element={<RateChanges />} />
+                        <Route path='/admin/gst-tax-updation' element={<GSTTaxUpdation />} />
+                        <Route path='/admin/stock-update' element={<StockUpdate />} />
+                        <Route path='/admin/stock-value-report' element={<StockValueReport />} />
+                        <Route path='/admin/opening-stock-report' element={<OpeningStockReport />} />
+                        <Route path='/admin/financial-year-change' element={<FinancialYearChange />} />
+                        <Route path='/admin/financial-year-creation' element={<FinancialYearCreation />} />
+                        <Route path='/admin/printer-settings' element={<PrinterSettings />} />
+                        <Route path='/admin/usermaster' element={<UserMaster />} />
+                        <Route path='/admin/userpermission' element={<UserPermission />} />
+                        <Route path='/admin/usertype' element={<UserType />} />
+
+
+                        {/* Help */}
+                        <Route path='/help/gst-sales-report' element={<GSTSalesReport />} />
+                        <Route path='/help/gst-purchase-report' element={<GSTPurchaseReport />} />
+                        <Route path='/help/product-history' element={<ProductHistory />} />
+                        <Route path='/help/about' element={<About />} />
+
+
+
+
+
+
+                    </Route>
+                </Routes>
+            </Router>
+        </>
     )
 }
 

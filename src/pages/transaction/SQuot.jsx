@@ -73,8 +73,15 @@ const SQuot = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [rowToDelete, setRowToDelete] = useState(null);
 
-    const [suppQuot, setSuppQuot] = useState([]);
-    const [suppQuotDet, setSuppQuotDet] = useState([]);
+    const [suppQuot, setSuppQuot] = useState([])
+    const [suppQuotDet, setSuppQuotDet] = useState([])
+
+    const [sqHeader, setSqHeader] = useState(null);
+    const [sqDetails, setSqDetails] = useState([]);
+
+
+
+
 
 
 
@@ -92,86 +99,9 @@ const SQuot = () => {
         loadSuppDets();
     }, [])
 
-    const { sqId } = useParams();
+
     const navigate = useNavigate();
-    const ignoreRowsLoadRef = useRef(false);
-
-    useEffect(() => {
-        if (sqId) {
-            loadSQPrimary(sqId);
-            loadSQSecondary(sqId);
-        }
-    }, [sqId]);
-
-
-    const loadSQPrimary = async (sqId) => {
-        try {
-            const res = await axios.get(`${gapi}/tblSuppQuo/${sqId}`);
-            const d = res.data;
-
-            // 🔹 Main state (IDs + values)
-            setTopData({
-                qNo: d.SQNo || '',
-                qDate: d.SQDate?.substring(0, 10) || '',
-                ledgerId: d.LedgerId || '',
-                projectId: d.ProjectId || '',
-                narration: d.Narration || '',
-                terms: d.Terms || '',
-                totalTaxableAmt: d.TotTaxableAmt || 0,
-                totVatAmt: d.TotVatAmt || 0,
-                netAmount: d.NetAmount || 0
-            });
-
-            // 🔹 UI textboxes (VERY IMPORTANT)
-            setLedgerQuery(d.LedgerName || '');
-            setProjectQuery(d.ProjName || '');
-
-        } catch (err) {
-            console.error("Primary load failed", err);
-        }
-    };
-
-
-    const loadSQSecondary = async (id) => {
-        try {
-            const res = await axios.get(`${gapi}/tblSuppQuoDets`);
-
-            const filtered = res.data.filter(
-                r => r.SQId === Number(id)
-            );
-
-            const mapped = filtered.map((r, index) => ({
-                sNo: index + 1,
-                SQDetsId: r.SQDetsId,
-
-                productId: r.ProductId,
-                productName: r.ProductName || '',
-
-                // ✅ BRAND
-                brandId: r.BrandId,
-                brandName: r.BrandName || '',
-
-                // ✅ UNIT
-                unitId: r.UnitId,
-                unitType: r.UnitType || '',
-
-                qty: r.Qty,
-                rate: r.SRate,
-                taxable: r.Taxable,
-                vatPer: r.VatPer,
-                vatAmt: r.VatAmt,
-                amount: r.NetAmt,
-
-                marPer: r.ProfPer,
-                sRate: r.NRate
-            }));
-
-            setRows(mapped);
-        } catch (err) {
-            console.error("Secondary load failed", err);
-        }
-    };
-
+    const { id } = useParams();
 
     const loadLedgers = async () => {
         try {
@@ -240,7 +170,7 @@ const SQuot = () => {
 
     const loadSuppDets = async () => {
         try {
-            const res = await axios.get(`${gapi}/tblSuppQuoDets`);
+            const res = await axios.get(`${gapi}/ `);
             console.log("LOAD detail RESPONSE:", res.data);
             setSuppQuotDet(res.data)
         } catch (err) {
@@ -248,6 +178,83 @@ const SQuot = () => {
             alert("Could not load SuppQuotationDetails. Please check API connection.");
         }
     }
+
+    useEffect(() => {
+        loadPrimary()
+        loadSecondary()
+    }, [id]);
+
+
+    const loadPrimary = async () => {
+        const res = await axios.get(
+            `http://192.168.31.101:85/api/SQInfoes/${id}`
+        );
+
+        const d = res.data;
+
+        setSqHeader(d); // optional (nee already vachiruka)
+
+        setTopData(prev => ({
+            ...prev,
+            qNo: d.SQNo ?? '',
+            qDate: d.SQDate ? d.SQDate.substring(0, 10) : '',
+            ledger: d.LedgerName ?? '',
+            ledgerId: d.LedgerId ?? '',
+            project: d.ProjName ?? '',
+            terms: d.Terms ?? '',
+            narration: d.Narration ?? '',
+            netAmount: d.NetAmount ?? 0,
+            totalTaxableAmt: d.TotTaxableAmt ?? 0,
+            totVatAmt: d.TotVatAmt ?? 0,
+        }));
+
+        // 🔥 dropdown text also sync
+        setLedgerQuery(d.LedgerName ?? '');
+        setProjectQuery(d.ProjName ?? '');
+    };
+
+    const loadSecondary = async () => {
+        try {
+            const res = await axios.get(
+                `http://192.168.31.101:85/api/sqbills/${id}`
+            );
+            console.log(res.data)
+            const selected = (Array.isArray(res.data) ? res.data : [])
+                .filter(r => r.SQId === Number(id));
+
+            const mappedRows = selected.map((r, index) => ({
+                sNo: index + 1,
+
+                // 🔥 DISPLAY VALUES (direct from API)
+                productId: r.ProductId,
+                productName: r.ProductName ?? '',
+
+                brandId: r.BrandId,
+                brandName: r.BrandName ?? '',
+
+                unitId: r.UnitId,
+                unitType: r.UnitType ?? '',
+
+                qty: r.Qty ?? '',
+                rate: r.BRate ?? '',
+                marPer: r.ProfPer ?? '',
+                sRate: r.SRate ?? '',
+                taxable: r.Taxable ?? '',
+                vatPer: r.VatPer ?? '',
+                vatAmt: r.VatAmt ?? '',
+                amount: r.NetAmt ?? '',
+                description: r.Des ?? '',
+
+                // for update/delete
+                SQDetsId: r.SQDetsId ?? null
+            }));
+
+            setRows(mappedRows);
+        } catch (err) {
+            console.error("Secondary load failed:", err);
+        }
+    };
+
 
 
     const handleTopChange = (e) => {
@@ -599,12 +606,12 @@ const SQuot = () => {
         const row = rows[index];
         setBottomData({
             sNo: index + 1,
+            product: row.product,
             productId: row.productId,
-            productName: row.productName,
+            unit: row.unit,
             unitId: row.unitId,
-            unitType: row.unitType,
+            brand: row.brand,
             brandId: row.brandId,
-            brandName: row.brandName,
             qty: row.qty,
             rate: row.rate,
             marPer: row.marPer,
@@ -616,8 +623,8 @@ const SQuot = () => {
         });
         setProductQuery(row.productName);
         setBrandQuery(row.brandName);
+        setUnitQuery(row.unitType);
         setEditIndex(index);
-        loadRowDataForEdit(index);
     };
 
     //Row Add/ Update
@@ -683,6 +690,7 @@ const SQuot = () => {
         setBrandQuery("");
         setShowProductDropdown(false);
         setShowBrandDropdown(false);
+        setEditIndex(index);
     };
 
     const handleDeleteRow = (index) => {
@@ -773,7 +781,6 @@ const SQuot = () => {
                 SRate: Number(r.sRate || 0),
 
                 Taxable: Number(r.taxable || 0),
-                VatPer: Number(r.vatPer || 0),
                 VatAmt: Number(r.vatAmt || 0),
 
                 NetAmT: Number(r.amount || 0),
@@ -873,54 +880,6 @@ const SQuot = () => {
             alert("Saving failed! " + (typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg)));
         }
     };
-    const updateSQPrimary = async () => {
-        const payload = {
-            SQId: sqId,
-            SQNo: topData.sqNo,
-            SQDate: topData.sqDate,
-            ProjectId: topData.projectId,
-            LedgerId: topData.ledgerId,
-            Narration: topData.narration,
-            TotTaxableAmt: topData.totalAmt,
-            TotVatAmt: topData.vatAmt,
-            NetAmount: topData.netAmt,
-            Terms: topData.terms,
-            Update_By: 1,
-            Update_On: new Date().toISOString()
-        };
-
-        await axios.put(`${gapi}/tblSuppQuo/${sqId}`, payload);
-    };
-
-    const updateSQSecondary = async () => {
-        for (let row of rows) {
-
-            const payload = {
-                SQDetsId: row.SQDetsId,
-                SQId: sqId,
-
-                ProductId: row.productId,
-                BrandId: row.brandId,
-                UnitId: row.unitId,
-
-                Qty: row.qty,
-                SRate: row.rate,
-                Taxable: row.taxable,
-                VatPer: row.vatPer,
-                VatAmt: row.vatAmt,
-                NetAmt: row.amount,
-
-                BRate: row.bRate,
-                NRate: row.nRate,
-                Sno: row.sNo
-            };
-
-            await axios.put(
-                `${gapi}/tblSuppQuoDets/${row.SQDetsId}`,
-                payload
-            );
-        }
-    };
 
     const handleReset = () => {
         setTopData({
@@ -985,35 +944,24 @@ const SQuot = () => {
             )
         );
     };
-    const handleUpdate = async () => {
-        try {
-            await updateSQPrimary();
-            await updateSQSecondary();
 
-            alert("Supply Quotation Updated Successfully ✅");
-
-            navigate('/transaction/squot');
-        } catch (err) {
-            console.error(err);
-            alert("Update failed ❌");
-        }
-    };
 
     return (
         <div className='container-fluid mt-2'>
             {/* Card */}
             <div className='card shadow-lg mx-auto'
                 style={{
-                    border: '2px solid #5d8aa8',
+                    border: '2px solid #6a1b9a',
                     width: '95%'
                 }}
             >
                 {/* card - header */}
                 <div
-                    className='card-header text-white'
+                    className='card-header '
                     style={{
-                        backgroundColor: '#5d8aa8',
-                        padding: '20px'
+                        color: '#6a1b9a',
+                        padding: '20px',
+                        backgroundColor: 'white'
                     }}
                 >
                     <h4><FontAwesomeIcon icon={faFileSignature} className="me-2" />SQuot</h4>
@@ -1032,10 +980,11 @@ const SQuot = () => {
                                 <label className='form-label fw-bold  mb-2 me-2'>QNo</label>
                                 <input
                                     type='number'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     name='qNo'
                                     value={topData.qNo}
                                     onChange={handleTopChange}
+                                    autoComplete="off"
                                 />
 
                             </div>
@@ -1047,10 +996,11 @@ const SQuot = () => {
                                     className='form-label fw-bold mb-2 me-2'>Q.Date</label>
                                 <input
                                     type='date'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     name='qDate'
                                     value={topData.qDate}
                                     onChange={handleTopChange}
+                                    autoComplete="off"
                                 />
                             </div>
                         </div>
@@ -1071,7 +1021,7 @@ const SQuot = () => {
                                 {/* INPUT */}
                                 <input
                                     type="text"
-                                    className="form-control form-control-sm"
+                                    className="form-control form-control-sm fw-bold"
                                     placeholder="🔎 Search Ledger..."
                                     value={ledgerQuery}
                                     onChange={handleLedgerChange}
@@ -1154,12 +1104,13 @@ const SQuot = () => {
                                 {/* Input */}
                                 <input
                                     type="text"
-                                    className="form-control form-control-sm"
+                                    className="form-control form-control-sm fw-bold"
                                     name="project"
                                     placeholder="🔎 Search Project..."
                                     value={projectQuery}
                                     onChange={handleProjectChange}
                                     onKeyDown={handleProjectKeyDown}
+                                    autoComplete="off"
                                     onFocus={() => projectQuery && setShowProjectDropdown(true)}
                                     onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
                                 />
@@ -1211,9 +1162,10 @@ const SQuot = () => {
                                 <input
                                     name='sNo'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.sNo}
                                     onChange={handleBottomChange}
+                                    autoComplete="off"
                                     disabled
                                 />
                             </div>
@@ -1231,9 +1183,10 @@ const SQuot = () => {
                                 {/* INPUT */}
                                 <input
                                     type="text"
-                                    className="form-control form-control-sm"
+                                    className="form-control form-control-sm fw-bold"
                                     placeholder="🔎 Search Product..."
                                     value={productQuery}
+                                    autoComplete="off"
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setProductQuery(value);
@@ -1305,9 +1258,10 @@ const SQuot = () => {
                                 {/* INPUT */}
                                 <input
                                     type="text"
-                                    className="form-control form-control-sm"
+                                    className="form-control form-control-sm fw-bold"
                                     style={{ height: '28px' }}
                                     value={unitQuery}
+                                    autoComplete="off"
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setUnitQuery(value);
@@ -1370,9 +1324,10 @@ const SQuot = () => {
                                 {/* INPUT */}
                                 <input
                                     type="text"
-                                    className="form-control form-control-sm"
+                                    className="form-control form-control-sm fw-bold"
                                     placeholder="🔎 Search Brand..."
                                     value={brandQuery}
+                                    autoComplete="off"
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setBrandQuery(value);
@@ -1436,8 +1391,9 @@ const SQuot = () => {
                                 <input
                                     name='qty'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.qty}
+                                    autoComplete="off"
                                     onChange={(e) => {
                                         const qty = e.target.value;
                                         const { sRate, taxable, vatAmt, amount } = calculateAll(
@@ -1471,7 +1427,8 @@ const SQuot = () => {
                                 <input
                                     name='rate'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    autoComplete="off"
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.rate}
                                     onChange={(e) => {
                                         const rate = e.target.value;
@@ -1502,8 +1459,9 @@ const SQuot = () => {
                                 <input
                                     name='marPer'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.marPer}
+                                    autoComplete="off"
                                     onChange={(e) => {
                                         const marPer = e.target.value;
 
@@ -1535,10 +1493,10 @@ const SQuot = () => {
                                 <input
                                     name='sRate'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.sRate}
                                     onChange={handleBottomChange}
-
+                                    autoComplete="off"
                                 />
                             </div>
                         </div>
@@ -1550,9 +1508,10 @@ const SQuot = () => {
                                 <input
                                     name='taxable'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.taxable}
                                     onChange={handleBottomChange}
+                                    autoComplete="off"
                                     disabled
                                 />
                             </div>
@@ -1566,10 +1525,10 @@ const SQuot = () => {
                                 <input
                                     name='vatPer'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.vatPer}
                                     onChange={handleBottomChange}
-
+                                    autoComplete="off"
                                 />
                             </div>
                         </div>
@@ -1592,9 +1551,10 @@ const SQuot = () => {
                                 <input
                                     name='vatAmt'
                                     type="text"
-                                    className="form-control form-control-sm"
+                                    className="form-control form-control-sm fw-bold"
                                     value={bottomData.vatAmt}
                                     onChange={handleBottomChange}
+                                    autoComplete="off"
                                     disabled
                                     style={{
                                         flex: "1 1 auto",
@@ -1612,9 +1572,10 @@ const SQuot = () => {
                                 <input
                                     name='amount'
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     value={bottomData.amount}
                                     onChange={handleBottomChange}
+                                    autoComplete="off"
                                     disabled
                                 />
                             </div>
@@ -1625,13 +1586,14 @@ const SQuot = () => {
                     <div className='d-flex align-items-center gap-2 mt-1'>
                         <textarea
                             name='description'
-                            className='form-control form-control-sm mt-1'
+                            className='form-control form-control-sm mt-1 fw-bold'
                             rows={2}
                             style={{
                                 width: '50%'
                             }}
                             value={bottomData.description}
                             onChange={handleBottomChange}
+                            autoComplete="off"
                         />
                         <button className='btn btn-primary btn-sm' onClick={handleAddOrUpdateRow}>
                             {editIndex !== null ? 'Update' : 'Add'}
@@ -1642,7 +1604,7 @@ const SQuot = () => {
                     <div
                         style={{
                             height: '2px',
-                            backgroundColor: '#5d8aa8',
+                            backgroundColor: '#6a1b9a',
                             marginTop: '8px',
                             marginBottom: '8px'
                         }}
@@ -1652,7 +1614,7 @@ const SQuot = () => {
                     <div
                         className="mt-2 px-2 px-md-3"
                         style={{
-                            border: '2px solid #5d8aa8',
+                            border: '2px solid #6a1b9a',
                             borderRadius: '5px',
                             backgroundColor: '#f8f9fa',
                             minHeight: '300px',
@@ -1662,20 +1624,20 @@ const SQuot = () => {
                     >
                         <table className="table table-bordered table-sm" style={{ fontSize: "12px", minWidth: "1200px" }}>
                             <thead className="table-light">
-                                <tr>
+                                <tr >
                                     <th style={{ width: "60px" }} className="text-center">S.No</th>
-                                    <th style={{ width: "100px" }}>Product</th>
+                                    <th style={{ width: "100px" }} className="text-center">Product</th>
                                     <th style={{ width: "100px" }} className='text-center'>Unit</th>
-                                    <th style={{ width: "100px" }}>Brand</th>
+                                    <th style={{ width: "100px" }} className="text-center">Brand</th>
                                     <th style={{ width: "70px" }} className="text-center">Qty</th>
-                                    <th style={{ width: "80px" }} className="text-end">Rate</th>
+                                    <th style={{ width: "80px" }} className="text-center">Rate</th>
                                     <th style={{ width: "80px" }} className="text-center">Mar %</th>
-                                    <th style={{ width: "100px" }} className="text-end">S.Rate</th>
-                                    <th style={{ width: "100px" }} className="text-end">Taxable</th>
+                                    <th style={{ width: "100px" }} className="text-center">S.Rate</th>
+                                    <th style={{ width: "100px" }} className="text-center">Taxable</th>
                                     <th style={{ width: "60px" }} className="text-center">VAT %</th>
-                                    <th style={{ width: "80px" }} className="text-end">VAT Amt</th>
-                                    <th style={{ width: "80px" }} className="text-end">Amount</th>
-                                    <th style={{ width: "100px" }} className="text-end">Actions</th>
+                                    <th style={{ width: "80px" }} className="text-center">VAT Amt</th>
+                                    <th style={{ width: "80px" }} className="text-center">Amount</th>
+                                    <th style={{ width: "100px" }} className="text-center">Actions</th>
 
                                 </tr>
                             </thead>
@@ -1683,6 +1645,7 @@ const SQuot = () => {
                                 {rows.map((r, index) => (
                                     <tr key={index}
                                         className={editIndex === index ? "edit-highlight" : ""}
+                                        style={{ fontWeight: 'bold' }}
                                     >
                                         <td className="text-center">{index + 1}</td>
                                         <td>{r.productName}</td>
@@ -1791,7 +1754,7 @@ const SQuot = () => {
                     <div
                         className='mt-1 px-3 py-2 d-flex'
                         style={{
-                            border: '2px solid #5d8aa8',
+                            border: '2px solid #6a1b9a',
                             borderRadius: '5px',
                             backgroundColor: '#f8f9fa',
                             alignItems: 'stretch'
@@ -1800,7 +1763,7 @@ const SQuot = () => {
                         {/* left section */}
                         <div
                             className='d-flex align-items-center pe-3'
-                            style={{ borderRight: '2px solid #5d8aa8', minWidth: '140px' }}
+                            style={{ borderRight: '2px solid #6a1b9a', minWidth: '140px' }}
                         >
                             <label
                                 className='fw-bold me-2 mb-0 '
@@ -1810,9 +1773,10 @@ const SQuot = () => {
                             </label>
                             <input
                                 type='text'
-                                className='form-control form-control-sm'
+                                className='form-control form-control-sm fw-bold'
                                 style={{ width: '80px', height: '28px' }}
                                 value={rows.length}
+                                autoComplete="off"
                                 readOnly
                             />
                         </div>
@@ -1820,7 +1784,7 @@ const SQuot = () => {
                         {/* middle section 1 */}
                         <div
                             className='d-flex px-3 flex-column justify-content-center'
-                            style={{ borderRight: '2px solid #5d8aa8', minWidth: '200px' }}
+                            style={{ borderRight: '2px solid #6a1b9a', minWidth: '200px' }}
                         >
                             <div className='d-flex align-items-center mb-2'>
                                 <label className='me-2 mb-0 fw-bold'
@@ -1828,9 +1792,10 @@ const SQuot = () => {
                                 >Total Amount</label>
                                 <input
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     style={{ width: '300px', height: '28px' }}
                                     value={totalAmount}
+                                    autoComplete="off"
                                     readOnly
                                 />
                             </div>
@@ -1841,9 +1806,10 @@ const SQuot = () => {
                                 >Vat Amount</label>
                                 <input
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     style={{ width: '300px', height: '28px' }}
                                     value={totalVatAmount}
+                                    autoComplete="off"
                                     readOnly
                                 />
                             </div>
@@ -1852,7 +1818,7 @@ const SQuot = () => {
                         {/* mid section-2 */}
                         <div
                             className='d-flex flex-column px-3 justify-content-center'
-                            style={{ borderRight: ' 2px solid #5d8aa8', minWidth: '200px' }}
+                            style={{ borderRight: ' 2px solid #6a1b9a', minWidth: '200px' }}
                         >
                             <div className='d-flex align-items-center mb-2'>
                                 <label
@@ -1863,12 +1829,13 @@ const SQuot = () => {
                                 </label>
                                 <input
                                     type='text'
-                                    className='form-control form-control-sm'
+                                    className='form-control form-control-sm fw-bold'
                                     style={{
                                         width: '300px',
                                         height: '28px'
                                     }}
                                     value={totalActAmt}
+                                    autoComplete="off"
                                     readOnly
                                 />
                             </div>
@@ -1883,6 +1850,7 @@ const SQuot = () => {
                                 <input
                                     type='text'
                                     className='form-control form-control-sm'
+                                    autoComplete="off"
                                     style={{
                                         width: '300px',
                                         height: '28px'
@@ -1901,10 +1869,11 @@ const SQuot = () => {
                             <label className='form-label fw-bold'>Term & Conditions</label>
                             <textarea
                                 name='terms'
-                                className='form-control form-control-sm'
+                                className='form-control form-control-sm fw-bold'
                                 rows={2}
                                 value={topData.terms}
                                 onChange={handleTopChange}
+                                autoComplete="off"
                             />
                         </div>
 
@@ -1912,10 +1881,11 @@ const SQuot = () => {
                             <label className='form-label fw-bold'>Narration</label>
                             <textarea
                                 name='narration'
-                                className='form-control form-control-sm'
+                                className='form-control form-control-sm fw-bold'
                                 rows={2}
                                 value={topData.narration}
                                 onChange={handleTopChange}
+                                autoComplete="off"
                             />
                         </div>
                     </div>

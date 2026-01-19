@@ -1006,6 +1006,8 @@ const Quot = ({ gstReportData }) => {
         });
     };
 
+   
+
     const updateQuotation = async () => {
         try {
             const payload = {
@@ -1014,10 +1016,10 @@ const Quot = ({ gstReportData }) => {
                 QRevNo: state.topData.rNo,
 
                 ProjId: state.projectId,
-                ProjName: state.projectQuery,  
+                ProjName: state.projectQuery,
 
                 LedgerId: state.ledgerId,
-                LedgerName: state.ledgerQuery, 
+                LedgerName: state.ledgerQuery,
 
                 QDate: state.topData.qDate,
                 Subject: state.topData.subject,
@@ -1415,15 +1417,16 @@ const Quot = ({ gstReportData }) => {
             <div
                 className='card mx-auto shadow-lg'
                 style={{
-                    border: '2px solid #5d8aa8',
+                    border: '2px solid #6a1b9a',
                     maxWidth: '95%'
                 }}
             >
                 {/* Header */}
-                <div className='card-header text-white'
+                <div className='card-header'
                     style={{
-                        backgroundColor: '#5d8aa8',
-                        padding: '20px'
+                        color: '#6a1b9a',
+                        padding: '20px',
+                        backgroundColor: 'white'
                     }}
                 >
                     <h4 className='mb-0'><FontAwesomeIcon icon={faReceipt} className="me-2" />Quot</h4>
@@ -1441,7 +1444,7 @@ const Quot = ({ gstReportData }) => {
                         <div
                             className="card shadow-sm"
                             style={{
-                                border: '1px solid #5d8aa8',
+                                border: '1px solid #6a1b9a',
                                 borderRadius: '5px',
                                 padding: '15px',
                                 maxWidth: '70%',
@@ -1470,6 +1473,7 @@ const Quot = ({ gstReportData }) => {
                                         name='qNo'
                                         value={state.topData.qNo ?? ''}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -1488,6 +1492,7 @@ const Quot = ({ gstReportData }) => {
                                         name='rNo'
                                         value={state.topData.rNo ?? ''}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -1509,6 +1514,7 @@ const Quot = ({ gstReportData }) => {
                                         placeholder="🔎 Search Project..."
                                         onChange={handleProjectChange}
                                         onKeyDown={handleProjectKeyDown}
+                                        autoComplete="off"
                                         onFocus={() =>
                                             dispatch({ type: 'SET_SHOW_PROJECT_DROPDOWN', payload: true })
                                         }
@@ -1583,6 +1589,7 @@ const Quot = ({ gstReportData }) => {
                                         placeholder="🔎 Search Ledger..."
                                         onChange={handleLedgerChange}
                                         onKeyDown={handleLedgerKeyDown}
+                                        autoComplete="off"
                                         onFocus={() =>
                                             dispatch({ type: 'SET_SHOW_LEDGER_DROPDOWN', payload: true })
                                         }
@@ -1660,6 +1667,7 @@ const Quot = ({ gstReportData }) => {
                                         name='qDate'
                                         value={state.topData.qDate || ''}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -1676,6 +1684,7 @@ const Quot = ({ gstReportData }) => {
                                         name='subject'
                                         value={state.topData.subject}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                     />
                                 </div>
                             </div>
@@ -1693,6 +1702,7 @@ const Quot = ({ gstReportData }) => {
                                         name='sNo'
                                         value={state.bottomData.sNo}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                         disabled
                                     />
                                 </div>
@@ -1714,6 +1724,7 @@ const Quot = ({ gstReportData }) => {
                                         placeholder="🔎 Search Product..."
                                         onChange={handleProductChange}
                                         onKeyDown={handleProductKeyDown}
+                                        autoComplete="off"
                                         onFocus={() =>
                                             dispatch({ type: 'SET_SHOW_PRODUCT_DROPDOWN', payload: true })
                                         }
@@ -1827,6 +1838,7 @@ const Quot = ({ gstReportData }) => {
                                         value={state.brandQuery}
                                         onChange={handleBrandChange}
                                         onKeyDown={handleBrandKeyDown}
+                                        autoComplete="off"
                                         placeholder="🔎 Search Brand..."
                                         onFocus={() =>
                                             dispatch({ type: 'SET_SHOW_BRAND_DROPDOWN', payload: true })
@@ -1894,6 +1906,7 @@ const Quot = ({ gstReportData }) => {
                                         className='form-control form-control-sm'
                                         name='qty'
                                         value={state.bottomData.qty}
+                                        autoComplete="off"
                                         onChange={handleBottomChange}
                                     />
                                 </div>
@@ -1907,6 +1920,7 @@ const Quot = ({ gstReportData }) => {
                                         name='rate'
                                         value={state.bottomData.rate}
                                         onChange={handleBottomChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -1918,6 +1932,7 @@ const Quot = ({ gstReportData }) => {
                                         name='taxable'
                                         value={state.bottomData.taxable}
                                         onChange={handleBottomChange}
+                                        autoComplete="off"
                                         disabled
                                     />
                                 </div>
@@ -1929,6 +1944,7 @@ const Quot = ({ gstReportData }) => {
                                         className='form-control form-control-sm'
                                         name='vatPer'
                                         value={state.bottomData.vatPer}
+                                        autoComplete="off"
                                         onChange={handleBottomChange}
                                     />
 
@@ -1973,6 +1989,7 @@ const Quot = ({ gstReportData }) => {
                                     name='description'
                                     value={state.bottomData.description}
                                     onChange={handleBottomChange}
+                                    autoComplete="off"
                                 />
 
                                 <button
@@ -2003,7 +2020,7 @@ const Quot = ({ gstReportData }) => {
                             <div
                                 className='d-flex'
                                 style={{
-                                    border: '2px solid #5d8aa8',
+                                    border: '2px solid #6a1b9a',
                                     borderRadius: '5px',
                                     backgroundColor: '#f8f9fa',
                                     flexGrow: 1,
@@ -2142,7 +2159,7 @@ const Quot = ({ gstReportData }) => {
                             <h6
                                 style={{
                                     display: 'inline-block',
-                                    borderBottom: '2px solid #5d8aa8',
+                                    borderBottom: '2px solid #6a1b9a',
                                     paddingTop: ' 2px',
                                     marginBottom: '10px'
                                 }}
@@ -2157,6 +2174,7 @@ const Quot = ({ gstReportData }) => {
                                     name='payment'
                                     value={state.topData.payment}
                                     onChange={handleTopChange}
+                                    autoComplete="off"
                                 />
                             </div>
 
@@ -2168,6 +2186,7 @@ const Quot = ({ gstReportData }) => {
                                     name='delivery'
                                     value={state.topData.delivery}
                                     onChange={handleTopChange}
+                                    autoComplete="off"
                                 />
                             </div>
 
@@ -2179,6 +2198,7 @@ const Quot = ({ gstReportData }) => {
                                     name='qValidity'
                                     value={state.topData.qValidity}
                                     onChange={handleTopChange}
+                                    autoComplete="off"
                                 />
                             </div>
 
@@ -2194,6 +2214,7 @@ const Quot = ({ gstReportData }) => {
                                         name='item'
                                         value={state.rows.length}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                         disabled
                                     />
                                 </div>
@@ -2207,6 +2228,7 @@ const Quot = ({ gstReportData }) => {
                                         name='totalAmt'
                                         value={state.topData.totalAmt ?? ''}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                         disabled
                                     />
                                 </div>
@@ -2220,6 +2242,7 @@ const Quot = ({ gstReportData }) => {
                                         name='vatAmt'
                                         value={state.topData.vatAmt ?? ''}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                         disabled
                                     />
                                 </div>
@@ -2233,6 +2256,7 @@ const Quot = ({ gstReportData }) => {
                                         name='actAmt'
                                         value={state.topData.actAmt ?? ''}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                         disabled
                                     />
                                 </div>
@@ -2246,6 +2270,7 @@ const Quot = ({ gstReportData }) => {
                                         name='roundOff'
                                         value={state.topData.roundOff}
                                         onChange={handleTopChange}
+                                        autoComplete="off"
                                         disabled
                                     />
                                 </div>
@@ -2263,6 +2288,7 @@ const Quot = ({ gstReportData }) => {
                                 name='notes'
                                 value={state.topData.notes}
                                 onChange={handleTopChange}
+                                autoComplete="off"
                             />
                         </div>
 
@@ -2274,6 +2300,7 @@ const Quot = ({ gstReportData }) => {
                                 name='warranty'
                                 value={state.topData.warranty}
                                 onChange={handleTopChange}
+                                autoComplete="off"
                             />
                         </div>
 
@@ -2285,6 +2312,7 @@ const Quot = ({ gstReportData }) => {
                                 name='inclusion'
                                 value={state.topData.inclusion}
                                 onChange={handleTopChange}
+                                autoComplete="off"
                             />
                         </div>
 
@@ -2296,6 +2324,7 @@ const Quot = ({ gstReportData }) => {
                                 name='exclusion'
                                 value={state.topData.exclusion}
                                 onChange={handleTopChange}
+                                autoComplete="off"
                             />
                         </div>
 
@@ -2307,6 +2336,7 @@ const Quot = ({ gstReportData }) => {
                                 name='scope'
                                 value={state.topData.scope}
                                 onChange={handleTopChange}
+                                autoComplete="off"
                             />
                         </div>
                         {/* Bottom 8 Buttons */}

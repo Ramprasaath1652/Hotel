@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBook } from '@fortawesome/free-solid-svg-icons';
@@ -49,6 +49,9 @@ const LedgerCreation = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState('');
 
+    const [showMessage, setShowMessage] = useState(false);
+    const [message, setMessage] = useState('');
+
 
 
 
@@ -68,7 +71,7 @@ const LedgerCreation = () => {
 
     const loadLedgers = async () => {
         try {
-            const res = await axios.get(API);
+            const res = await axiosInstance.get(API);
             console.log(' Ledgers received from API:', res.data)
             setLedgers(res.data);
 
@@ -80,7 +83,7 @@ const LedgerCreation = () => {
 
     const loadAccountGroups = async () => {
         try {
-            const res = await axios.get(`${gapi}/accountgroups`);
+            const res = await axiosInstance.get(`${gapi}/accountgroups`);
             console.log("Account Groups:", res.data);
             setAccountGroups(res.data);
         } catch (err) {
@@ -91,7 +94,7 @@ const LedgerCreation = () => {
 
     const loadStates = async () => {
         try {
-            const res = await axios.get(`${gapi}/statemasters`);
+            const res = await axiosInstance.get(`${gapi}/statemasters`);
             console.log("State masters:", res.data);
             setStateList(res.data);
         } catch (err) {
@@ -165,7 +168,7 @@ const LedgerCreation = () => {
         console.log("Payload sent to API:", newLedger);
 
         try {
-            const res = await axios.post(API, newLedger, {
+            const res = await axiosInstance.post(API, newLedger, {
                 headers: { 'Content-Type': 'application/json' },
             })
             // console.log("Full API response:", res);
@@ -174,7 +177,7 @@ const LedgerCreation = () => {
 
             //setLedgers(prev => [...prev, res.data]);                        
             //("✅ Ledger added successfully:", res.data);
-            alert("✅ Ledger added successfully!");
+            showTempMessage("Ledger added successfully ✅");
             loadLedgers();
 
             setFormData({
@@ -255,12 +258,13 @@ const LedgerCreation = () => {
 
 
         try {
-            await axios.put(`${API}/${updatedLedger.LedgerId}`, updatedLedger, {
+            await axiosInstance.put(`${API}/${updatedLedger.LedgerId}`, updatedLedger, {
                 headers: { 'Content-type': 'application/json' }
             })
 
             console.log("✅ Ledger updated successfully:", updatedLedger);
-            alert("Ledger updated successfully!");
+            showTempMessage("Ledger updated successfully ✏️");
+
 
             await loadLedgers();
             setFormData({
@@ -338,15 +342,14 @@ const LedgerCreation = () => {
         if (!ledgerToDelete) return;
 
         try {
-            await axios.delete(`${API}/${ledgerToDelete.LedgerId}`)
+            await axiosInstance.delete(`${API}/${ledgerToDelete.LedgerId}`)
             await loadLedgers();
             setshowDeleteModal(false);
             setledgerToDelete(null);
-            console.log(`Ledger "${ledgerToDelete.LedgerName}" deleted successfully.`);
+            showTempMessage("Ledger deleted successfully 🗑️");
         }
         catch (err) {
             console.error("Error deleting ledger:", err);
-            alert('Failed to delete ledger. Please check the API connection or ID.')
         }
     }
 
@@ -367,6 +370,34 @@ const LedgerCreation = () => {
             );
         })
         : [];
+
+    const handleReset = () => {
+        setFormData({
+            AccId: '',
+            LedgerName: '',
+            LedgerId: '',
+            TName: '',
+            Add1: '',
+            Add2: '',
+            TPlace: '',
+            EPlace: '',
+            District: '',
+            Pin: '',
+            Phone: '',
+            Mobile: '',
+            TinNo: '',
+            Debit: '',
+            Credit: '',
+            CategoryId: '',
+            State: '',
+            TinStatus: '',
+            LocalAgent: '',
+            OtherState: '',
+            GSTinNo: '',
+            OtherNo: '',
+            Country: '',
+        });
+    }
 
     const highlightText = (text, search) => {
         if (!search || !text) return text;
@@ -392,18 +423,26 @@ const LedgerCreation = () => {
         );
     };
 
+    const showTempMessage = (msg) => {
+        setMessage(msg);
+        setShowMessage(true);
+        setTimeout(() => setShowMessage(false), 3000);
+    };
+
+
     return (
         <div className='container-fluid mt-2'>
             <div className='card shadow-lg mx-auto'
                 style={{
-                    border: '2px solid #5d8aa8',
+                    border: '2px solid #6a1b9a',
                     maxWidth: '95%'
                 }}
             >
-                <div className='card-header text-white'
+                <div className='card-header '
                     style={{
-                        backgroundColor: '#5d8aa8',
-                        padding: '20px'
+                        color: '#6a1b9a',
+                        padding: '20px',
+                        backgroundColor: 'white'
                     }}
                 >
                     <h4 className='mb-0'> <FontAwesomeIcon icon={faBook} className="me-2" />Ledger Master</h4>
@@ -413,14 +452,13 @@ const LedgerCreation = () => {
                     <div className='row'>
                         {/* Left Form */}
                         <div className='col-md-4'>
-                            <h4 className='mb-3 '>
-                                {editingIndex !== null ? 'Edit Ledger' : 'Add Ledger'}
-                            </h4>
+
                             <div className="row mb-3 align-items-center">
-                                <label className="col-sm-4 col-form-label">Account Group <span className='required'>*</span></label>
+                                <label className="col-sm-4 col-form-label fw-bold">Account Group <span className='required'>*</span></label>
                                 <div className="col-sm-8">
                                     <select
                                         className="form-select"
+                                        autoComplete="off"
                                         name="AccId"
                                         value={formData.AccId}
                                         onChange={handleChange}>
@@ -435,7 +473,7 @@ const LedgerCreation = () => {
                             </div>
 
                             <div className="row mb-3 align-items-center">
-                                <label className="col-sm-4 col-form-label">Name <span className='required'>*</span></label>
+                                <label className="col-sm-4 col-form-label fw-bold">Name <span className='required'>*</span></label>
                                 <div className="col-sm-8">
                                     <input
                                         className="form-control"
@@ -444,13 +482,14 @@ const LedgerCreation = () => {
                                         name="LedgerName"
                                         value={formData.LedgerName}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
                                 </div>
                             </div>
 
 
                             <div className=" row mb-3 align-items-center">
-                                <label className='col-sm-4 col-form-label' >Add 1</label>
+                                <label className='col-sm-4 col-form-label fw-bold' >Add 1</label>
                                 <div className='col-sm-8'>
                                     <input
                                         className='form-control '
@@ -459,6 +498,7 @@ const LedgerCreation = () => {
                                         name='Add1'
                                         value={formData.Add1}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -467,7 +507,7 @@ const LedgerCreation = () => {
 
 
                             <div className="row mb-3 align-items-center">
-                                <label className="col-sm-4 col-form-label">Add 2</label>
+                                <label className="col-sm-4 col-form-label fw-bold">Add 2</label>
                                 <div className="col-sm-8">
                                     <input
                                         type="text"
@@ -476,6 +516,7 @@ const LedgerCreation = () => {
                                         name="Add2"
                                         value={formData.Add2}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
                                 </div>
                             </div>
@@ -483,7 +524,7 @@ const LedgerCreation = () => {
 
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>Place <span className='required'>*</span></label>
+                                <label className='col-sm-4 col-form-label fw-bold'>Place <span className='required'>*</span></label>
                                 <div className='col-sm-8'>
                                     <input
                                         className='form-control'
@@ -492,13 +533,14 @@ const LedgerCreation = () => {
                                         name='EPlace'
                                         value={formData.EPlace}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
                             </div>
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>P.O Box #</label>
+                                <label className='col-sm-4 col-form-label fw-bold'>P.O Box #</label>
                                 <div className='col-sm-8'>
                                     <input
                                         className='form-control'
@@ -507,17 +549,19 @@ const LedgerCreation = () => {
                                         name='Pin'
                                         value={formData.Pin}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
                             </div>
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>State <span className='required'>*</span></label>
+                                <label className='col-sm-4 col-form-label fw-bold'>State <span className='required'>*</span></label>
                                 <div className='col-sm-8'>
                                     <select className='form-select'
                                         name='State'
                                         value={formData.State}
+                                        autoComplete="off"
                                         onChange={handleChange}>
                                         <option value=''>-- Select State --</option>
                                         {stateList.map((group) => (
@@ -533,7 +577,7 @@ const LedgerCreation = () => {
                             </div>
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>Country</label>
+                                <label className='col-sm-4 col-form-label fw-bold'>Country</label>
                                 <div className='col-sm-8'>
                                     <input
                                         className='form-control'
@@ -542,13 +586,14 @@ const LedgerCreation = () => {
                                         name='Country'
                                         value={formData.Country}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
                             </div>
 
                             <div className="mb-3 row align-items-center">
-                                <label className='col-sm-4 col-form-label'>TNR #</label>
+                                <label className='col-sm-4 col-form-label fw-bold'>TRN #</label>
                                 <div className='col-sm-8'>
                                     <input
                                         className='form-control'
@@ -557,6 +602,7 @@ const LedgerCreation = () => {
                                         name='TinNo'
                                         value={formData.TinNo}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -565,7 +611,7 @@ const LedgerCreation = () => {
 
                             <div className='row mb-3 '>
                                 <div className='col-md-6 d-flex align-items-center mb-2'>
-                                    <label className='me-2' style={{ width: '100px' }}>Mobile</label>
+                                    <label className='me-2 fw-bold' style={{ width: '100px' }}>Mobile</label>
 
                                     <input
                                         className='form-control'
@@ -574,6 +620,7 @@ const LedgerCreation = () => {
                                         name='Mobile'
                                         value={formData.Mobile}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
 
 
@@ -581,7 +628,7 @@ const LedgerCreation = () => {
 
                                 <div className='col-md-6 d-flex align-items-center mb-2'>
 
-                                    <label className='me-2' style={{ width: '100px' }}>Phone</label>
+                                    <label className='me-2 fw-bold' style={{ width: '100px' }}>Phone</label>
 
                                     <input
                                         className='form-control'
@@ -590,6 +637,7 @@ const LedgerCreation = () => {
                                         name='Phone'
                                         value={formData.Phone}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
 
 
@@ -600,7 +648,7 @@ const LedgerCreation = () => {
 
                             <div className='row mb-3 '>
                                 <div className='col-md-6 d-flex align-items-center mb-2'>
-                                    <label className='me-2' style={{ width: '100px' }}>Debit</label>
+                                    <label className='me-2 fw-bold' style={{ width: '100px' }}>Debit</label>
 
                                     <input
                                         className='form-control'
@@ -609,6 +657,7 @@ const LedgerCreation = () => {
                                         name='Debit'
                                         value={formData.Debit}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
 
 
@@ -616,7 +665,7 @@ const LedgerCreation = () => {
 
                                 <div className='col-md-6 d-flex align-items-center mb-2'>
 
-                                    <label className='me-2' style={{ width: '100px' }}>Credit</label>
+                                    <label className='me-2 fw-bold' style={{ width: '100px' }}>Credit</label>
 
                                     <input
                                         className='form-control'
@@ -625,33 +674,47 @@ const LedgerCreation = () => {
                                         name='Credit'
                                         value={formData.Credit}
                                         onChange={handleChange}
+                                        autoComplete="off"
                                     />
 
 
                                 </div>
                             </div>
 
-                            <div className='d-flex flex-wrap gap-2 mt-2'>
-                                <button
-                                    className='btn btn-primary btn-sm'
-                                    onClick={editingIndex !== null ? handleUpdate : handleAdd}
-                                >
-                                    {editingIndex !== null ? 'Update' : 'Insert'}
-                                </button>
-                            </div>
+
+                            <button
+                                className='btn btn-success text-uppercase fw-bold btn-md '
+                                onClick={editingIndex !== null ? handleUpdate : handleAdd}
+                            >
+                                {editingIndex !== null ? '🛠️Update' : '📋Save'}
+                            </button>
+                            <button className='btn btn-md btn-danger m-2 fw-bold'
+                                onClick={handleReset}
+                            >
+                                🔄️RESET
+                            </button>
+
                         </div>
 
                         {/* Right - Table */}
-                        <div className='col-md-8'>
-                            <div className='d-flex justify-content-between align-items-center mb-3'>
-                                <h5>Ledger List</h5>
+                        <div className='col-md-8 mt-2 mt-md-0'>
+                            <label className="form-label fw-bold">Search for LedgerName </label>
+
+                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
                                 <input
-                                    type='text'
-                                    className='form-control w-50'
-                                    placeholder='🔎 search ledgers...'
+                                    type="text"
+                                    className="form-control w-100 w-md-50"
+                                    placeholder="🔎 search ledgers..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
+
+                                <h5
+                                    className="w-100 w-md-auto text-md-end"
+                                    style={{ color: '#6a1b9a' }}
+                                >
+                                    Showing {filteredLedgers.length} of {ledgers.length} Records
+                                </h5>
 
                             </div>
 
@@ -680,31 +743,31 @@ const LedgerCreation = () => {
                                         <tbody>
                                             {filteredLedgers.map((l) => (
                                                 <tr key={l.LedgerId}>
-                                                    <td>{highlightText(l.LedgerName, searchTerm)}</td>
-                                                    <td>{highlightText(l.Add1, searchTerm)}</td>
-                                                    <td>{highlightText(l.Add2, searchTerm)}</td>
-                                                    <td>{highlightText(l.StateName, searchTerm)}</td>
-                                                    <td>{highlightText(l.AccName, searchTerm)}</td>
-                                                    <td>{highlightText(l.Debit?.toString(), searchTerm)}</td>
-                                                    <td>{highlightText(l.Credit?.toString(), searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(l.LedgerName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(l.Add1, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(l.Add2, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(l.StateName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(l.AccName, searchTerm)}</td>
+                                                    <td className='text-end'>{highlightText(l.Debit?.toString(), searchTerm)}</td>
+                                                    <td className='text-end'>{highlightText(l.Credit?.toString(), searchTerm)}</td>
                                                     <td>
                                                         <button
-                                                            className="btn btn-warning btn-sm me-2"
+                                                            className="btn btn-warning btn-sm me-2 fw-bold"
                                                             onClick={() => {
                                                                 setledgerToEdit(l);
                                                                 setshowEditModal(true);
                                                             }}
                                                         >
-                                                            Edit
+                                                            🖋️Edit
                                                         </button>
                                                         <button
-                                                            className="btn btn-danger btn-sm"
+                                                            className="btn btn-danger btn-sm fw-bold"
                                                             onClick={() => {
                                                                 setledgerToDelete(l);
                                                                 setshowDeleteModal(true);
                                                             }}
                                                         >
-                                                            Delete
+                                                            🗑️Delete
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -821,6 +884,26 @@ const LedgerCreation = () => {
                             </div>
                         </div>
                     )}
+
+                    {showMessage && (
+                        <div
+                            className="position-fixed top-0 start-50 translate-middle-x mt-3"
+                            style={{ zIndex: 9999, minWidth: '300px' }}
+                        >
+                            <div
+                                className="alert alert-success alert-dismissible fade show mb-0"
+                                role="alert"
+                            >
+                                {message}
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowMessage(false)}
+                                ></button>
+                            </div>
+                        </div>
+                    )}
+
 
                 </div>
             </div>

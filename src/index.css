@@ -117,3 +117,14 @@
   border-radius: 6px;
   width: 300px;
 }
+
+.vertical-divider {
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+
+  pointer-events: none;
+}

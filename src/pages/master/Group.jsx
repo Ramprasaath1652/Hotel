@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import CommonTable from '../../components/CommonTable';
 import CommonTableLayout from '../../components/CommonTableLayout';
 import CommonModals from '../../components/CommonModals ';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUsers } from '@fortawesome/free-solid-svg-icons'
+
+
 
 
 const Group = () => {
@@ -15,6 +20,7 @@ const Group = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [showMessage, setShowMessage] = useState(false);
+  const [showMessage_Error, setShowMessage_Error] = useState(false);
   const [message, setMessage] = useState('');
   const [showPopup, setShowPopup] = useState(false)
 
@@ -25,30 +31,45 @@ const Group = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
 
 
-  const API = `${gapi}/group`; // Change to your actual API
+  //1. list
+  //2. create
+  //3.update , 4. delete/id
+  const API = gapi + '/group/'; // Change to your actual API
+  console.log('new', API)
 
   useEffect(() => {
-    console.log('main url : ' + gapi + '/group');
-    // console.log(API);
+    // console.log('main url : ' + gapi + '/group');
+    // console.log('new:',API);
     loadGroups();
   }, []);
 
   const loadGroups = async () => {
     try {
-      const res = await axios.get(API);
-      setGroups(res.data);
-
+      const res = await axiosInstance.get(API + 'list');//https://gtfin.in/abnapi/api/group/list
+      if (res.data?.Success) {
+        setGroups(res.data.Data);
+      } else {
+        setGroups([]);
+      }
     } catch (err) {
       console.error('Error fetching groups:', err);
-      alert('Could not load groups. Check API connection.');
     }
   };
 
-  const showTempMessage = (msg) => {
+  const showTempMessage = (msg, msgtype) => {
     setMessage(msg);
-    setShowMessage(true);
-    setTimeout(() => setShowMessage(false), 3000);
+    if (msgtype === 'true') {
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 3000);
+
+    } else {
+      setShowMessage_Error(true);
+      setTimeout(() => setShowMessage_Error(false), 3000);
+    }
+
   };
+
+
 
   // Add new group
   const handleAdd = async () => {
@@ -60,17 +81,29 @@ const Group = () => {
     const newGroup = {
       GroupID: 0,
       GroupName: groupName,
+      TGroupName: groupName
     };
 
     try {
-      const res = await axios.post(API, newGroup, {
+      const res = await axiosInstance.post(API + 'insert', newGroup, { //https://gtfin.in/abnapi/api/group/insert
         headers: { 'Content-Type': 'application/json' },
       });
       console.log('API response:', res.data);
       console.log('gId:', res.data.GroupID)
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true');
+        await loadGroups();
+        setGroupName('');
+        setGroupId(0);
+        setEditingIndex(null);
+      }
+      // ❌ BACKEND LOGICAL ERROR
+      else {
+        showTempMessage(res.data?.Message, 'false');
+      }
       loadGroups();
       setGroupName('');
-      showTempMessage('Group added successfully!');
+      // showTempMessage('Group added successfully!');
     } catch (err) {
       console.error('Add error:', err);
     }
@@ -91,19 +124,40 @@ const Group = () => {
     const updatedGroup = {
       GroupID: groupId,
       GroupName: groupName,
+      TGroupName: groupName
     };
 
     try {
-      await axios.put(`${API}/${groupId}`, updatedGroup, {
+      // await axios.put(`${API}/${groupId}`, updatedGroup, {
+      //   headers: { 'Content-Type': 'application/json' },
+      // });
+      setShowUpdateModal(false);
+      const res = await axiosInstance.put(API + 'update', updatedGroup, {
         headers: { 'Content-Type': 'application/json' },
       });
-      await loadGroups();
-      setGroupName('');
-      setGroupId(0);
-      setEditingIndex(null);
-      setShowUpdateModal(false);
-      showTempMessage('Group updated successfully!');
+      console.log('UPDATE FULL RESPONSE 👉', res);
+      console.log('UPDATE DATA 👉', res.data);
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true');
+        await loadGroups();
+        setGroupName('');
+        setGroupId(0);
+        setEditingIndex(null);
+      }
+      // ❌ BACKEND LOGICAL ERROR
+      else {
+        showTempMessage(res.data?.Message, 'false');
+      }
+
     } catch (err) {
+      // ❌ NETWORK / 500 / CORS / SERVER DOWN
+      const backendError =
+        err.response?.data?.Message ||
+        err.response?.data ||
+        err.message ||
+        'Something went wrong';
+
+      showTempMessage(backendError, 'false');
       console.error('Update error:', err);
     }
   };
@@ -126,13 +180,26 @@ const Group = () => {
   // Delete
   const handleDelete = async () => {
     if (!groupToDelete) return;
+    setShowDeleteModal(false);
 
     try {
-      await axios.delete(`${API}/${groupToDelete.GroupID}`);
-      setShowDeleteModal(false);
+      const res = await axiosInstance.delete(`${API}delete/${groupToDelete.GroupID}`);
+      console.log(`${API}delete/${groupToDelete.GroupID}`)
+      console.log(res.data)
       setGroupToDelete(null);
-      loadGroups();
-      showTempMessage('Group deleted successfully!');
+      // showTempMessage('Group deleted successfully!');
+      setShowDeleteModal(false);
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true');
+        await loadGroups();
+        setGroupName('');
+        setGroupId(0);
+        setEditingIndex(null);
+      }
+      // ❌ BACKEND LOGICAL ERROR
+      else {
+        showTempMessage(res.data?.Message, 'false');
+      }
     } catch (err) {
       console.error('Delete error:', err);
     }
@@ -175,6 +242,11 @@ const Group = () => {
     );
   };
 
+  const handleReset = () => {
+    setGroupName('')
+    setEditingIndex(null);
+  }
+
   const groupColumns = [
     {
       header: "Group Name",
@@ -188,14 +260,14 @@ const Group = () => {
     <div className="container-fluid mt-2">
       <div
         className="card shadow-lg mx-auto"
-        style={{ maxWidth: '95%', border: '2px solid #5d8aa8' }}
+        style={{ maxWidth: '95%', border: '2px solid #6a1b9a' }}
       >
         {/* Header */}
         <div
-          className="card-header text-white"
-          style={{ backgroundColor: '#5d8aa8', padding: '20px' }}
+          className="card-header "
+          style={{ color: '#6a1b9a', padding: '20px', backgroundColor: 'white' }}
         >
-          <h4 className="mb-0">Group Master</h4>
+          <h4 className="mb-0"> <FontAwesomeIcon icon={faUsers} className="me-2" />Group Master</h4>
         </div>
 
         {/* Body */}
@@ -206,23 +278,22 @@ const Group = () => {
           <div className="row">
             {/* Left - Form */}
             <div className="col-md-4">
-              <h5 className="mb-3">
-                {editingIndex !== null ? 'Edit Group' : 'Add Group'}
-              </h5>
+
 
               <div className="mb-3">
-                <label className="form-label">Group Name <span className='required'>*</span></label>
+                <label className="form-label fw-bold">Group Name <span className='required'>*</span></label>
                 <input
                   type="text"
                   className="form-control"
                   placeholder="Enter Group Name"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
 
               <button
-                className="btn btn-primary btn-sm"
+                className="btn btn-success fw-bold text-uppercase btn-md"
                 onClick={() => {
                   if (editingIndex !== null) {
                     setShowUpdateModal(true);   // 🔥 update confirm
@@ -231,13 +302,22 @@ const Group = () => {
                   }
                 }}
               >
-                {editingIndex !== null ? 'Update' : 'Insert'}
+                {editingIndex !== null ? '🛠️Update' : '📋Save'}
+              </button>
+              <button className='btn btn-md btn-danger m-2'
+                onClick={handleReset}
+              >
+                🔄️RESET
               </button>
             </div>
 
             {/* Right - Table with Search */}
             <CommonTableLayout
-              title="Group List"
+              title={
+                <h5 className="mb-0 w-100 w-md-auto text-md-end" style={{ color: '#6a1b9a' }}>
+                  Showing {filteredGroups.length} of {groups.length} Records
+                </h5>
+              }
               placeholder="🔎 Search Groups..."
               searchValue={searchTerm}
               onSearchChange={setSearchTerm}
@@ -266,7 +346,7 @@ const Group = () => {
             showAlert={showPopup}
             deleteText={`Are you sure you want to delete "${groupToDelete?.GroupName}"?`}
             editText={`Are you sure you want to edit "${groupToEdit?.GroupName}"?`}
-            updateText={`Are you sure you want to update "${groupName}"?`}   // ✅
+            updateText={`Are you sure you want to update "${groupName}"?`}
             alertText="Group Name must be filled"
             onConfirmDelete={handleDelete}
             onConfirmEdit={confirmEdit}
@@ -281,26 +361,79 @@ const Group = () => {
 
           {showMessage && (
             <div
-              className="position-fixed top-0 start-50 translate-middle-x mt-3"
-              style={{
-                zIndex: 9999,
-                minWidth: '300px',
-              }}
+              aria-live="polite"
+              aria-atomic="true"
+              className="toast-container position-fixed top-0 end-0 pe-3"
+              style={{ zIndex: 9999 ,paddingTop: '70px'}}
             >
               <div
-                className="alert alert-success alert-dismissible fade show mb-0"
+                className="toast show text-bg-success"
                 role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
               >
-                {message}
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowMessage(false)}
-                ></button>
+                <div
+                  className="toast-header text-bg-blue"
+                  style={{
+                    backgroundColor: "#0f8532",
+                    color: "#fff"
+                  }}
+                >
+                  <strong className="me-auto">Success</strong>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setShowMessage(false)}
+                  ></button>
+                </div>
+
+                <div
+                  className="toast-body fw-bold"
+                  style={{
+                    backgroundColor: "#fff",
+                    color: "#000"
+                  }}
+                >
+                  {message}
+                </div>
               </div>
             </div>
           )}
 
+          {showMessage_Error && (
+            <div
+              className="toast-container position-fixed top-0 end-0 pe-3"
+              style={{ zIndex: 9999 ,paddingTop: '70px' }}
+            >
+              <div className="toast show" role="alert">
+
+                <div
+                  className="toast-header"
+                  style={{
+                    backgroundColor: "#d60707",
+                    color: "#fff"
+                  }}
+                >
+                  <strong className="me-auto">Error</strong>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setShowMessage_Error(false)}
+                  ></button>
+                </div>
+
+                <div
+                  className="toast-body fw-bold"
+                  style={{
+                    backgroundColor: "#fff",
+                    color: "#000"
+                  }}
+                >
+                  {message}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

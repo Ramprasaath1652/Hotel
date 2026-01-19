@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'
+import axiosInstance from '../../api/axiosInstance';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBox } from '@fortawesome/free-solid-svg-icons'
@@ -56,9 +56,11 @@ const Product = () => {
     const [activeIndex, setActiveIndex] = useState(-1);
     const [showAddGroupModal, setShowAddGroupModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [showMessage_Error, setShowMessage_Error] = useState(false);
+
 
     const gapi = import.meta.env.VITE_API_URL;
-    const API = `${gapi}/productmasters`;
+    const API = `${gapi}/productmasters/`;
     const API_PUNIT = `${gapi}/productunits`;
 
     useEffect(() => {
@@ -71,7 +73,7 @@ const Product = () => {
 
     const loadGroup = async () => {
         try {
-            const res = await axios.get(`${gapi}/group`);
+            const res = await axiosInstance.get(`${gapi}/group`);
             console.log('group url : ' + gapi + '/group');
             setGroupList(res.data)
 
@@ -82,7 +84,7 @@ const Product = () => {
 
     const loadUnit = async () => {
         try {
-            const res = await axios.get(`${gapi}/unit`);
+            const res = await axiosInstance.get(`${gapi}/unit`);
             console.log('unit url : ' + gapi + '/unit');
             setUnitList(res.data)
         } catch (err) {
@@ -94,7 +96,7 @@ const Product = () => {
 
     const loadProduct = async () => {
         try {
-            const res = await axios.get(API)
+            const res = await axiosInstance.get(API + 'list')
             setProducts(res.data)
         } catch (err) {
             console.error('product fetching error', err);
@@ -102,10 +104,15 @@ const Product = () => {
         }
     }
 
-    const showTempMessage = (msg) => {
+    const showTempMessage = (msg, msgtype) => {
         setMessage(msg);
-        setShowMessage(true);
-        setTimeout(() => setShowMessage(false), 3000);
+        if (msgtype === 'true') {
+            setShowMessage(true);
+            setTimeout(() => setShowMessage(false), 3000);
+        } else {
+            setShowMessage_Error(true);
+            setTimeout(() => setShowMessage_Error(false), 3000);
+        }
     };
 
     //Add
@@ -118,11 +125,16 @@ const Product = () => {
             UnitId: salesUnit
         }
         try {
-            const res = await axios.post(API_PUNIT, newUnit, {
+            const res = await axiosInstance.post(API_PUNIT, newUnit, {
                 headers: { 'Content-Type': 'application/json' },
             })
-            await loadProduct();
-            alert("2 Project Added Successfully!");
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadProduct();
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+
         } catch (err) {
             console.error('Add error:', err);
             alert("Failed to add product.");
@@ -136,7 +148,7 @@ const Product = () => {
             UnitId: salesUnit
         }
         try {
-            const res = await axios.put(`${API_PUNIT}/${_puId}`, _updateUnit);
+            const res = await axiosInstance.put(`${API_PUNIT}/${_puId}`, _updateUnit);
             console.log('put data :', res.data);
             await loadProduct();
             //alert("Product Updated Successfully!");
@@ -193,7 +205,7 @@ const Product = () => {
         console.log("📌 NEW PRODUCT SENT TO API:", newProduct);
 
         try {
-            const res = await axios.post(API, newProduct, {
+            const res = await axiosInstance.post(API, newProduct, {
                 headers: { 'Content-Type': 'application/json' },
             })
             const pid = res.data.ProductID
@@ -207,24 +219,29 @@ const Product = () => {
             alert("Failed to add product.");
         }
     }
-
+    const cancelEdit = () => {
+        setShowEditModal(false);
+        setProductToEdit(null);
+        setEditingIndex(null);
+        resetForm();
+    };
     const handleEdit = (product) => {
         setProductToEdit(product);
         console.log('my productToEdit : ' + product);
-        setEditingIndex(product.ProductID);
+        // setEditingIndex(product.ProductID);
         setShowEditModal(true);
     };
     // Edit
     const confirmEdit = () => {
-        console.log("🟦 confirmEdit() productToEdit:", productToEdit);
-
+        // console.log("🟦 confirmEdit() productToEdit:", productToEdit);
+        if (!productToEdit) return;
         const p = productToEdit;
 
         setProductId(p.ProductID);
 
         console.log("🟩 Setting productId to:", p.ProductID);
         if (!productToEdit) return;
-
+        setEditingIndex(productToEdit.ProductID)
         setProductId(productToEdit.ProductID);
         setProductCode(productToEdit.ProductCode);
         setProductName(productToEdit.ProductName);
@@ -259,7 +276,10 @@ const Product = () => {
         setProductId('')
         setProductCode('')
         setProductName('')
-        setGroupId('')
+        setGroupId(null);
+        setGroupQuery('');
+        setShowGroupDropdown(false);
+        setActiveIndex(-1);
         setPacking('')
         setProductTamil('')
         setFreeQty('')
@@ -269,6 +289,7 @@ const Product = () => {
         setSch('')
         setEditingIndex(null);
         setProductToEdit(null);
+        setSalesUnit('');
     };
 
     // Update group
@@ -309,7 +330,7 @@ const Product = () => {
 
         try {
             // Update In Product Table
-            const res = await axios.put(`${API}/${productId}`, updatedProduct);
+            const res = await axiosInstance.put(`${API}/${productId}`, updatedProduct);
             // Update in Product Unit Table
             await handleUpdateProductUnit(_puId, productId);
 
@@ -331,7 +352,7 @@ const Product = () => {
         if (!productToDelete) return;
 
         try {
-            await axios.delete(`${API}/${productToDelete.ProductID}`);
+            await axiosInstance.delete(`${API}/${productToDelete.ProductID}`);
             setShowDeleteModal(false);
             setProductToDelete(null);
             loadProduct();
@@ -409,7 +430,7 @@ const Product = () => {
         if (!groupQuery.trim()) return;
 
         try {
-            const res = await axios.post(
+            const res = await axiosInstance.post(
                 `${gapi}/group`, // 🔁 change this
                 {
                     GroupName: groupQuery
@@ -479,11 +500,35 @@ const Product = () => {
         );
     };
 
+    const handleReset = () => {
+        setIGST('')
+        setCGST('')
+        setSGST('')
+        setHSNCode('')
+        setHSNId('')
+        setProductId('')
+        setProductCode('')
+        setProductName('')
+        setGroupId(null);
+        setGroupQuery('');
+        setShowGroupDropdown(false);
+        setActiveIndex(-1);
+        setPacking('')
+        setProductTamil('')
+        setFreeQty('')
+        setQty('')
+        setVatPer('')
+        setComCode('')
+        setSch('')
+        setEditingIndex(null);
+        setProductToEdit(null);
+        setSalesUnit('');
+    }
     return (
         <div className="container-fluid mt-2">
-            <div className="card shadow-lg mx-auto" style={{ maxWidth: '95%', border: '2px solid #5d8aa8' }}>
+            <div className="card shadow-lg mx-auto" style={{ maxWidth: '95%', border: '2px solid #6a1b9a' }}>
                 {/* Header */}
-                <div className="card-header text-white" style={{ backgroundColor: '#5d8aa8', padding: '20px' }}>
+                <div className="card-header" style={{ color: '#6a1b9a', padding: '20px', backgroundColor: 'white' }}>
                     <h4 className="mb-0"><FontAwesomeIcon icon={faBox} className="me-2" />Product</h4>
                 </div>
 
@@ -493,27 +538,28 @@ const Product = () => {
                     <div className="row">
                         {/* Left - Form */}
                         <div className="col-md-4">
-                            <h5 className="mb-3">{editingIndex !== null ? 'Edit Product' : 'Add Product'}</h5>
 
                             <div className="mb-3">
-                                <label className="form-label">Product Code <span className='required'>*</span></label>
+                                <label className="form-label fw-bold">Product Code <span className='required'>*</span></label>
                                 <input
                                     type="text"
                                     className="form-control"
                                     placeholder="Enter product code"
                                     value={productCode}
                                     onChange={(e) => setProductCode(e.target.value)}
+                                    autoComplete="off"
                                 />
                             </div>
 
                             <div className="mb-3">
-                                <label className="form-label">Product Name <span className='required'>*</span></label>
+                                <label className="form-label fw-bold">Product Name <span className='required'>*</span></label>
                                 <input
                                     type="text"
                                     className="form-control"
                                     placeholder="Enter product name"
                                     value={productName}
                                     onChange={(e) => setProductName(e.target.value)}
+                                    autoComplete="off"
                                 />
                             </div>
 
@@ -521,7 +567,7 @@ const Product = () => {
 
 
                             <div className='mb-3 position-relative'>
-                                <label className='form-label'>Group Name <span className='required'>*</span></label>
+                                <label className='form-label fw-bold'>Group Name <span className='required'>*</span></label>
                                 <label className='form-label'>{_groupId}</label>
 
 
@@ -531,6 +577,7 @@ const Product = () => {
                                     className="form-control"
                                     placeholder="Search Group..."
                                     value={groupQuery}
+                                    autoComplete="off"
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setGroupQuery(value);
@@ -600,11 +647,12 @@ const Product = () => {
 
                             </div>
                             <div className="mb-3">
-                                <label className="form-label">Sales Unit <span className='required'>*</span></label>
+                                <label className="form-label fw-bold">Sales Unit <span className='required'>*</span></label>
                                 <select
                                     className="form-control"
                                     value={salesUnit}
                                     onChange={(e) => setSalesUnit(e.target.value)}
+                                    autoComplete="off"
                                 >
                                     <option value="">-- Select Sales --</option>
 
@@ -617,18 +665,19 @@ const Product = () => {
                             </div>
 
                             <div className="mb-3 ">
-                                <label className="form-label">Vat%</label>
+                                <label className="form-label fw-bold">Vat%</label>
                                 <input
                                     type="text"
                                     className="form-control form-control-sm"
                                     placeholder="Enter Vat%"
                                     value={vatPer}
                                     onChange={(e) => setVatPer(e.target.value)}
+                                    autoComplete="off"
                                 />
                             </div>
 
                             <button
-                                className="btn btn-primary btn-sm"
+                                className="btn btn-success text-uppercase fw-bold btn-md "
                                 onClick={() => {
                                     if (editingIndex !== null) {
                                         setShowUpdateModal(true);   // ✅ open update confirmation
@@ -637,15 +686,19 @@ const Product = () => {
                                     }
                                 }}
                             >
-                                {editingIndex !== null ? 'Update' : 'Insert'}
+                                {editingIndex !== null ? '🛠️Update' : '📋Save'}
                             </button>
-
+                            <button className='btn btn-md btn-danger m-2 fw-bold'
+                                onClick={handleReset}
+                            >
+                                🔄️RESET
+                            </button>
                         </div>
 
                         {/* Right - Table */}
-                        <div className="col-md-8">
-                            <div className="d-flex justify-content-between align-items-center mb-3">
-                                <h5 className="mb-0">Product List</h5>
+                        <div className="col-md-8 mt-2 mt-md-0">
+                            <label className="form-label fw-bold">Search for ProductName </label>
+                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
                                 <input
                                     type="text"
                                     className="form-control w-50"
@@ -653,6 +706,7 @@ const Product = () => {
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
+                                <h5 className="mb-0" style={{ color: '#6a1b9a' }}>Showing {filteredProducts.length} of {products.length} Records </h5>
                             </div>
 
                             {filteredProducts.length === 0 ? (
@@ -674,18 +728,18 @@ const Product = () => {
                                             {filteredProducts.map((item) => (
                                                 <tr key={item.ProductID}>
                                                     <td>{highlightText(item.ProductCode, searchTerm)}</td>
-                                                    <td>{highlightText(item.ProductName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(item.ProductName, searchTerm)}</td>
                                                     <td>
-                                                        <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(item)}>
-                                                            Edit
+                                                        <button className="btn btn-warning btn-sm me-2 fw-bold" onClick={() => handleEdit(item)}>
+                                                            🖋️Edit
                                                         </button>
-                                                        <button className="btn btn-danger btn-sm"
+                                                        <button className="btn btn-danger btn-sm fw-bold"
                                                             onClick={() => {
                                                                 setProductToDelete(item);
                                                                 setShowDeleteModal(true);
                                                             }}
                                                         >
-                                                            Delete
+                                                            🗑️Delete
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -700,19 +754,76 @@ const Product = () => {
                     {/* Success Message */}
                     {showMessage && (
                         <div
-                            className="position-fixed top-0 start-50 translate-middle-x mt-3"
-                            style={{ zIndex: 9999, minWidth: '300px' }}
+                            aria-live="polite"
+                            aria-atomic="true"
+                            className="toast-container position-fixed top-0 end-0  pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
                         >
                             <div
-                                className="alert alert-success alert-dismissible fade show mb-0"
+                                className="toast show text-bg-success"
                                 role="alert"
+                                aria-live="assertive"
+                                aria-atomic="true"
                             >
-                                {message}
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setShowMessage(false)}
-                                ></button>
+                                <div
+                                    className="toast-header text-bg-blue"
+                                    style={{
+                                        backgroundColor: "#0f8532",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Success</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showMessage_Error && (
+                        <div
+                            className="toast-container position-fixed top-0 end-0 pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
+                        >
+                            <div className="toast show" role="alert">
+
+                                <div
+                                    className="toast-header"
+                                    style={{
+                                        backgroundColor: "#d60707",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Error</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage_Error(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -796,7 +907,7 @@ const Product = () => {
                                     <div className="modal-footer">
                                         <button
                                             className="btn btn-secondary"
-                                            onClick={() => setShowEditModal(false)}
+                                            onClick={cancelEdit}
                                         >
                                             No
                                         </button>

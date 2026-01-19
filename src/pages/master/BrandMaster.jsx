@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import axiosInstance from "../../api/axiosInstance";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTags, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
@@ -23,9 +23,11 @@ const BrandMaster = () => {
   const [brandToEdit, setBrandToEdit] = useState(null);
 
   const [showPopup, setShowPopup] = useState(false)
+  const [showMessage_Error, setShowMessage_Error] = useState(false);
+
 
   const gapi = import.meta.env.VITE_API_URL;
-  const API = `${gapi}/brand`;
+  const API = `${gapi}/brand/`;
 
   useEffect(() => {
     console.log('main url: ' + gapi + '/brand')
@@ -35,18 +37,27 @@ const BrandMaster = () => {
 
   const loadBrands = async () => {
     try {
-      const res = await axios.get(API);
-      setBrands(res.data);
+      const res = await axiosInstance.get(API + 'list');
+      if (res.data?.Success) {
+        setBrands(res.data.Data);
+      } else {
+        setBrands([])
+      }
     } catch (err) {
       console.error("Error fetching brands:", err);
-      alert("Could not load brands. Please check API connection.");
     }
   };
 
-  const showTempMessage = (msg) => {
+  const showTempMessage = (msg, msgtype) => {
     setMessage(msg);
-    setShowMessage(true);
-    setTimeout(() => setShowMessage(false), 3000);
+    if (msgtype === 'true') {
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 3000);
+    } else {
+      setShowMessage_Error(true);
+      setTimeout(() => setShowMessage_Error(false), 3000);
+    }
+
   };
 
   const handleAdd = async () => {
@@ -62,13 +73,19 @@ const BrandMaster = () => {
     };
 
     try {
-      await axios.post(API, newBrand, {
+      const res = await axiosInstance.post(API + 'insert', newBrand, {
         headers: { "Content-Type": "application/json" },
       });
-      loadBrands();
-      setBrandName("");
-      setShowUpdateModal(false);
-      showTempMessage("Brand added successfully!");
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true')
+        await loadBrands();
+        setBrandName("");
+        setEditingIndex(null);
+      } else {
+        showTempMessage(res.data?.Message, ' false')
+      }
+      loadBrands()
+      setBrandName('')
     } catch (err) {
       console.error("Add error:", err);
     }
@@ -92,17 +109,28 @@ const BrandMaster = () => {
     };
 
     try {
-      await axios.put(`${API}/${BrandId}`, updatedBrand, {
+      const res = await axiosInstance.put(API + 'update', updatedBrand, {
         headers: { "Content-Type": "application/json" },
       });
-      loadBrands();
-      setBrandName("");
-      setBrandId(0);
-      setEditingIndex(null);
-      setShowUpdateModal(false);
-      showTempMessage("Brand updated successfully!");
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true');
+        await loadBrands();
+        setBrandName("");
+        setBrandId(0);
+        setEditingIndex(null);
+        setShowUpdateModal(false);
+      } else {
+        showTempMessage(res.data?.Message, 'false');
+      }
     } catch (err) {
-      console.error("Update error:", err);
+      const backendError =
+        err.response?.data?.Message ||
+        err.response?.data ||
+        err.message ||
+        'Something went wrong';
+
+      showTempMessage(backendError, 'false');
+      console.error('Update error:', err);
     }
   };
 
@@ -127,11 +155,17 @@ const BrandMaster = () => {
     if (!brandToDelete) return;
 
     try {
-      await axios.delete(`${API}/${brandToDelete.BrandId}`);
+      const res = await axiosInstance.delete(`${API}delete/${brandToDelete.BrandId}`);
       setShowDeleteModal(false);
       setBrandToDelete(null);
-      loadBrands();
-      showTempMessage("Brand deleted successfully!");
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true');
+        await loadBrands()
+        setBrandId(0)
+        setEditingIndex(null);
+      } else {
+        showTempMessage(res.data?.Message, 'false');
+      }
     } catch (err) {
       console.error("Delete error:", err);
     }
@@ -172,16 +206,21 @@ const BrandMaster = () => {
     );
   };
 
+  const handleReset = () => {
+    setBrandName('')
+    setEditingIndex(null);
+  }
+
   return (
     <div className="container-fluid mt-2">
       <div
         className="card shadow-lg mx-auto"
-        style={{ border: "2px solid #5d8aa8", maxWidth: "95%" }}
+        style={{ border: "2px solid #6a1b9a", maxWidth: "95%" }}
       >
         {/* Header */}
         <div
-          className="card-header text-white"
-          style={{ backgroundColor: "#5d8aa8", padding: "20px" }}
+          className="card-header "
+          style={{ color: "#6a1b9a", padding: "20px", backgroundColor: 'white' }}
         >
           <h4 className="mb-0"><FontAwesomeIcon icon={faTags} className="me-2" />Brand Master</h4>
         </div>
@@ -194,23 +233,22 @@ const BrandMaster = () => {
           <div className="row">
             {/* Left - Form */}
             <div className="col-md-4">
-              <h5 className="mb-3">
-                {editingIndex !== null ? "Edit Brand" : "Add Brand"}
-              </h5>
+
 
               <div className="mb-3">
-                <label className="form-label">Brand Name <span className='required'>*</span></label>
+                <label className="form-label fw-bold">Brand Name <span className='required'>*</span></label>
                 <input
                   type="text"
                   className="form-control"
                   placeholder="Enter Brand Name"
                   value={brandName}
                   onChange={(e) => setBrandName(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
 
               <button
-                className="btn btn-primary btn-sm"
+                className="btn btn-success btn-md fw-bold text-uppercase"
                 onClick={() => {
                   if (editingIndex !== null) {
                     setShowUpdateModal(true);
@@ -219,14 +257,19 @@ const BrandMaster = () => {
                   }
                 }}
               >
-                {editingIndex !== null ? "Update" : "Insert"}
+                {editingIndex !== null ? "🛠️Update" : "📋Save"}
+              </button>
+              <button className='btn btn-md btn-danger m-2'
+                onClick={handleReset}
+              >
+                🔄️RESET
               </button>
             </div>
 
             {/* Right - Table */}
-            <div className="col-md-8">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Brand List</h5>
+            <div className="col-md-8 mt-2 mt-md-0">
+              <label className="form-label fw-bold">Search for BrandName </label>
+              <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
                 <input
                   type="text"
                   className="form-control"
@@ -235,6 +278,7 @@ const BrandMaster = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                <h5 className="mb-0" style={{ color: '#6a1b9a' }}>Showing {filteredBrands.length} of {brands.length} Records  </h5>
               </div>
 
               {filteredBrands.length === 0 ? (
@@ -260,22 +304,22 @@ const BrandMaster = () => {
                     <tbody>
                       {filteredBrands.map((item) => (
                         <tr key={item.BrandId}>
-                          <td>{highlightText(item.BrandName, searchTerm)}</td>
+                          <td className="text-start">{highlightText(item.BrandName, searchTerm)}</td>
                           <td>
                             <button
-                              className="btn btn-warning btn-sm me-2"
+                              className="btn btn-warning btn-sm me-2 fw-bold"
                               onClick={() => handleEdit(item.BrandId)}
                             >
-                              Edit
+                              🖋️Edit
                             </button>
                             <button
-                              className="btn btn-danger btn-sm"
+                              className="btn btn-danger btn-sm fw-bold"
                               onClick={() => {
                                 setBrandToDelete(item);
                                 setShowDeleteModal(true);
                               }}
                             >
-                              Delete
+                              🗑️Delete
                             </button>
                           </td>
                         </tr>
@@ -290,19 +334,76 @@ const BrandMaster = () => {
           {/* Success Message */}
           {showMessage && (
             <div
-              className="position-fixed top-0 start-50 translate-middle-x mt-3"
-              style={{ zIndex: 9999, minWidth: "300px" }}
+              aria-live="polite"
+              aria-atomic="true"
+              className="toast-container position-fixed top-0 end-0  pe-3"
+              style={{ zIndex: 9999, paddingTop: '70px' }}
             >
               <div
-                className="alert alert-success alert-dismissible fade show mb-0"
+                className="toast show text-bg-success"
                 role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
               >
-                {message}
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowMessage(false)}
-                ></button>
+                <div
+                  className="toast-header text-bg-blue"
+                  style={{
+                    backgroundColor: "#0f8532",
+                    color: "#fff"
+                  }}
+                >
+                  <strong className="me-auto">Success</strong>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setShowMessage(false)}
+                  ></button>
+                </div>
+
+                <div
+                  className="toast-body fw-bold"
+                  style={{
+                    backgroundColor: "#fff",
+                    color: "#000"
+                  }}
+                >
+                  {message}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showMessage_Error && (
+            <div
+              className="toast-container position-fixed top-0 end-0 pe-3"
+              style={{ zIndex: 9999, paddingTop: '70px' }}
+            >
+              <div className="toast show" role="alert">
+
+                <div
+                  className="toast-header"
+                  style={{
+                    backgroundColor: "#d60707",
+                    color: "#fff"
+                  }}
+                >
+                  <strong className="me-auto">Error</strong>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setShowMessage_Error(false)}
+                  ></button>
+                </div>
+
+                <div
+                  className="toast-body fw-bold"
+                  style={{
+                    backgroundColor: "#fff",
+                    color: "#000"
+                  }}
+                >
+                  {message}
+                </div>
               </div>
             </div>
           )}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRulerCombined } from '@fortawesome/free-solid-svg-icons'
+
 
 
 const Unit = () => {
@@ -23,9 +24,12 @@ const Unit = () => {
   const [unitToEdit, setUnitToEdit] = useState(null);
 
   const [showPopup, setShowPopup] = useState(false)
+  const [showMessage_Error, setShowMessage_Error] = useState(false);
+
 
   const gapi = import.meta.env.VITE_API_URL;
-  const API = `${gapi}/unit`;
+  const API = `${gapi}/unit/`;
+
 
   useEffect(() => {
     loadUnits();
@@ -33,19 +37,27 @@ const Unit = () => {
 
   const loadUnits = async () => {
     try {
-      const res = await axios.get(API);
-      console.log('Fetched Units:', res.data);
-      setUnits(res.data);
+      const res = await axiosInstance.get(API + 'list');
+      if (res.data?.Success) {
+        setUnits(res.data.Data)
+      } else {
+        setUnits([]);
+      }
     } catch (err) {
       console.error('Error fetching units:', err);
-      alert('Could not load units. Please check API connection');
     }
   };
 
-  const showTempMessage = (msg) => {
+  const showTempMessage = (msg, msgtype) => {
     setMessage(msg);
-    setShowMessage(true);
-    setTimeout(() => setShowMessage(false), 3000);
+    if (msgtype === 'true') {
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 3000);
+    } else {
+      setShowMessage_Error(true);
+      setTimeout(() => setShowMessage_Error(false), 3000);
+    }
+
   };
 
   // Add new unit
@@ -62,12 +74,21 @@ const Unit = () => {
     };
 
     try {
-      await axios.post(API, newUnit, {
+      const res = await axiosInstance.post(API + 'insert', newUnit, {
         headers: { 'Content-Type': 'application/json' },
       });
-      loadUnits();
-      setUnitName('');
-      showTempMessage('Unit added successfully!');
+      console.log('API response:', res.data);
+      console.log('gId:', res.data.UnitId)
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true')
+        await loadUnits();
+        setUnitName('');
+        setEditingIndex(null);
+      } else {
+        showTempMessage(res.data?.Message, ' false')
+      }
+      loadUnits()
+      setUnitName('')
     } catch (err) {
       console.error('Add error:', err);
     }
@@ -92,16 +113,28 @@ const Unit = () => {
     };
 
     try {
-      await axios.put(`${API}/${UnitId}`, updatedUnit, {
+      const res = await axiosInstance.put(API + 'update', updatedUnit, {
         headers: { 'Content-Type': 'application/json' },
       });
-      loadUnits();
-      setUnitName('');
-      setUnitId(0);
-      setEditingIndex(null);
-      setShowUpdateModal(false);
-      showTempMessage('Unit updated successfully!');
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true');
+        await loadUnits();
+        setUnitName('');
+        setUnitId(0);
+        setEditingIndex(null);
+        setShowUpdateModal(false);
+      } else {
+        showTempMessage(res.data?.Message, 'false');
+      }
+
     } catch (err) {
+      const backendError =
+        err.response?.data?.Message ||
+        err.response?.data ||
+        err.message ||
+        'Something went wrong';
+
+      showTempMessage(backendError, 'false');
       console.error('Update error:', err);
     }
   };
@@ -124,13 +157,23 @@ const Unit = () => {
   // Delete
   const handleDelete = async () => {
     if (!unitToDelete) return;
+    setShowDeleteModal(false);
 
     try {
-      await axios.delete(`${API}/${unitToDelete.UnitId}`);
-      setShowDeleteModal(false);
+      const res = await axiosInstance.delete(`${API}delete/${unitToDelete.UnitId}`);
       setUnitToDelete(null);
-      loadUnits();
-      showTempMessage('Unit deleted successfully!');
+      setShowDeleteModal(false);
+      if (res.data?.Success === true) {
+        showTempMessage(res.data.Message, 'true');
+        await loadUnits();
+        setUnitId(0);
+        setEditingIndex(null);
+      }
+      // ❌ BACKEND LOGICAL ERROR
+      else {
+        showTempMessage(res.data?.Message, 'false');
+      }
+
     } catch (err) {
       console.error('Delete error:', err);
     }
@@ -166,21 +209,27 @@ const Unit = () => {
     );
   };
 
+  const handleReset = () => {
+    setUnitName('')
+    setEditingIndex(null);
+  }
+
   return (
     <div className="container-fluid mt-2">
       <div
         className="card shadow-lg mx-auto"
         style={{
           maxWidth: '95%',
-          border: '2px solid #5d8aa8',
+          border: '2px solid #6a1b9a',
         }}
       >
         {/* Header */}
         <div
-          className="card-header text-white"
+          className="card-header "
           style={{
-            backgroundColor: '#5d8aa8',
+            color: '#6a1b9a',
             padding: '20px',
+            backgroundColor: 'white'
           }}
         >
           <h4 className="mb-0"><FontAwesomeIcon icon={faRulerCombined} className="me-2" />Unit Master</h4>
@@ -194,23 +243,22 @@ const Unit = () => {
           <div className="row">
             {/* Left - Form */}
             <div className="col-md-4">
-              <h5 className="mb-3">
-                {editingIndex !== null ? 'Edit Unit' : 'Add Unit'}
-              </h5>
+
 
               <div className="mb-3">
-                <label className="form-label">Unit Name <span className='required'>*</span></label>
+                <label className="form-label fw-bold">Unit Name <span className='required'>*</span></label>
                 <input
                   type="text"
                   className="form-control"
                   placeholder="Enter Unit Name"
                   value={unitName}
                   onChange={(e) => setUnitName(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
 
               <button
-                className="btn btn-primary btn-sm"
+                className="btn btn-success fw-bold text-uppercase btn-md"
                 onClick={() => {
                   if (editingIndex !== null) {
                     setShowUpdateModal(true);   // ✅ open confirmation modal
@@ -219,14 +267,19 @@ const Unit = () => {
                   }
                 }}
               >
-                {editingIndex !== null ? 'Update' : 'Insert'}
+                {editingIndex !== null ? '🛠️Update' : '📋Save'}
+              </button>
+              <button className='btn btn-md btn-danger m-2'
+                onClick={handleReset}
+              >
+                🔄️RESET
               </button>
             </div>
 
             {/* Right - Table with Search */}
-            <div className="col-md-8">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Unit List</h5>
+            <div className="col-md-8 mt-2 mt-md-0">
+              <label className="form-label fw-bold">Search for UnitName </label>
+              <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
                 <input
                   type="text"
                   className="form-control"
@@ -235,6 +288,9 @@ const Unit = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                <h5
+                  className='w-100 w-md-auto text-md-end'
+                  style={{ color: '#6a1b9a' }}> Showing {filteredUnits.length} of {units.length} Records </h5>
               </div>
 
               {filteredUnits.length === 0 ? (
@@ -260,22 +316,22 @@ const Unit = () => {
                     <tbody>
                       {filteredUnits.map((item) => (
                         <tr key={item.UnitId}>
-                          <td>{highlightText(item.UnitType, searchTerm)}</td>
+                          <td className='text-start'>{highlightText(item.UnitType, searchTerm)}</td>
                           <td>
                             <button
-                              className="btn btn-warning btn-sm me-2"
+                              className="btn btn-warning btn-sm me-2 fw-bold"
                               onClick={() => handleEdit(item)}
                             >
-                              Edit
+                              🖋️Edit
                             </button>
                             <button
-                              className="btn btn-danger btn-sm"
+                              className="btn btn-danger btn-sm fw-bold"
                               onClick={() => {
                                 setUnitToDelete(item);
                                 setShowDeleteModal(true);
                               }}
                             >
-                              Delete
+                              🗑️Delete
                             </button>
                           </td>
                         </tr>
@@ -290,22 +346,77 @@ const Unit = () => {
           {/* Success Message */}
           {showMessage && (
             <div
-              className="position-fixed top-0 start-50 translate-middle-x mt-3"
-              style={{
-                zIndex: 9999,
-                minWidth: '300px',
-              }}
+              aria-live="polite"
+              aria-atomic="true"
+              className="toast-container position-fixed top-0 end-0 pe-3"
+              style={{ zIndex: 9999 ,paddingTop: '70px'}}
             >
               <div
-                className="alert alert-success alert-dismissible fade show mb-0"
+                className="toast show text-bg-success"
                 role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
               >
-                {message}
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowMessage(false)}
-                ></button>
+                <div
+                  className="toast-header text-bg-blue"
+                  style={{
+                    backgroundColor: "#0f8532",
+                    color: "#fff"
+                  }}
+                >
+                  <strong className="me-auto">Success</strong>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setShowMessage(false)}
+                  ></button>
+                </div>
+
+                <div
+                  className="toast-body fw-bold"
+                  style={{
+                    backgroundColor: "#fff",
+                    color: "#000"
+                  }}
+                >
+                  {message}
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {showMessage_Error && (
+            <div
+              className="toast-container position-fixed top-0 end-0 pe-3"
+              style={{ zIndex: 9999, paddingTop: '70px' }}
+            >
+              <div className="toast show" role="alert">
+
+                <div
+                  className="toast-header"
+                  style={{
+                    backgroundColor: "#d60707",
+                    color: "#fff"
+                  }}
+                >
+                  <strong className="me-auto">Error</strong>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setShowMessage_Error(false)}
+                  ></button>
+                </div>
+
+                <div
+                  className="toast-body fw-bold"
+                  style={{
+                    backgroundColor: "#fff",
+                    color: "#000"
+                  }}
+                >
+                  {message}
+                </div>
               </div>
             </div>
           )}
@@ -406,6 +517,7 @@ const Unit = () => {
               </div>
             </div>
           )}
+
           {/* Update Confirmation Modal */}
           {showUpdateModal && (
             <div className="modal show d-block" tabIndex="-1">

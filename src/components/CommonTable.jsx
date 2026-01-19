@@ -25,7 +25,7 @@ const CommonTable = ({
         {data.map((row) => (
           <tr key={row[rowKey]}>
             {columns.map((col, index) => (
-              <td key={index}>
+              <td className= 'text-start' key={index}>
                 {col.render
                   ? col.render(row[col.accessor], row)
                   : row[col.accessor]}
@@ -34,16 +34,16 @@ const CommonTable = ({
 
             <td>
               <button
-                className="btn btn-warning btn-sm me-2"
+                className="btn btn-warning btn-sm me-2 fw-bold"
                 onClick={() => onEdit(row)}
               >
-                Edit
+                🖋️Edit
               </button>
               <button
-                className="btn btn-danger btn-sm"
+                className="btn btn-danger btn-sm fw-bold"
                 onClick={() => onDelete(row)}
               >
-                Delete
+                🗑️Delete
               </button>
             </td>
           </tr>

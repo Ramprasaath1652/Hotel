@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBriefcase } from '@fortawesome/free-solid-svg-icons'
@@ -53,11 +53,6 @@ const ProjectMaster = () => {
 
     const [showUpdateModal, setShowUpdateModal] = useState(false);
 
-
-
-
-
-
     const gapi = import.meta.env.VITE_API_URL;
 
     const API = `${gapi}/project`;
@@ -70,13 +65,13 @@ const ProjectMaster = () => {
     }, []);
 
     useEffect(() => {
-        axios.get(`${gapi}/accountgroups`).then(res => setAccountGroups(res.data));
-        axios.get(`${gapi}/statemasters`).then(res => setStatesList(res.data));
+        axiosInstance.get(`${gapi}/accountgroups`).then(res => setAccountGroups(res.data));
+        axiosInstance.get(`${gapi}/statemasters`).then(res => setStatesList(res.data));
     }, []);
 
     const loadLedger = async () => {
         try {
-            const res = await axios.get(`${gapi}/ledger`);
+            const res = await axiosInstance.get(`${gapi}/ledger`);
             setLedgerList(res.data);
         } catch (err) {
             console.error("Ledger Load Error:", err);
@@ -88,7 +83,7 @@ const ProjectMaster = () => {
 
     const loadProjects = async () => {
         try {
-            const res = await axios.get(API);
+            const res = await axiosInstance.get(API);
             // console.log("LOAD PROJECTS RESPONSE:", res.data);
             setProjects(res.data);
         } catch (err) {
@@ -140,7 +135,7 @@ const ProjectMaster = () => {
         };
         // console.log("DATA SENT TO API:", newProject);
         try {
-            const result = await axios.post(API, newProject, {
+            const result = await axiosInstance.post(API, newProject, {
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -191,6 +186,7 @@ const ProjectMaster = () => {
         setProjectNo(projectToEdit.ProjNo ?? '');
         setDate(projectToEdit.ProjDate ? projectToEdit.ProjDate.split("T")[0] : '');
         setLedger(projectToEdit.LedgerId ?? '');
+        setLedgerQuery(projectToEdit.LedgerName ?? '');
         setRefPerson(projectToEdit.RefName ?? '');
         setDescription(projectToEdit.Description ?? '');
         setAdd1(projectToEdit.Add1 ?? '');
@@ -218,6 +214,7 @@ const ProjectMaster = () => {
         setProjectId('');
         setDate('');
         setLedger('');
+        setLedgerQuery('');
         setRefPerson('');
         setDescription('');
         setAdd1('');
@@ -262,7 +259,7 @@ const ProjectMaster = () => {
         };
 
         try {
-            await axios.put(`${API}/${projectId}`, updatedProject, {
+            await axiosInstance.put(`${API}/${projectId}`, updatedProject, {
                 headers: { 'Content-Type': 'application/json' },
             });
             loadProjects();
@@ -287,7 +284,7 @@ const ProjectMaster = () => {
         if (!projectToDelete) return;
 
         try {
-            await axios.delete(`${API}/${projectToDelete.ProjId}`);
+            await axiosInstance.delete(`${API}/${projectToDelete.ProjId}`);
             setShowDeleteModal(false);
             setProjectToDelete(null);
             loadProjects();
@@ -369,6 +366,24 @@ const ProjectMaster = () => {
         }
     };
 
+    const handleReset = () => {
+        setProjectName('');
+        setProjectNo('');
+        setProjectId('');
+        setDate('');
+        setLedger('');
+        setLedgerQuery('');
+        setRefPerson('');
+        setDescription('');
+        setAdd1('');
+        setAdd2('');
+        setState('');
+        setCountry('');
+        setPin('');
+        setMobile('');
+        setEditingIndex(null);
+        setProjectToEdit(null);
+    }
     const handleAddLedger = async () => {
         if (!ledgerName.trim() || !ledgerGroup || !ledgerState) {
             alert("Please fill required fields!");
@@ -376,7 +391,7 @@ const ProjectMaster = () => {
         }
 
         try {
-            const res = await axios.post(
+            const res = await axiosInstance.post(
                 `${gapi}/ledger`,
                 {
                     LedgerId: 0,
@@ -456,15 +471,16 @@ const ProjectMaster = () => {
         <div className='container-fluid mt-2'>
             <div className='card mx-auto shadow-lg'
                 style={{
-                    border: '2px solid #5d8aa8',
+                    border: '2px solid #6a1b9a',
                     maxWidth: '95%'
                 }}
             >
                 <div
-                    className='card-header text-white'
+                    className='card-header '
                     style={{
-                        backgroundColor: '#5d8aa8',
-                        padding: '20px'
+                        backgroundColor: 'white',
+                        padding: '20px',
+                        color: '#6a1b9a'
                     }}
                 >
                     <h4 className='mb-0'><FontAwesomeIcon icon={faBriefcase} className="me-2" />Project Master</h4>
@@ -475,13 +491,11 @@ const ProjectMaster = () => {
                     <div className='row'>
                         {/* Left Form */}
                         <div className='col-md-4'>
-                            <h4 className='mb-3'>
-                                Add Project
-                            </h4>
+
 
                             <div className='row mb-3'>
                                 <div className='col-md-6'>
-                                    <label className='form-label'>Project No <span className='required'>*</span></label>
+                                    <label className='form-label fw-bold'>Project No <span className='required'>*</span></label>
                                     <input
                                         name='projectNo'
                                         type='number'
@@ -492,7 +506,7 @@ const ProjectMaster = () => {
                                 </div>
 
                                 <div className='col-md-6'>
-                                    <label className='form-label'>Date</label>
+                                    <label className='form-label fw-bold'>Date</label>
                                     <input
                                         name='date'
                                         type='date'
@@ -504,7 +518,7 @@ const ProjectMaster = () => {
                             </div>
 
                             <div className='mb-3'>
-                                <label className='form-label'>Project Name <span className='required'>*</span></label>
+                                <label className='form-label fw-bold'>Project Name <span className='required'>*</span></label>
                                 <input
                                     name='projectName'
                                     type='text'
@@ -515,7 +529,7 @@ const ProjectMaster = () => {
                             </div>
 
                             <div className='mb-3 position-relative'>
-                                <label className='form-label'>
+                                <label className='form-label fw-bold'>
                                     Ledger <span className='required'>*</span>
                                 </label>
                                 <label className='form-label'>{ledger}</label>
@@ -611,7 +625,7 @@ const ProjectMaster = () => {
                             </div>
 
                             <div className='mb-3'>
-                                <label className='form-label'>Ref Person</label>
+                                <label className='form-label fw-bold'>Ref Person</label>
                                 <input
                                     type='text'
                                     name='refPerson'
@@ -623,7 +637,7 @@ const ProjectMaster = () => {
                             </div>
 
                             <div className='mb-3'>
-                                <label className='form-label'>Description</label>
+                                <label className='form-label fw-bold'>Description</label>
                                 <textarea
                                     type='text'
                                     name='description'
@@ -636,7 +650,7 @@ const ProjectMaster = () => {
                             </div>
 
                             <button
-                                className='btn btn-primary btn-sm'
+                                className='btn  btn-md text-uppercase btn-success fw-bold'
                                 onClick={() => {
                                     if (editingIndex !== null) {
                                         setShowUpdateModal(true);   // ✅ open update confirm modal
@@ -645,13 +659,19 @@ const ProjectMaster = () => {
                                     }
                                 }}
                             >
-                                {editingIndex !== null ? 'Update' : 'Insert'}
+                                {editingIndex !== null ? '🛠️Update' : '📋Save'}
+                            </button>
+                            <button className='btn btn-md btn-danger m-2'
+                            onClick={handleReset}
+                            >
+                                🔄️RESET
                             </button>
                         </div>
                         {/* Right - Table */}
-                        <div className='col-md-8'>
-                            <div className='d-flex justify-content-between align-items-center mb-3'>
-                                <h5>Project Master</h5>
+                        <div className='col-md-8 mt-2 mt-md-0'>
+      <label className="form-label fw-bold">Search for ProjectName </label>
+
+                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
                                 <input
                                     type='text'
                                     className='form-control w-50'
@@ -659,6 +679,7 @@ const ProjectMaster = () => {
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
+                                <h5 className="w-100 w-md-auto text-md-end" style={{ color: '#6a1b9a' }}>Showing {filteredProject.length} of {projects.length} Records  </h5>
                             </div>
 
                             {filteredProject.length === 0 ? (<p className='text-center text-muted'>No records found.</p>
@@ -684,24 +705,24 @@ const ProjectMaster = () => {
                                             {filteredProject.map((item) => (
                                                 <tr key={item.ProjId}>
                                                     <td>{highlightText(item.ProjNo?.toString(), searchTerm)}</td>
-                                                    <td>{highlightText(item.ProjName, searchTerm)}</td>
-                                                    <td>{highlightText(item.LedgerName, searchTerm)}</td>
-                                                    <td>{highlightText(item.RefName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(item.ProjName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(item.LedgerName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(item.RefName, searchTerm)}</td>
                                                     <td>
                                                         <button
-                                                            className="btn btn-warning btn-sm me-2"
+                                                            className="btn btn-warning btn-sm me-2 fw-bold"
                                                             onClick={() => handleEdit(item)}
                                                         >
-                                                            Edit
+                                                            🖋️Edit
                                                         </button>
                                                         <button
-                                                            className="btn btn-danger btn-sm"
+                                                            className="btn btn-danger btn-sm fw-bold"
                                                             onClick={() => {
                                                                 setProjectToDelete(item);
                                                                 setShowDeleteModal(true);
                                                             }}
                                                         >
-                                                            Delete
+                                                            🗑️Delete
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -718,10 +739,10 @@ const ProjectMaster = () => {
                     {showMessage && (
                         <div
                             className="position-fixed top-0 start-50 translate-middle-x mt-3"
-                            style={{ zIndex: 9999, minWidth: '300px' }}
+                            style={{ zIndex: 9999, minWidth: '600px' }}
                         >
                             <div
-                                className="alert alert-success alert-dismissible fade show mb-0"
+                                className="alert alert-success alert-dismissible fade show mb-0 fw-bold"
                                 role="alert"
                             >
                                 {message}
