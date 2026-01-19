@@ -58,13 +58,12 @@ const Product = () => {
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [showMessage_Error, setShowMessage_Error] = useState(false);
 
-
     const gapi = import.meta.env.VITE_API_URL;
-    const API = `${gapi}/productmasters/`;
+    const API = `${gapi}/product/`;
     const API_PUNIT = `${gapi}/productunits`;
 
     useEffect(() => {
-        console.log('main url : ' + gapi + '/productmasters');
+
         loadProduct()
         loadGroup()
         loadUnit()
@@ -73,9 +72,9 @@ const Product = () => {
 
     const loadGroup = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/group`);
+            const res = await axiosInstance.get(`${gapi}/group/list`);
             console.log('group url : ' + gapi + '/group');
-            setGroupList(res.data)
+            setGroupList(res.data.Data)
 
         } catch (err) {
             console.error('Group Load Error:', err)
@@ -84,20 +83,19 @@ const Product = () => {
 
     const loadUnit = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/unit`);
+            const res = await axiosInstance.get(`${gapi}/unit/list`);
             console.log('unit url : ' + gapi + '/unit');
-            setUnitList(res.data)
+            setUnitList(res.data.Data)
         } catch (err) {
             console.error('Unit Load Error:', err)
         }
     }
 
-
-
     const loadProduct = async () => {
         try {
             const res = await axiosInstance.get(API + 'list')
-            setProducts(res.data)
+            setProducts(res.data.Data)
+
         } catch (err) {
             console.error('product fetching error', err);
             alert('Could not load product. Check API connection.');
@@ -199,24 +197,51 @@ const Product = () => {
             Sch: null,
             HSNCode: "",
             HSNId: 0,
-            UnitId: Number(salesUnit),
+            UnitId: Number(salesUnit)
 
         };
         console.log("📌 NEW PRODUCT SENT TO API:", newProduct);
 
         try {
-            const res = await axiosInstance.post(API, newProduct, {
+            const res = await axiosInstance.post(API + 'insert', newProduct, {
                 headers: { 'Content-Type': 'application/json' },
             })
-            const pid = res.data.ProductID
-            await handleAddProductUnit(pid);
+            console.log('API response:', res.data);
+
+
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadProduct()
+                ProductName('')
+                ProductID(0)
+                setEditingIndex(null);
+                resetForm();
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+
+
+
             //alert("1 Project Added Successfully!");
-            resetForm();
+            
 
             // alert("Product added successfully!")
         } catch (err) {
-            console.error('Add error:', err);
-            alert("Failed to add product.");
+            console.log("❌ FULL ERROR:", err);
+
+            if (err.response) {
+                console.log("❌ STATUS:", err.response.status);
+                console.log("❌ DATA:", err.response.data);
+                console.log("❌ HEADERS:", err.response.headers);
+
+                alert(err.response.data?.Message || "Server error");
+            } else if (err.request) {
+                console.log("❌ NO RESPONSE:", err.request);
+                alert("Server not responding");
+            } else {
+                console.log("❌ ERROR MESSAGE:", err.message);
+                alert(err.message);
+            }
         }
     }
     const cancelEdit = () => {
@@ -377,9 +402,12 @@ const Product = () => {
         )
         : [];
 
-    const filteredGroup = groupList.filter(item =>
-        item.GroupName?.toLowerCase().includes(groupQuery?.toLowerCase() || '')
-    );
+    const filteredGroup = Array.isArray(groupList)
+        ? groupList.filter(item =>
+            item.GroupName?.toLowerCase().includes(groupQuery?.toLowerCase() || '')
+        )
+        : [];
+
 
     const handleKeyDown = (e) => {
         if (!showGroupDropdown || filteredGroup.length === 0) return;

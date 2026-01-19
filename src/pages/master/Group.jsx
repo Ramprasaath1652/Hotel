@@ -89,7 +89,7 @@ const Group = () => {
         headers: { 'Content-Type': 'application/json' },
       });
       console.log('API response:', res.data);
-      console.log('gId:', res.data.GroupID)
+      console.log('gId:', res.data.RefId)
       if (res.data?.Success === true) {
         showTempMessage(res.data.Message, 'true');
         await loadGroups();
