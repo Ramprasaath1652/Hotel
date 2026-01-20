@@ -52,10 +52,12 @@ const ProjectMaster = () => {
     const [statesList, setStatesList] = useState([]);
 
     const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [showMessage_Error, setShowMessage_Error] = useState(false);
+
 
     const gapi = import.meta.env.VITE_API_URL;
 
-    const API = `${gapi}/project`;
+    const API = `${gapi}/project/`;
 
     useEffect(() => {
         // console.log('main url : ' + gapi + '/project');
@@ -65,38 +67,38 @@ const ProjectMaster = () => {
     }, []);
 
     useEffect(() => {
-        axiosInstance.get(`${gapi}/accountgroups`).then(res => setAccountGroups(res.data));
-        axiosInstance.get(`${gapi}/statemasters`).then(res => setStatesList(res.data));
+        axiosInstance.get(`${gapi}/accgroup/list`).then(res => setAccountGroups(res.data));
+        axiosInstance.get(`${gapi}/state/list`).then(res => setStatesList(res.data));
     }, []);
 
     const loadLedger = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/ledger`);
-            setLedgerList(res.data);
+            const res = await axiosInstance.get(`${gapi}/ledger/list`);
+            setLedgerList(res.data.Data);
         } catch (err) {
             console.error("Ledger Load Error:", err);
         }
     };
 
-
-
-
     const loadProjects = async () => {
         try {
-            const res = await axiosInstance.get(API);
+            const res = await axiosInstance.get(API + 'list');
             // console.log("LOAD PROJECTS RESPONSE:", res.data);
-            setProjects(res.data);
+            setProjects(res.data.Data);
         } catch (err) {
             console.error('Error fetching groups:', err);
             console.log("Server error:", err.response?.data);
-            alert('Could not load groups. Check API connection.');
         }
     };
-
-    const showTempMessage = (msg) => {
+    const showTempMessage = (msg, msgtype) => {
         setMessage(msg);
-        setShowMessage(true);
-        setTimeout(() => setShowMessage(false), 3000);
+        if (msgtype === 'true') {
+            setShowMessage(true);
+            setTimeout(() => setShowMessage(false), 3000);
+        } else {
+            setShowMessage_Error(true);
+            setTimeout(() => setShowMessage_Error(false), 3000);
+        }
     };
 
     const handleAdd = async () => {
@@ -105,6 +107,11 @@ const ProjectMaster = () => {
             setPopupMessage('Project No must be filled')
             return;
         }
+        // if (!date) {
+        //     setShowPopup(true);
+        //     setPopupMessage('Date  must be filled')
+        //     return;
+        // }
 
         if (!projectName.trim()) {
             setShowPopup(true);
@@ -117,6 +124,8 @@ const ProjectMaster = () => {
             setPopupMessage('Ledger  must be filled')
             return;
         }
+
+
 
         const newProject = {
             ProjId: 0,
@@ -135,36 +144,37 @@ const ProjectMaster = () => {
         };
         // console.log("DATA SENT TO API:", newProject);
         try {
-            const result = await axiosInstance.post(API, newProject, {
+            const res = await axiosInstance.post(API + 'insert', newProject, {
                 headers: { 'Content-Type': 'application/json' },
             });
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadProjects()
+                setProjectId(0)
+                setProjectName('')
+                setEditingIndex(null);
+                setProjectId('')
+                setProjectName('');
+                setProjectNo('');
+                setLedger('');
+                setRefPerson('');
+                setDescription('');
+                setDate('');
+                setAdd1('');
+                setAdd2('');
+                setState('');
+                setCountry('');
+                setPin('');
+                setMobile('');
+                setLedger(null);
+                setLedgerQuery('');
+                setShowLedgerDropdown(false)
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
 
-            // console.log("Result RESPONSE:", result.data);
-
-            await loadProjects();
-
-            alert("Project Added Successfully!");
-            setProjectId('')
-            setProjectName('');
-            setProjectNo('');
-            setLedger('');
-            setRefPerson('');
-            setDescription('');
-            setDate('');
-            setAdd1('');
-            setAdd2('');
-            setState('');
-            setCountry('');
-            setPin('');
-            setMobile('');
-            setLedger(null);
-            setLedgerQuery('');
-            setShowLedgerDropdown(false)
-
-            alert("Project added successfully!");
         } catch (err) {
             console.error('Add error:', err);
-            alert("Failed to add project.");
         }
     }
 
@@ -233,12 +243,10 @@ const ProjectMaster = () => {
     // Update group
     const handleUpdate = async () => {
         if (!projectName.trim()) {
-            alert('Please enter group name');
             return;
         }
 
         if (projectId === 0) {
-            alert('Invalid group selected');
             return;
         }
 
@@ -259,16 +267,20 @@ const ProjectMaster = () => {
         };
 
         try {
-            await axiosInstance.put(`${API}/${projectId}`, updatedProject, {
+            const res = await axiosInstance.put(API + 'update', updatedProject, {
                 headers: { 'Content-Type': 'application/json' },
             });
-            loadProjects();
-            setProjectName('');
-            setProjectId(0);
-            setEditingIndex(null);
-            showTempMessage('Project updated successfully!');
-            setShowUpdateModal(false);
-            resetForm();
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadProjects();
+                setProjectName('');
+                setProjectId(0);
+                setEditingIndex(null);
+                setShowUpdateModal(false);
+                resetForm()
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
         } catch (err) {
             console.error('Update error:', err);
         }
@@ -282,13 +294,19 @@ const ProjectMaster = () => {
     // Delete
     const handleDelete = async () => {
         if (!projectToDelete) return;
+        setShowDeleteModal(false);
 
         try {
-            await axiosInstance.delete(`${API}/${projectToDelete.ProjId}`);
-            setShowDeleteModal(false);
-            setProjectToDelete(null);
-            loadProjects();
-            showTempMessage('project deleted successfully!');
+            const res = await axiosInstance.delete(`${API}delete/${projectToDelete.ProjId}`);
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadProjects();
+                setProjectName('');
+                setProjectId(0);
+                setEditingIndex(null)
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
         } catch (err) {
             console.error('Delete error:', err);
         }
@@ -386,7 +404,6 @@ const ProjectMaster = () => {
     }
     const handleAddLedger = async () => {
         if (!ledgerName.trim() || !ledgerGroup || !ledgerState) {
-            alert("Please fill required fields!");
             return;
         }
 
@@ -662,14 +679,14 @@ const ProjectMaster = () => {
                                 {editingIndex !== null ? '🛠️Update' : '📋Save'}
                             </button>
                             <button className='btn btn-md btn-danger m-2'
-                            onClick={handleReset}
+                                onClick={handleReset}
                             >
                                 🔄️RESET
                             </button>
                         </div>
                         {/* Right - Table */}
                         <div className='col-md-8 mt-2 mt-md-0'>
-      <label className="form-label fw-bold">Search for ProjectName </label>
+                            <label className="form-label fw-bold">Search for ProjectName </label>
 
                             <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
                                 <input
@@ -738,22 +755,80 @@ const ProjectMaster = () => {
                     {/* Success Message */}
                     {showMessage && (
                         <div
-                            className="position-fixed top-0 start-50 translate-middle-x mt-3"
-                            style={{ zIndex: 9999, minWidth: '600px' }}
+                            aria-live="polite"
+                            aria-atomic="true"
+                            className="toast-container position-fixed top-0 end-0  pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
                         >
                             <div
-                                className="alert alert-success alert-dismissible fade show mb-0 fw-bold"
+                                className="toast show text-bg-success"
                                 role="alert"
+                                aria-live="assertive"
+                                aria-atomic="true"
                             >
-                                {message}
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setShowMessage(false)}
-                                ></button>
+                                <div
+                                    className="toast-header text-bg-blue"
+                                    style={{
+                                        backgroundColor: "#0f8532",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Success</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
                             </div>
                         </div>
                     )}
+
+                    {showMessage_Error && (
+                        <div
+                            className="toast-container position-fixed top-0 end-0 pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
+                        >
+                            <div className="toast show" role="alert">
+
+                                <div
+                                    className="toast-header"
+                                    style={{
+                                        backgroundColor: "#d60707",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Error</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage_Error(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
 
                     {showPopup && (
                         <div className="modal show d-block" tabIndex="-1">

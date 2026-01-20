@@ -4,6 +4,28 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBook } from '@fortawesome/free-solid-svg-icons';
 
+const initialFormData = {
+    AccId: '',
+    LedgerName: '',
+    LedgerId: '',
+    TName: '',
+    Add1: '',
+    Add2: '',
+    TPlace: '',
+    EPlace: '',
+    District: '',
+    Pin: '',
+    Phone: '',
+    Mobile: '',
+    TinNo: '',
+    Debit: '',
+    Credit: '',
+    CategoryId: '',
+    State: '',
+    GSTinNo: '',
+    Country: '',
+};
+
 
 const LedgerCreation = () => {
 
@@ -25,11 +47,7 @@ const LedgerCreation = () => {
         Credit: '',
         CategoryId: '',
         State: '',
-        TinStatus: '',
-        LocalAgent: '',
-        OtherState: '',
         GSTinNo: '',
-        OtherNo: '',
         Country: '',
     });
 
@@ -40,7 +58,7 @@ const LedgerCreation = () => {
     const [editingIndex, setEditingIndex] = useState(null);
     const [accountGroups, setAccountGroups] = useState([]);
 
-    const [showDeleteModal, setshowDeleteModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [ledgerToDelete, setledgerToDelete] = useState(null);
 
     const [showEditModal, setshowEditModal] = useState(false);
@@ -52,14 +70,18 @@ const LedgerCreation = () => {
     const [showMessage, setShowMessage] = useState(false);
     const [message, setMessage] = useState('');
 
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [showMessage_Error, setShowMessage_Error] = useState(false);
+
+
 
 
 
     const gapi = import.meta.env.VITE_API_URL;
-    const API = `${gapi}/ledger`;
+    const API = `${gapi}/ledger/`;
 
     useEffect(() => {
-        console.log('main url : ' + gapi + '/ledger');
+        // console.log('main url : ' + gapi + '/ledger');
         loadLedgers();
         loadAccountGroups();
         loadStates();
@@ -71,42 +93,39 @@ const LedgerCreation = () => {
 
     const loadLedgers = async () => {
         try {
-            const res = await axiosInstance.get(API);
+            const res = await axiosInstance.get(API + 'list');
             console.log(' Ledgers received from API:', res.data)
-            setLedgers(res.data);
+            setLedgers(res.data.Data);
 
         } catch (err) {
             console.error('Error fetching groups:', err);
-            alert('Could not load groups. Check API connection.');
         }
     };
 
     const loadAccountGroups = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/accountgroups`);
-            console.log("Account Groups:", res.data);
-            setAccountGroups(res.data);
+            const res = await axiosInstance.get(`${gapi}/accgroup/list`);
+            // console.log("Account Groups:", res.data);
+            setAccountGroups(res.data.Data);
         } catch (err) {
             console.error("Error fetching account groups:", err);
-            alert("Could not load account groups. Check API connection.");
         }
     };
 
     const loadStates = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/statemasters`);
-            console.log("State masters:", res.data);
-            setStateList(res.data);
+            const res = await axiosInstance.get(`${gapi}/state/list`);
+            // console.log("State masters:", res.data);
+            setStateList(res.data.Data);
         } catch (err) {
             console.error("Error fetching State master:", err);
-            alert("Could not load state master. Check API connection.");
         }
     };
 
 
     //cancel delete
     const cancelDelete = () => {
-        setshowDeleteModal(false);
+        setShowDeleteModal(false);
         setledgerToDelete(null)
     }
 
@@ -138,6 +157,12 @@ const LedgerCreation = () => {
             return;
         }
 
+        if (!formData.State.trim()) {
+            setShowPopup(true);
+            setPopupMessage('State must be filled')
+            return;
+        }
+
 
         const newLedger = {
             LedgerId: 0,
@@ -157,71 +182,66 @@ const LedgerCreation = () => {
             Credit: !isNaN(parseFloat(formData.Credit)) ? parseFloat(formData.Credit) : 0,
             CategoryId: Number(formData.CategoryId) || 1,
             State: Number(formData.State) || 0,
-            TinStatus: formData.TinStatus?.trim() || 'No',
-            LocalAgent: formData.LocalAgent?.trim() || 'No',
-            OtherState: formData.OtherState?.trim() || 'No',
             GSTinNo: formData.TinNo?.trim() || '',
-            OtherNo: formData.OtherNo?.trim() || '',
             Country: formData.Country?.trim() || ''
         };
 
         console.log("Payload sent to API:", newLedger);
 
         try {
-            const res = await axiosInstance.post(API, newLedger, {
+            const res = await axiosInstance.post(API + 'insert', newLedger, {
                 headers: { 'Content-Type': 'application/json' },
             })
-            // console.log("Full API response:", res);
-            // console.log("Sent payload:", newLedger);
-            // console.log("Returned from API:", res.data);
+            console.log('Add Res:', res.data);
+            if (res.data?.Success === true) {
 
-            //setLedgers(prev => [...prev, res.data]);                        
-            //("✅ Ledger added successfully:", res.data);
-            showTempMessage("Ledger added successfully ✅");
-            loadLedgers();
+                showTempMessage(res.data.Message, 'true');
+                console.log('00')
 
-            setFormData({
-                AccId: '',
-                LedgerName: '',
-                LedgerId: '',
-                TName: '',
-                Add1: '',
-                Add2: '',
-                TPlace: '',
-                EPlace: '',
-                District: '',
-                Pin: '',
-                Phone: '',
-                Mobile: '',
-                TinNo: '',
-                Debit: '',
-                Credit: '',
-                CategoryId: '',
-                State: '',
-                TinStatus: '',
-                LocalAgent: '',
-                OtherState: '',
-                GSTinNo: '',
-                OtherNo: '',
-                Country: '',
-            })
+                await loadLedgers();
+                console.log('444')
 
+                setFormData({
+                    LedgerId: 0,
+                    LedgerName: ''
+                })
+                console.log('11111')
+                setFormData(initialFormData);
+                console.log('22')
+
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
         } catch (err) {
-            console.error('Add error:', err);
-            alert("Failed to add ledger. Please check API connection.")
+            console.log("❌ FULL ERROR:", err);
+
+            if (err.response) {
+                console.log("❌ STATUS:", err.response.status);
+                console.log("❌ DATA:", err.response.data);
+                console.log("❌ HEADERS:", err.response.headers);
+
+                alert(err.response.data?.Message || "Server error");
+            } else if (err.request) {
+                console.log("❌ NO RESPONSE:", err.request);
+            } else {
+                console.log("❌ ERROR MESSAGE:", err.message);
+                alert('Add Err:', err.message);
+            }
         }
 
     }
 
     // update
     const handleUpdate = async () => {
-        if (!formData.LedgerName.trim()) {
-            alert('Please enter Ledger Name');
+
+        if (!formData?.LedgerName.trim()) {
+            // console.log("❌ LedgerName empty");
             return;
         }
 
-        if (editingIndex === null || editingIndex === undefined) {
-            alert('Invalid ledger selected for update.');
+        if (!formData.LedgerId) {
+            // console.log("❌ LedgerId missing", formData.LedgerId);
+            console.error("LedgerId missing");
             return;
         }
 
@@ -243,59 +263,32 @@ const LedgerCreation = () => {
             Credit: parseFloat(formData.Credit) || 0,
             CategoryId: Number(formData.CategoryId) || 1,
             State: Number(formData.State) || 0,
-            TinStatus: formData.TinStatus,
-            LocalAgent: formData.LocalAgent,
-            OtherState: formData.OtherState,
             GSTinNo: formData.TinNo,
-            OtherNo: formData.OtherNo,
             Country: formData.Country,
-
         };
 
-
-        console.log("URL:", `${API}/${editingIndex}`);
-        console.log("About to PUT ledger:", updatedLedger);
-
-
+        console.log("payload:", updatedLedger)
         try {
-            await axiosInstance.put(`${API}/${updatedLedger.LedgerId}`, updatedLedger, {
+            const res = await axiosInstance.put(API + 'update', updatedLedger, {
                 headers: { 'Content-type': 'application/json' }
             })
+            console.log("Response:", res.data)
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadLedgers();
+                setFormData({
+                    LedgerId: 0,
+                    LedgerName: ''
+                })
+                setEditingIndex(null);
+                setShowUpdateModal(false);
+                setFormData(initialFormData);
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
 
-            console.log("✅ Ledger updated successfully:", updatedLedger);
-            showTempMessage("Ledger updated successfully ✏️");
-
-
-            await loadLedgers();
-            setFormData({
-                AccId: '',
-                LedgerName: '',
-                LedgerId: '',
-                TName: '',
-                Add1: '',
-                Add2: '',
-                TPlace: '',
-                EPlace: '',
-                District: '',
-                Pin: '',
-                Phone: '',
-                Mobile: '',
-                TinNo: '',
-                Debit: '',
-                Credit: '',
-                CategoryId: '',
-                State: '',
-                TinStatus: '',
-                LocalAgent: '',
-                OtherState: '',
-                GSTinNo: '',
-                OtherNo: '',
-                Country: '',
-            });
-            setEditingIndex(null);
         } catch (err) {
             console.error('Update error:', err);
-            alert('Failed to update ledger . please check API connection')
         }
 
     }
@@ -334,19 +327,29 @@ const LedgerCreation = () => {
 
         setshowEditModal(false);
 
-        console.log("Form data populated for editing:", ledgerToEdit);
+        // console.log("Form data populated for editing:", ledgerToEdit);
     }
 
     //Delete Record
     const handleDelete = async () => {
         if (!ledgerToDelete) return;
 
+
+
         try {
-            await axiosInstance.delete(`${API}/${ledgerToDelete.LedgerId}`)
-            await loadLedgers();
-            setshowDeleteModal(false);
-            setledgerToDelete(null);
-            showTempMessage("Ledger deleted successfully 🗑️");
+            const res = await axiosInstance.delete(`${API}delete/${ledgerToDelete.LedgerId}`)
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadLedgers();
+                setShowDeleteModal(false);
+                setledgerToDelete(null);
+                setFormData({
+                    LedgerId: 0,
+                    LedgerName: ''
+                })
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
         }
         catch (err) {
             console.error("Error deleting ledger:", err);
@@ -372,6 +375,7 @@ const LedgerCreation = () => {
         : [];
 
     const handleReset = () => {
+        setEditingIndex(null);
         setFormData({
             AccId: '',
             LedgerName: '',
@@ -423,10 +427,15 @@ const LedgerCreation = () => {
         );
     };
 
-    const showTempMessage = (msg) => {
+    const showTempMessage = (msg, msgtype) => {
         setMessage(msg);
-        setShowMessage(true);
-        setTimeout(() => setShowMessage(false), 3000);
+        if (msgtype === 'true') {
+            setShowMessage(true);
+            setTimeout(() => setShowMessage(false), 3000);
+        } else {
+            setShowMessage_Error(true);
+            setTimeout(() => setShowMessage_Error(false), 3000);
+        }
     };
 
 
@@ -684,7 +693,13 @@ const LedgerCreation = () => {
 
                             <button
                                 className='btn btn-success text-uppercase fw-bold btn-md '
-                                onClick={editingIndex !== null ? handleUpdate : handleAdd}
+                                onClick={() => {
+                                    if (editingIndex !== null) {
+                                        setShowUpdateModal(true);   // ✅ open update confirmation
+                                    } else {
+                                        handleAdd();
+                                    }
+                                }}
                             >
                                 {editingIndex !== null ? '🛠️Update' : '📋Save'}
                             </button>
@@ -727,57 +742,97 @@ const LedgerCreation = () => {
                                         overflowX: "auto",
                                     }}
                                 >
-                                    <table className="table table-bordered table-striped text-center align-middle">
-                                        <thead className="table-light" style={{ position: "sticky", top: 0 }}>
-                                            <tr>
-                                                <th>Ledger Name</th>
-                                                <th>Address 1</th>
-                                                <th>Address 2</th>
-                                                <th>State</th>
-                                                <th>Account Type</th>
-                                                <th>Debit</th>
-                                                <th>Credit</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredLedgers.map((l) => (
-                                                <tr key={l.LedgerId}>
-                                                    <td className='text-start'>{highlightText(l.LedgerName, searchTerm)}</td>
-                                                    <td className='text-start'>{highlightText(l.Add1, searchTerm)}</td>
-                                                    <td className='text-start'>{highlightText(l.Add2, searchTerm)}</td>
-                                                    <td className='text-start'>{highlightText(l.StateName, searchTerm)}</td>
-                                                    <td className='text-start'>{highlightText(l.AccName, searchTerm)}</td>
-                                                    <td className='text-end'>{highlightText(l.Debit?.toString(), searchTerm)}</td>
-                                                    <td className='text-end'>{highlightText(l.Credit?.toString(), searchTerm)}</td>
-                                                    <td>
-                                                        <button
-                                                            className="btn btn-warning btn-sm me-2 fw-bold"
-                                                            onClick={() => {
-                                                                setledgerToEdit(l);
-                                                                setshowEditModal(true);
-                                                            }}
-                                                        >
-                                                            🖋️Edit
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-danger btn-sm fw-bold"
-                                                            onClick={() => {
-                                                                setledgerToDelete(l);
-                                                                setshowDeleteModal(true);
-                                                            }}
-                                                        >
-                                                            🗑️Delete
-                                                        </button>
-                                                    </td>
+                                    <div className="table-responsive">
+                                        <table className="table table-bordered table-striped text-center align-middle ledger-table">
+                                            <thead className="table-light sticky-top">
+                                                <tr>
+                                                    <th>Ledger Name</th>
+                                                    <th>Place</th>
+                                                    <th>Mobile</th>
+                                                    <th>Account Type</th>
+                                                    <th>Debit</th>
+                                                    <th>Credit</th>
+                                                    <th>Actions</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {filteredLedgers.map((l) => (
+                                                    <tr key={l.LedgerId}>
+                                                        <td className='text-start'>{highlightText(l.LedgerName, searchTerm)}</td>
+                                                        <td className='text-start'>{highlightText(l.EPlace, searchTerm)}</td>
+                                                        <td className='text-start'>{highlightText(l.Mobile, searchTerm)}</td>
+                                                        <td className='text-start'>{highlightText(l.AccName, searchTerm)}</td>
+                                                        <td className='text-end'>{highlightText(l.Debit?.toString(), searchTerm)}</td>
+                                                        <td className='text-end'>{highlightText(l.Credit?.toString(), searchTerm)}</td>
+                                                        <td>
+                                                            <button
+                                                                className="btn btn-warning btn-sm me-2 fw-bold"
+                                                                onClick={() => {
+                                                                    setledgerToEdit(l);
+                                                                    setshowEditModal(true);
+                                                                }}
+                                                            >
+                                                                🖋️Edit
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-danger btn-sm fw-bold"
+                                                                onClick={() => {
+                                                                    setledgerToDelete(l);
+                                                                    setShowDeleteModal(true);
+                                                                }}
+                                                            >
+                                                                🗑️Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
+
+                    {/* Update Confirmation Modal */}
+                    {showUpdateModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Confirm Update</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={() => setShowUpdateModal(false)}
+                                        ></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <p>
+                                            Are you sure you want to update "
+                                            <strong>{formData.LedgerName}</strong>"?
+                                        </p>
+                                    </div>
+
+                                    <div className="modal-footer">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowUpdateModal(false)}
+                                        >
+                                            No
+                                        </button>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={handleUpdate}
+                                        >
+                                            Yes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {showPopup && (
                         <div className="modal show d-block" tabIndex="-1">
@@ -814,13 +869,13 @@ const LedgerCreation = () => {
                                         <button
                                             type="button"
                                             className="btn-close"
-
+                                            onClick={cancelDelete}
                                         ></button>
                                     </div>
                                     <div className="modal-body">
                                         <p>
-                                            Are you sure you want to delete "{ledgerToDelete?.LedgerName}
-                                            "?
+                                            Are you sure you want to delete "
+                                            {ledgerToDelete?.LedgerName}"?
                                         </p>
                                     </div>
                                     <div className="modal-footer">
@@ -830,10 +885,7 @@ const LedgerCreation = () => {
                                         >
                                             No
                                         </button>
-                                        <button
-                                            className="btn btn-danger"
-                                            onClick={handleDelete}
-                                        >
+                                        <button className="btn btn-danger" onClick={handleDelete}>
                                             Yes
                                         </button>
                                     </div>
@@ -885,21 +937,80 @@ const LedgerCreation = () => {
                         </div>
                     )}
 
+
+                    {/* Success Message */}
                     {showMessage && (
                         <div
-                            className="position-fixed top-0 start-50 translate-middle-x mt-3"
-                            style={{ zIndex: 9999, minWidth: '300px' }}
+                            aria-live="polite"
+                            aria-atomic="true"
+                            className="toast-container position-fixed top-0 end-0  pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
                         >
                             <div
-                                className="alert alert-success alert-dismissible fade show mb-0"
+                                className="toast show text-bg-success"
                                 role="alert"
+                                aria-live="assertive"
+                                aria-atomic="true"
                             >
-                                {message}
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setShowMessage(false)}
-                                ></button>
+                                <div
+                                    className="toast-header text-bg-blue"
+                                    style={{
+                                        backgroundColor: "#0f8532",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Success</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showMessage_Error && (
+                        <div
+                            className="toast-container position-fixed top-0 end-0 pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
+                        >
+                            <div className="toast show" role="alert">
+
+                                <div
+                                    className="toast-header"
+                                    style={{
+                                        backgroundColor: "#d60707",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Error</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage_Error(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
                             </div>
                         </div>
                     )}

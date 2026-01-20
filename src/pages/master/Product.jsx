@@ -198,10 +198,9 @@ const Product = () => {
             HSNCode: "",
             HSNId: 0,
             UnitId: Number(salesUnit)
-
         };
         console.log("📌 NEW PRODUCT SENT TO API:", newProduct);
-
+ 
         try {
             const res = await axiosInstance.post(API + 'insert', newProduct, {
                 headers: { 'Content-Type': 'application/json' },
@@ -212,8 +211,8 @@ const Product = () => {
             if (res.data?.Success === true) {
                 showTempMessage(res.data.Message, 'true');
                 await loadProduct()
-                ProductName('')
-                ProductID(0)
+                setProductName('')
+                setProductId(0)
                 setEditingIndex(null);
                 resetForm();
             } else {
@@ -223,7 +222,7 @@ const Product = () => {
 
 
             //alert("1 Project Added Successfully!");
-            
+
 
             // alert("Product added successfully!")
         } catch (err) {
@@ -240,7 +239,7 @@ const Product = () => {
                 alert("Server not responding");
             } else {
                 console.log("❌ ERROR MESSAGE:", err.message);
-                alert(err.message);
+                alert('Add Err:', err.message);
             }
         }
     }
@@ -319,7 +318,7 @@ const Product = () => {
 
     // Update group
     const handleUpdate = async () => {
-        console.log("🟦 handleUpdate() — productId:", productId);
+        // console.log("🟦 handleUpdate() — productId:", productId);
         if (!productName.trim()) {
             alert("Please enter product name");
             return;
@@ -352,19 +351,35 @@ const Product = () => {
         };
         console.log("🟩 productId BEFORE UPDATE:", productId);
         console.log("🟧 updatedProduct BEFORE UPDATE:", updatedProduct);
-
         try {
             // Update In Product Table
-            const res = await axiosInstance.put(`${API}/${productId}`, updatedProduct);
+            const res = await axiosInstance.put(API + 'update', updatedProduct, {
+                headers: { 'Content-Type': 'application/json' },
+            });
             // Update in Product Unit Table
-            await handleUpdateProductUnit(_puId, productId);
+            // await handleUpdateProductUnit(_puId, productId);
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadProduct()
+                setProductId(0);
+                setProductName('')
+                setEditingIndex(null);
+                setShowUpdateModal(false);
+                resetForm()
+            }
+            // ❌ BACKEND LOGICAL ERROR
+            else {
+                showTempMessage(res.data?.Message, 'false');
+            }
 
 
-            loadProduct();
-            resetForm();
-            setShowUpdateModal(false);
-            showTempMessage("Product updated successfully!");
         } catch (err) {
+            const backendError =
+                err.response?.data?.Message ||
+                err.response?.data ||
+                err.message ||
+                'Something went wrong';
+            showTempMessage(backendError, 'false');
             console.error("Update error:", err);
         }
     };
@@ -375,16 +390,22 @@ const Product = () => {
     // Delete
     const handleDelete = async () => {
         if (!productToDelete) return;
+        setShowDeleteModal(false);
 
         try {
-            await axiosInstance.delete(`${API}/${productToDelete.ProductID}`);
-            setShowDeleteModal(false);
+            const res = await axiosInstance.delete(`${API}delete/${productToDelete.ProductID}`);
             setProductToDelete(null);
-            loadProduct();
-            showTempMessage('project deleted successfully!');
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                await loadProduct();
+                setProductName('')
+                setProductId(0)
+                setEditingIndex(null)
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
         } catch (err) {
             console.error('Delete error:', err);
-            alert("Failed to delete product");
         }
     };
 
