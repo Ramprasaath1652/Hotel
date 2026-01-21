@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 
-const FindSQuot = () => {
+const FindSQuot = ({ onClose }) => {
     const [quot, setQuot] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState('');
@@ -10,7 +9,10 @@ const FindSQuot = () => {
     const [ledgerList, setLedgerList] = useState([]);
     const [projectList, setProjectList] = useState([]);
 
-    const navigate = useNavigate();
+    const gapi = import.meta.env.VITE_API_URL;
+
+
+
 
     useEffect(() => {
         loadMasters();
@@ -20,11 +22,11 @@ const FindSQuot = () => {
     // 🔹 Step 1 - Load ledger & project masters
     const loadMasters = async () => {
         try {
-            const ledgers = await axios.get('http://192.168.31.101:85/api/ledger');
-            setLedgerList(ledgers.data || []);
+            const ledgers = await axiosInstance.get(`${gapi}/ledger/list`);
+            setLedgerList(ledgers.data.Data);
 
-            const projects = await axios.get('http://192.168.31.101:85/api/project');
-            setProjectList(projects.data || []);
+            const projects = await axiosInstance.get(`${gapi}/project/list`);
+            setProjectList(projects.data.Data);
         } catch (err) {
             console.error('Masters load error:', err);
         }
@@ -33,8 +35,8 @@ const FindSQuot = () => {
     // 🔹 Step 2 - Load Quotations
     const loadSQuot = async () => {
         try {
-            const res = await axios.get('http://192.168.31.101:85/api/SQInfoes');
-            const data = res.data || [];
+            const res = await axiosInstance.get(`${gapi}/suppquo/list`);
+            const data = res.data.Data;
 
             // Map to include LedgerName & ProjName if missing
             const mapped = data.map(r => ({
@@ -71,11 +73,11 @@ const FindSQuot = () => {
 
     return (
         <div className="find-overlay"
+            onClick={onClose}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 9999 }}
-            onClick={() => navigate('/transaction/squot')}
         >
             <div className="find-container" onClick={e => e.stopPropagation()}>
-                <div className="text-white px-3 py-2" style={{ backgroundColor: '#5d8aa8' }}>
+                <div className="text-white px-3 py-2" style={{ backgroundColor: '#6a1b9a' }}>
                     <h6>SQuot</h6>
                 </div>
 
@@ -91,7 +93,7 @@ const FindSQuot = () => {
                 </div>
 
                 <div className="mt-3 px-2 px-md-3"
-                    style={{ border: '1px solid #5d8aa8', minHeight: '500px', borderRadius: '5px', padding: '10px', overflow: 'auto' }}
+                    style={{ border: '1px solid #6a1b9a', minHeight: '500px', borderRadius: '5px', padding: '10px', overflow: 'auto' }}
                 >
                     <table className="table table-bordered table-sm" style={{ fontSize: '12px', minWidth: '900px' }}>
                         <thead className="table-light">
@@ -119,11 +121,11 @@ const FindSQuot = () => {
                                     <td className="text-center">
                                         <button className="btn btn-sm btn-secondary me-1"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}
-                                            onClick={() => navigate(`/transaction/squot/${r.SQId}`)}
-                                        >Edit</button>
+
+                                        >🖋️Edit</button>
                                         <button className="btn btn-sm btn-danger"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}
-                                        >Delete</button>
+                                        >🗑️Delete</button>
                                     </td>
                                 </tr>
                             ))}
@@ -132,7 +134,7 @@ const FindSQuot = () => {
                 </div>
 
                 <div className="mt-4 text-end">
-                    <button className="btn btn-sm btn-danger" onClick={() => window.history.back()}>Close</button>
+                    <button className="btn btn-sm btn-danger" onClick={onClose}>Close</button>
                 </div>
             </div>
         </div>

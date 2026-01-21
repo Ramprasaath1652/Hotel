@@ -200,7 +200,7 @@ const Product = () => {
             UnitId: Number(salesUnit)
         };
         console.log("📌 NEW PRODUCT SENT TO API:", newProduct);
- 
+
         try {
             const res = await axiosInstance.post(API + 'insert', newProduct, {
                 headers: { 'Content-Type': 'application/json' },
@@ -480,32 +480,33 @@ const Product = () => {
 
         try {
             const res = await axiosInstance.post(
-                `${gapi}/group`, // 🔁 change this
+                `${gapi}/group/insert`,
                 {
-                    GroupName: groupQuery
+                    GroupName: groupQuery.trim(),
+                    GroupID: 0,
+                    TGroupName: groupQuery.trim()
                 },
                 {
                     headers: { 'Content-Type': 'application/json' }
                 }
             );
-            if (res.data?.Status === "Success") {
+            if (res.data?.Success === true) {
 
-                // 🔥 MANUALLY CREATE GROUP OBJECT
-                const newGroup = {
-                    GroupID: res.data.RefId,   // backend id
-                    GroupName: groupQuery      // user typed name
-                };
+        console.log('data1:',res.data.Data)
+        console.log('GN:',res.data.Data[0].GroupName)
+
+              
 
                 // 🔥 instant dropdown update
-                setGroupList(prev => [...prev, newGroup]);
-
-                setGroupId(newGroup.GroupID);
-                setGroupQuery(newGroup.GroupName);
-                setGroupQuery("");
+                // setGroupList(prev => [...prev, newGroup]);
+                setGroupId(res.data.Data[0].GroupID);
+                // setGroupQuery(newGroup.GroupName);
+                // setGroupQuery("");
                 setShowGroupDropdown(false);
                 setActiveIndex(-1);
-
-                showTempMessage("Group added successfully ✅");
+                showTempMessage(res.data.Message, 'true');
+            } else {
+                showTempMessage(res.data?.Message, 'false');
             }
         } catch (err) {
             console.error("Add Group Error", err);
@@ -770,6 +771,9 @@ const Product = () => {
                                             <tr>
                                                 <th>Product Code</th>
                                                 <th>Product Name</th>
+                                                <th>Group Name</th>
+                                                <th>Unit</th>
+                                                <th>Vat %</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -778,6 +782,10 @@ const Product = () => {
                                                 <tr key={item.ProductID}>
                                                     <td>{highlightText(item.ProductCode, searchTerm)}</td>
                                                     <td className='text-start'>{highlightText(item.ProductName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(item.GroupName, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(item.UnitType, searchTerm)}</td>
+                                                    <td className='text-start'>{highlightText(item.VatPer, searchTerm)}</td>
+
                                                     <td>
                                                         <button className="btn btn-warning btn-sm me-2 fw-bold" onClick={() => handleEdit(item)}>
                                                             🖋️Edit

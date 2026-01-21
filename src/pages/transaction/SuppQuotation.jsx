@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./supQuot_css.css";
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileInvoice } from '@fortawesome/free-solid-svg-icons'
 
@@ -91,13 +91,12 @@ const SuppQuotation = () => {
 
     useEffect(() => {
         loadLedger();
-        loadProjects();
-        loadUnit();
-        loadProduct();
-        loadBrands();
-        loadSupp();
-        loadSuppDets();
-        console.log("XXX : " + brandList);
+        // loadProjects();
+        // loadUnit();
+        // loadProduct();
+        // loadBrands();
+        // loadSupp();
+        // loadSuppDets();
     }, [])
 
     useEffect(() => {
@@ -122,9 +121,9 @@ const SuppQuotation = () => {
 
     const loadLedger = async () => {
         try {
-            const res = await axios.get(`${gapi}/ledger`)
-            //console.log("Ledger API Response:", res.data);
-            setLedgerList(res.data)
+            const res = await axiosInstance.get(`${gapi}/ledger/list`)
+            console.log("Ledger API Response:", res.data);
+            setLedgerList(res.data.Data)
         } catch (err) {
             console.error("Ledger Load Error:", err)
         }
@@ -132,23 +131,22 @@ const SuppQuotation = () => {
 
     const loadProjects = async () => {
         try {
-            const res = await axios.get(`${gapi}/project`);
-            console.log("API RAW RESPONSE:", res);
+            const res = await axiosInstance.get(`${gapi}/project/list`);
+            // console.log("API RAW RESPONSE:", res);
 
             //console.log("LOAD PROJECTS RESPONSE:", res.data);
-            setProjects(res.data);
+            setProjects(res.data.Data);
         } catch (err) {
             console.error('Error fetching groups:', err);
             console.log("Server error:", err.response?.data);
-            alert('Could not load groups. Check API connection.');
         }
     }
 
     const loadUnit = async () => {
         try {
-            const res = await axios.get(`${gapi}/unit`);
+            const res = await axiosInstance.get(`${gapi}/unit/list`);
             //console.log("LOAD UNIT RESPONSE:", res.data);
-            setUnitList(res.data)
+            setUnitList(res.data.Data)
         } catch (err) {
             console.error('Unit Load Error:', err)
         }
@@ -156,49 +154,47 @@ const SuppQuotation = () => {
 
     const loadProduct = async () => {
         try {
-            const res = await axios.get(`${gapi}/productmasters`)
+            const res = await axiosInstance.get(`${gapi}/product/list`)
             //console.log("LOAD Product RESPONSE:", res.data);
-            setProductList(res.data)
+            setProductList(res.data.Data)
         } catch (err) {
             console.error('product fetching error', err);
-            alert('Could not load product. Check API connection.');
         }
     }
 
     const loadBrands = async () => {
         try {
-            const res = await axios.get(`${gapi}/brand`);
+            const res = await axiosInstance.get(`${gapi}/brand/list`);
             //    console.log("LOAD Brand RESPONSE:", res.data);
-            setBrandList(res.data);
+            setBrandList(res.data.Data);
 
         } catch (err) {
             console.error("Error fetching brands:", err);
-            alert("Could not load brands. Please check API connection.");
         }
     };
 
-    const loadSupp = async () => {
-        try {
-            const res = await axios.get(`${gapi}/tblSuppQuos`);
-            console.log("LOAD table RESPONSE:", res.data);
-            setSuppQuot(res.data)
+    // const loadSupp = async () => {
+    //     try {
+    //         const res = await axiosInstance.get(`${gapi}/tblSuppQuos`);
+    //         console.log("LOAD table RESPONSE:", res.data);
+    //         setSuppQuot(res.data)
 
-        } catch (err) {
-            console.error("Error fetching suppQuo:", err);
-            alert("Could not load SuppQuotation. Please check API connection.");
-        }
-    }
+    //     } catch (err) {
+    //         console.error("Error fetching suppQuo:", err);
+    //         alert("Could not load SuppQuotation. Please check API connection.");
+    //     }
+    // }
 
-    const loadSuppDets = async () => {
-        try {
-            const res = await axios.get(`${gapi}/tblSuppQuoDets`);
-            console.log("LOAD detail RESPONSE:", res.data);
-            setSuppQuotDet(res.data)
-        } catch (err) {
-            console.error("Error fetching suppQuo:", err);
-            alert("Could not load SuppQuotationDetails. Please check API connection.");
-        }
-    }
+    // const loadSuppDets = async () => {
+    //     try {
+    //         const res = await axiosInstance.get(`${gapi}/tblSuppQuoDets`);
+    //         console.log("LOAD detail RESPONSE:", res.data);
+    //         setSuppQuotDet(res.data)
+    //     } catch (err) {
+    //         console.error("Error fetching suppQuo:", err);
+    //         alert("Could not load SuppQuotationDetails. Please check API connection.");
+    //     }
+    // }
 
 
     const handleKeyDown = (e, type) => {
@@ -224,7 +220,6 @@ const SuppQuotation = () => {
     const handleAddRow = () => {
         // Validate minimal required fields before adding
         if (!bottomData.productId) {
-            alert("Please select a product.");
             return;
         }
 
@@ -311,7 +306,7 @@ const SuppQuotation = () => {
 
             console.log("HEADER PAYLOAD:", payload);
 
-            const res = await axios.post(`${gapi}/tblSuppQuos`, payload);
+            const res = await axiosInstance.post(`${gapi}/tblSuppQuos`, payload);
 
             console.log("HEADER SAVED:", res.data);
 
@@ -379,7 +374,7 @@ const SuppQuotation = () => {
             const results = [];
             for (const item of detailItems) {
                 // POST single object
-                const res = await axios.post(`${gapi}/tblSuppQuoDets`, item);
+                const res = await axiosInstance.post(`${gapi}/tblSuppQuoDets`, item);
                 results.push(res.data);
                 console.log("Saved detail:", res.data);
             }
@@ -396,18 +391,14 @@ const SuppQuotation = () => {
 
     const handleSave = async () => {
         if (!topData.ledgerId) {
-            alert('please select a Ledger')
         }
         if (!topData.projectId) {
-            alert("Please select a Project.");
             return;
         }
         if (!topData.qNo) {
-            alert("Please enter Quotation No.");
             return;
         }
         if (!topData.qDate) {
-            alert("Please select Quotation Date.");
             return;
         }
 
@@ -422,7 +413,6 @@ const SuppQuotation = () => {
             // 2️⃣ Save detail rows
             await saveSuppQuoDetails(sqId);
 
-            alert("Saved Successfully!");
 
             // 3️⃣ Reset everything properly AFTER save
             setTopData({
@@ -452,7 +442,6 @@ const SuppQuotation = () => {
         } catch (err) {
             console.error("❌ SAVE FAILED:", err);
             const serverMsg = err.response?.data || err.message;
-            alert("Saving failed! " + (typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg)));
         }
     };
 

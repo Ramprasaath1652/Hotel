@@ -67,8 +67,8 @@ const ProjectMaster = () => {
     }, []);
 
     useEffect(() => {
-        axiosInstance.get(`${gapi}/accgroup/list`).then(res => setAccountGroups(res.data));
-        axiosInstance.get(`${gapi}/state/list`).then(res => setStatesList(res.data));
+        axiosInstance.get(`${gapi}/accgroup/list`).then(res => setAccountGroups(res.data.Data));
+        axiosInstance.get(`${gapi}/state/list`).then(res => setStatesList(res.data.Data));
     }, []);
 
     const loadLedger = async () => {
@@ -406,18 +406,20 @@ const ProjectMaster = () => {
         if (!ledgerName.trim() || !ledgerGroup || !ledgerState) {
             return;
         }
-
+        const payload = {
+            LedgerId: 0,
+            AccId: Number(ledgerGroup),
+            LedgerName: ledgerName.trim(),
+            TName: ledgerName.trim(),
+            TPlace: ledgerPlace?.trim() || "",
+            EPlace: ledgerPlace?.trim() || "",
+            CategoryId: 1,
+            State: Number(ledgerState),
+        };
         try {
             const res = await axiosInstance.post(
-                `${gapi}/ledger`,
-                {
-                    LedgerId: 0,
-                    CategoryId: 1,
-                    LedgerName: ledgerName.trim(),
-                    AccId: ledgerGroup,      // ✅ backend match
-                    State: ledgerState,      // ✅ backend match
-                    EPlace: ledgerPlace || ""
-                },
+                `${gapi}/ledger/insert`,
+                payload,
                 {
                     headers: { "Content-Type": "application/json" }
                 }
@@ -426,10 +428,9 @@ const ProjectMaster = () => {
             console.log("LEDGER RES 👉", res.data);
 
             // 🔥 SUCCESS CONDITION (THIS IS THE FIX)
-            if (res.data?.LedgerId) {
+            if (res.data?.Success === true) {
 
-                const newLedger = {
-
+                const savedLedger = {
                     LedgerId: res.data.LedgerId,
                     LedgerName: res.data.LedgerName,
                     EPlace: res.data.EPlace || "-",
@@ -438,11 +439,11 @@ const ProjectMaster = () => {
                 };
 
                 // 🔥 instant dropdown update
-                setLedgerList(prev => [...prev, newLedger]);
+                setLedgerList(prev => [...prev,savedLedger ]);
 
                 // 🔥 auto select
-                setLedger(newLedger.LedgerId);
-                setLedgerQuery(newLedger.LedgerName);
+                setLedger(savedLedger.LedgerId);
+                setLedgerQuery(savedLedger.LedgerName);
 
                 // 🔥 reset + close
                 setLedgerName("");
@@ -452,11 +453,9 @@ const ProjectMaster = () => {
                 setLedgerQuery("");
                 setShowLedgerModal(false);
                 setShowLedgerDropdown(false);
-
-
-                showTempMessage("Ledger added successfully ✅");
+                showTempMessage(res.data.Message, 'true');
             } else {
-                showTempMessage("Ledger save failed ❌");
+                showTempMessage(res.data?.Message, 'false');
             }
 
         } catch (err) {
@@ -924,10 +923,10 @@ const ProjectMaster = () => {
                     )}
 
                     {showLedgerModal && (
-                        <div className="modal show d-block" tabIndex="-1">
+                        <div className="modal show d-block mt-5" tabIndex="-1"> 
                             <div className="modal-dialog modal-lg">
                                 <div className="modal-content">
-                                    <div className="modal-header" style={{ backgroundColor: '#5d8aa8' }}>
+                                    <div className="modal-header" style={{ backgroundColor: '#6a1b9a' }}>
                                         <h5 className="modal-title" style={{ color: 'white' }}>Add Ledger</h5>
                                         <button className="btn-close" style={{ backgroundColor: 'white' }} onClick={() => setShowLedgerModal(false)}></button>
                                     </div>

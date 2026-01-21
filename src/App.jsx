@@ -127,7 +127,7 @@ const App = () => {
 
                         {/* Transaction Master */}
                         <Route path='/transaction/suppquotation' element={<SuppQuotation />} />
-                        <Route path='/transaction/quotation/sfind' element={<FindSQuot />} />
+                        {/* <Route path='/transaction/quotation/sfind' element={<FindSQuot />} /> */}
                         <Route path='/transaction/quotation' element={<Quotation />} />
                         <Route path='/transaction/quotation/find' element={<FindQuot />} />
                         <Route path='/transaction/sales' element={<Sales />} />
@@ -137,7 +137,6 @@ const App = () => {
                         <Route path='/transaction/quot' element={<Quot />} />
                         <Route path="/transaction/quot/:qId" element={<Quot />} />
                         <Route path='/transaction/squot' element={<SQuot />} />
-                        <Route path='/transaction/squot/:id' element={<SQuot />} />
 
 
 

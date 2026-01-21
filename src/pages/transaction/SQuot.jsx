@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import axiosInstance from '../../api/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileSignature } from '@fortawesome/free-solid-svg-icons'
 import { useNavigate, useParams } from 'react-router-dom';
+import FindSQuot from './FindSQuot';
 
 
 
@@ -16,6 +17,7 @@ const SQuot = () => {
         ledger: '',
         ledgerId: '',
         project: '',
+        projectId: '',
         terms: '',
         narration: '',
         netAmount: 0,
@@ -79,6 +81,12 @@ const SQuot = () => {
     const [sqHeader, setSqHeader] = useState(null);
     const [sqDetails, setSqDetails] = useState([]);
 
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [showMessage_Error, setShowMessage_Error] = useState(false);
+    const [showMessage, setShowMessage] = useState(false);
+    const [message, setMessage] = useState('');
+    const [showFind, setShowFind] = useState(false);
+
 
 
 
@@ -96,18 +104,26 @@ const SQuot = () => {
         loadBrands();
         loadUnit();
         loadSupp();
-        loadSuppDets();
+        // loadSuppDets();
     }, [])
 
 
     const navigate = useNavigate();
     const { id } = useParams();
+    console.log("EDIT ID =", id);
+
+    useEffect(() => {
+        if (id) {
+            loadById(id);
+        }
+    }, [id]);
+
 
     const loadLedgers = async () => {
         try {
-            const res = await axios.get(`${gapi}/ledger`)
-            // console.log('ledgers res:',res.data)
-            setLedgerList(res.data)
+            const res = await axiosInstance.get(`${gapi}/ledger/list`)
+            console.log('ledgers res:', res.data)
+            setLedgerList(res.data.Data)
         } catch (err) {
             console.error('Ledger Load Error:', err)
         }
@@ -115,9 +131,9 @@ const SQuot = () => {
 
     const loadProject = async () => {
         try {
-            const res = await axios.get(`${gapi}/project`)
+            const res = await axiosInstance.get(`${gapi}/project/list`)
             console.log('project res:', res.data)
-            setProjectList(res.data)
+            setProjectList(res.data.Data)
         } catch (err) {
             console.error('Project load error:', err)
         }
@@ -125,32 +141,30 @@ const SQuot = () => {
 
     const loadProduct = async () => {
         try {
-            const res = await axios.get(`${gapi}/productmasters`)
+            const res = await axiosInstance.get(`${gapi}/product/list`)
             //console.log("LOAD Product RESPONSE:", res.data);
-            setProductList(res.data)
+            setProductList(res.data.Data)
         } catch (err) {
             console.error('product fetching error', err);
-            alert('Could not load product. Check API connection.');
         }
     }
 
     const loadBrands = async () => {
         try {
-            const res = await axios.get(`${gapi}/brand`);
+            const res = await axiosInstance.get(`${gapi}/brand/list`);
             //    console.log("LOAD Brand RESPONSE:", res.data);
-            setBrandList(res.data);
+            setBrandList(res.data.Data);
 
         } catch (err) {
             console.error("Error fetching brands:", err);
-            alert("Could not load brands. Please check API connection.");
         }
     };
 
     const loadUnit = async () => {
         try {
-            const res = await axios.get(`${gapi}/unit`);
-            //console.log("LOAD UNIT RESPONSE:", res.data);
-            setUnitList(res.data)
+            const res = await axiosInstance.get(`${gapi}/unit/list`);
+            console.log("LOAD UNIT RESPONSE:", res.data);
+            setUnitList(res.data.Data)
         } catch (err) {
             console.error('Unit Load Error:', err)
         }
@@ -158,35 +172,33 @@ const SQuot = () => {
 
     const loadSupp = async () => {
         try {
-            const res = await axios.get(`${gapi}/tblSuppQuos`);
+            const res = await axiosInstance.get(`${gapi}/suppquo/list`);
             console.log("LOAD table RESPONSE:", res.data);
-            setSuppQuot(res.data)
+            setSuppQuot(res.data.Data)
 
         } catch (err) {
             console.error("Error fetching suppQuo:", err);
-            alert("Could not load SuppQuotation. Please check API connection.");
         }
     }
 
     const loadSuppDets = async () => {
         try {
-            const res = await axios.get(`${gapi}/ `);
+            const res = await axiosInstance.get(`${gapi}/ `);
             console.log("LOAD detail RESPONSE:", res.data);
             setSuppQuotDet(res.data)
         } catch (err) {
             console.error("Error fetching suppQuo:", err);
-            alert("Could not load SuppQuotationDetails. Please check API connection.");
         }
     }
 
-    useEffect(() => {
-        loadPrimary()
-        loadSecondary()
-    }, [id]);
+    // useEffect(() => {
+    //     loadPrimary()
+    //     loadSecondary()
+    // }, [id]);
 
 
     const loadPrimary = async () => {
-        const res = await axios.get(
+        const res = await axiosInstance.get(
             `http://192.168.31.101:85/api/SQInfoes/${id}`
         );
 
@@ -215,7 +227,7 @@ const SQuot = () => {
 
     const loadSecondary = async () => {
         try {
-            const res = await axios.get(
+            const res = await axiosInstance.get(
                 `http://192.168.31.101:85/api/sqbills/${id}`
             );
             console.log(res.data)
@@ -254,8 +266,6 @@ const SQuot = () => {
             console.error("Secondary load failed:", err);
         }
     };
-
-
 
     const handleTopChange = (e) => {
         const { name, value } = e.target;
@@ -507,10 +517,36 @@ const SQuot = () => {
         setActiveUnitIndex(-1);
     };
 
+    const loadById = async (sqId) => {
+        try {
+            const res = await axiosInstance.get(`${gapi}/suppquo/${sqId}`);
+            const data = res.data.Data;
+
+            // HEADER
+            setTopData({
+                SQNo: data.SQNo,
+                SQDate: data.SQDate,
+                ProjectId: data.ProjectId,
+                LedgerId: data.LedgerId,
+                TotTaxableAmt: data.TotTaxableAmt,
+                TotVatAmt: data.TotVatAmt,
+                NetAmount: data.NetAmount,
+                Terms: data.Terms,
+                Narration: data.Narration,
+            });
+
+            // DETAILS
+            setBottomData(data.Details || []);
+
+        } catch (err) {
+            console.error("Load SQuot error:", err);
+        }
+    };
+
+
     const handleAddRow = () => {
         // Validate minimal required fields before adding
         if (!bottomData.productId) {
-            alert("Please select a product.");
             return;
         }
 
@@ -545,6 +581,7 @@ const SQuot = () => {
             brand: "",
             brandId: "",
             brandName: "",
+            unit: ' ',
             unitId: "",
             unitType: "",
             qty: "",
@@ -646,7 +683,8 @@ const SQuot = () => {
             productId: '',
             productName: '',
             unitId: '',
-            unitType: '',
+            unitId: '',
+            unit: '',
             brandId: '',
             brandName: '',
             qty: '',
@@ -661,6 +699,7 @@ const SQuot = () => {
         });
         setProductQuery("");
         setBrandQuery("");
+        setUnitQuery('');
         setShowProductDropdown(false);
         setShowBrandDropdown(false);
     };
@@ -716,124 +755,188 @@ const SQuot = () => {
 
     const handleSaveSuppQuo = async () => {
         try {
+            const totalQty = rows.reduce((s, r) => s + Number(r.qty || 0), 0);
+            const netAmt = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
 
+            const nRate = totalQty > 0 ? netAmt / totalQty : 0;
 
             const payload = {
-                Create_By: 1,
-                Create_On: new Date().toISOString(),
-
-                LedgerId: topData.ledgerId,
-                ProjectId: topData.projectId,
+                SQId: 0,
                 SQNo: topData.qNo,
                 SQDate: topData.qDate,
 
-                Narration: topData.narration || "",
+                ProjectId: Number(topData.projectId),
+                LedgerId: Number(topData.ledgerId),
+
+                TotTaxableAmt: rows.reduce(
+                    (sum, r) => sum + Number(r.taxable || 0), 0
+                ),
+                TotVatAmt: rows.reduce(
+                    (sum, r) => sum + Number(r.vatAmt || 0), 0
+                ),
+                NetAmount: netAmt,
+
                 Terms: topData.terms || "",
+                Narration: topData.narration || "",
+                Create_By: 1,
 
-                TotTaxableAmt: rows.reduce((sum, r) => sum + Number(r.taxable || 0), 0),
-                TotVatAmt: rows.reduce((sum, r) => sum + Number(r.vatAmt || 0), 0),
+                // 🔥 DETAILS ARRAY
+                Details: rows.map((r, index) => ({
+                    Sno: index + 1,
+                    ProductId: Number(r.productId),
+                    Des: r.description || "",
 
-                NetAmount: rows.reduce((sum, r) => sum + Number(r.amount || 0), 0),
+                    BrandId: Number(r.brandId || 0),
+                    UnitId: Number(r.unitId || 0),
 
-                SQId: 0
+                    Qty: Number(r.qty || 0),
+                    BRate: Number(r.rate || 0),
+                    ProfPer: Number(r.marPer || 0),
+                    SRate: Number(r.sRate || 0),
+
+                    Taxable: Number(r.taxable || 0),
+                    VatPer: Number(r.vatPer || 0),
+                    VatAmt: Number(r.vatAmt || 0),
+
+                    NetAmt: Number(r.amount || 0),
+                    NRate: nRate,
+                }))
             };
-
-            console.log("HEADER PAYLOAD:", payload);
-
-            const res = await axios.post(`${gapi}/tblSuppQuos`, payload);
-
-            console.log("HEADER SAVED:", res.data);
-
-            // Return the created SQId. Try to read returned property in multiple casings
-            return Number(res.data?.RefId) || 0;
-
-
-        } catch (err) {
-            console.error("❌ HEADER SAVE ERROR:", err);
-            throw err;
+            // 🔥 SINGLE API CALL
+            const res = await axiosInstance.post(
+                `${gapi}/suppquo/insert`,
+                payload,
+                { headers: { "Content-Type": "application/json" } }
+            );
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                handleReset()
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+        }
+        catch (err) {
+            console.error("❌ SAVE ERROR:", err.response?.data || err);
         }
     };
 
-    const saveSuppQuoDetails = async (sqId) => {
-        if (!sqId || sqId <= 0) {
-            throw new Error("Missing SQId for details save.");
-        }
-        const totalQty = rows.reduce((sum, r) => sum + Number(r.qty || 0), 0);
-        const netAmt = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
-        // ✅ CALCULATE NRate (NetAmt / Qty)
-        const nRate = totalQty > 0 ? netAmt / totalQty : 0;
-        // Build detail objects and validate
-        const detailItems = rows.map((r, index) => {
-            return {
-                SQDetId: r.SQDetId || 0,
-                SQId: Number(sqId),
-                SNo: index + 1,
+    // const handleSaveSuppQuo = async () => {
+    //     try {
 
-                ProductId: Number(r.productId || 0),
-                BrandId: Number(r.brandId || 0),
-                UnitId: Number(r.unitId || 0),
-                UnitType: r.unitType || "",
 
-                Qty: Number(r.qty || 0),
-                BRate: Number(r.rate || 0),
-                ProfPer: Number(r.marPer || 0),
-                SRate: Number(r.sRate || 0),
+    //         const payload = {
+    //             Create_By: 1,
+    //             Create_On: new Date().toISOString(),
 
-                Taxable: Number(r.taxable || 0),
-                VatAmt: Number(r.vatAmt || 0),
+    //             LedgerId: topData.ledgerId,
+    //             ProjectId: topData.projectId,
+    //             SQNo: topData.qNo,
+    //             SQDate: topData.qDate,
 
-                NetAmT: Number(r.amount || 0),
-                Des: r.description || "",
-                NRate: nRate,
+    //             Narration: topData.narration || "",
+    //             Terms: topData.terms || "",
 
-            };
-        });
+    //             TotTaxableAmt: rows.reduce((sum, r) => sum + Number(r.taxable || 0), 0),
+    //             TotVatAmt: rows.reduce((sum, r) => sum + Number(r.vatAmt || 0), 0),
 
-        console.log("DETAIL ITEMS TO SEND (per-item):", detailItems);
+    //             NetAmount: rows.reduce((sum, r) => sum + Number(r.amount || 0), 0),
 
-        // Validate: ensure required fields are present. If any row lacks productId, skip or throw.
-        for (let i = 0; i < detailItems.length; i++) {
-            const it = detailItems[i];
-            if (!it.ProductId || Number(it.ProductId) === 0) {
-                // If you prefer to stop saving completely, throw. Otherwise skip.
-                throw new Error(`Row ${i + 1} missing ProductId. Please select product for each row.`);
-            }
-            // optionally validate other required fields
-        }
+    //             SQId: 0
+    //         };
 
-        // Post each detail item individually (backend expects single object per POST)
-        try {
-            const results = [];
-            for (const item of detailItems) {
-                // POST single object
-                const res = await axios.post(`${gapi}/tblSuppQuoDets`, item);
-                results.push(res.data);
-                console.log("Saved detail:", res.data);
-            }
-            return results;
-        } catch (err) {
-            console.error("❌ DETAIL SAVE ERROR:", err);
-            // If server returns .response.data include it
-            console.error("Server response:", err.response?.data);
-            throw err;
-        }
-    };
+    //         console.log("HEADER PAYLOAD:", payload);
+
+    //         const res = await axiosInstance.post(`${gapi}/suppquo/list`, payload);
+
+    //         console.log("HEADER SAVED:", res.data);
+
+    //         // Return the created SQId. Try to read returned property in multiple casings
+    //         return Number(res.data?.RefId) || 0;
+
+
+    //     } catch (err) {
+    //         console.error("❌ HEADER SAVE ERROR:", err);
+    //         throw err;
+    //     }
+    // };
+
+    // const saveSuppQuoDetails = async (sqId) => {
+    //     if (!sqId || sqId <= 0) {
+    //         throw new Error("Missing SQId for details save.");
+    //     }
+    //     const totalQty = rows.reduce((sum, r) => sum + Number(r.qty || 0), 0);
+    //     const netAmt = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    //     // ✅ CALCULATE NRate (NetAmt / Qty)
+    //     const nRate = totalQty > 0 ? netAmt / totalQty : 0;
+    //     // Build detail objects and validate
+    //     const detailItems = rows.map((r, index) => {
+    //         return {
+    //             SQDetId: r.SQDetId || 0,
+    //             SQId: Number(sqId),
+    //             SNo: index + 1,
+
+    //             ProductId: Number(r.productId || 0),
+    //             BrandId: Number(r.brandId || 0),
+    //             UnitId: Number(r.unitId || 0),
+    //             UnitType: r.unitType || "",
+
+    //             Qty: Number(r.qty || 0),
+    //             BRate: Number(r.rate || 0),
+    //             ProfPer: Number(r.marPer || 0),
+    //             SRate: Number(r.sRate || 0),
+
+    //             Taxable: Number(r.taxable || 0),
+    //             VatAmt: Number(r.vatAmt || 0),
+
+    //             NetAmT: Number(r.amount || 0),
+    //             Des: r.description || "",
+    //             NRate: nRate,
+
+    //         };
+    //     });
+
+    //     console.log("DETAIL ITEMS TO SEND (per-item):", detailItems);
+
+    //     // Validate: ensure required fields are present. If any row lacks productId, skip or throw.
+    //     for (let i = 0; i < detailItems.length; i++) {
+    //         const it = detailItems[i];
+    //         if (!it.ProductId || Number(it.ProductId) === 0) {
+    //             // If you prefer to stop saving completely, throw. Otherwise skip.
+    //             throw new Error(`Row ${i + 1} missing ProductId. Please select product for each row.`);
+    //         }
+    //         // optionally validate other required fields
+    //     }
+
+    //     // Post each detail item individually (backend expects single object per POST)
+    //     try {
+    //         const results = [];
+    //         for (const item of detailItems) {
+    //             // POST single object
+    //             const res = await axiosInstance.post(`${gapi}/tblSuppQuoDets`, item);
+    //             results.push(res.data);
+    //             console.log("Saved detail:", res.data);
+    //         }
+    //         return results;
+    //     } catch (err) {
+    //         console.error("❌ DETAIL SAVE ERROR:", err);
+    //         // If server returns .response.data include it
+    //         console.error("Server response:", err.response?.data);
+    //         throw err;
+    //     }
+    // };
 
     const handleSave = async () => {
         if (!topData.ledgerId) {
-            alert('please select a Ledger')
         }
         if (!topData.projectId) {
-            alert("Please select a Project.");
             return;
         }
         if (!topData.qNo) {
-            alert("Please enter Quotation No.");
             return;
         }
         if (!topData.qDate) {
-            alert("Please select Quotation Date.");
             return;
         }
 
@@ -848,7 +951,6 @@ const SQuot = () => {
             // 2️⃣ Save detail rows
             await saveSuppQuoDetails(sqId);
 
-            alert("Saved Successfully!");
 
             // 3️⃣ Reset everything properly AFTER save
             setTopData({
@@ -877,7 +979,6 @@ const SQuot = () => {
         } catch (err) {
             console.error("❌ SAVE FAILED:", err);
             const serverMsg = err.response?.data || err.message;
-            alert("Saving failed! " + (typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg)));
         }
     };
 
@@ -920,6 +1021,18 @@ const SQuot = () => {
         setUnitQuery('');
         setRows([]);
     };
+
+    const showTempMessage = (msg, msgtype) => {
+        setMessage(msg);
+        if (msgtype === 'true') {
+            setShowMessage(true);
+            setTimeout(() => setShowMessage(false), 3000);
+        } else {
+            setShowMessage_Error(true);
+            setTimeout(() => setShowMessage_Error(false), 3000);
+        }
+    };
+
 
     const highlightText = (text, search) => {
         if (!search || !text) return text;
@@ -1596,7 +1709,7 @@ const SQuot = () => {
                             autoComplete="off"
                         />
                         <button className='btn btn-primary btn-sm' onClick={handleAddOrUpdateRow}>
-                            {editIndex !== null ? 'Update' : 'Add'}
+                            {editIndex !== null ? 'Update' : '🎬Add'}
                         </button>
                     </div>
 
@@ -1894,11 +2007,93 @@ const SQuot = () => {
                         className="mt-3 d-flex justify-content-center flex-wrap"
                         style={{ gap: '8px' }}
                     >
-                        <button className="btn btn-sm btn-success" onClick={handleSave}>Save</button>
-                        <button className="btn btn-sm btn-danger" onClick={() => navigate('/transaction/quotation/sfind')}>Find</button>
-                        <button className="btn btn-sm btn-info text-white">Delete</button>
-                        <button className="btn btn-sm btn-dark" onClick={handleReset}>Reset</button>
+                        <button className="btn btn-sm btn-success" onClick={handleSaveSuppQuo}>💾Save</button>
+                        <button className="btn btn-sm btn-danger" onClick={() => setShowFind(true)}>🔎Find</button>
+                        <button className="btn btn-sm btn-info text-white">🗑️Delete</button>
+                        <button className="btn btn-sm btn-dark" onClick={handleReset}>🔄️Reset</button>
                     </div>
+
+                    {/* Success Message */}
+                    {showMessage && (
+                        <div
+                            aria-live="polite"
+                            aria-atomic="true"
+                            className="toast-container position-fixed top-0 end-0  pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
+                        >
+                            <div
+                                className="toast show text-bg-success"
+                                role="alert"
+                                aria-live="assertive"
+                                aria-atomic="true"
+                            >
+                                <div
+                                    className="toast-header text-bg-blue"
+                                    style={{
+                                        backgroundColor: "#0f8532",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Success</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showMessage_Error && (
+                        <div
+                            className="toast-container position-fixed top-0 end-0 pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
+                        >
+                            <div className="toast show" role="alert">
+
+                                <div
+                                    className="toast-header"
+                                    style={{
+                                        backgroundColor: "#d60707",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Error</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage_Error(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ===== FIND POPUP ===== */}
+                    {showFind && (
+                        <FindSQuot onClose={() => setShowFind(false)} />
+                    )}
 
                 </div>
             </div>
