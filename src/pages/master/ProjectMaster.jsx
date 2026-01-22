@@ -557,7 +557,7 @@ const ProjectMaster = () => {
                                 <input
                                     type="text"
                                     className="form-control"
-                                    placeholder="Search Ledger..."
+                                    placeholder="🔎Search Ledger..."
                                     value={ledgerQuery}
                                     onChange={(e) => {
                                         const value = e.target.value;

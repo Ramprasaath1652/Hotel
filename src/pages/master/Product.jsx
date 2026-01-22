@@ -115,46 +115,6 @@ const Product = () => {
 
     //Add
 
-    const handleAddProductUnit = async (pid) => {
-        const newUnit = {
-            PUId: 0,
-            ProductId: pid,
-            UType: 'W',
-            UnitId: salesUnit
-        }
-        try {
-            const res = await axiosInstance.post(API_PUNIT, newUnit, {
-                headers: { 'Content-Type': 'application/json' },
-            })
-            if (res.data?.Success === true) {
-                showTempMessage(res.data.Message, 'true');
-                await loadProduct();
-            } else {
-                showTempMessage(res.data?.Message, 'false');
-            }
-
-        } catch (err) {
-            console.error('Add error:', err);
-            alert("Failed to add product.");
-        }
-    }
-    const handleUpdateProductUnit = async (puid, pid) => {
-        const _updateUnit = {
-            PUId: puid,
-            ProductId: pid,
-            UType: 'W',
-            UnitId: salesUnit
-        }
-        try {
-            const res = await axiosInstance.put(`${API_PUNIT}/${_puId}`, _updateUnit);
-            console.log('put data :', res.data);
-            await loadProduct();
-            //alert("Product Updated Successfully!");
-        } catch (err) {
-            console.error('Add error:', err);
-            alert("Failed to add product.");
-        }
-    }
 
     const handleAdd = async () => {
         if (!productCode.trim()) {
@@ -492,10 +452,10 @@ const Product = () => {
             );
             if (res.data?.Success === true) {
 
-        console.log('data1:',res.data.Data)
-        console.log('GN:',res.data.Data[0].GroupName)
+                console.log('data1:', res.data.Data)
+                console.log('GN:', res.data.Data[0].GroupName)
 
-              
+
 
                 // 🔥 instant dropdown update
                 // setGroupList(prev => [...prev, newGroup]);

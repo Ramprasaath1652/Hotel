@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 
-const FindSQuot = ({ onClose }) => {
+const FindSQuot = ({ onClose, onEdit }) => {
     const [quot, setQuot] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState('');
@@ -71,6 +71,8 @@ const FindSQuot = ({ onClose }) => {
         setFiltered(result);
     };
 
+    
+
     return (
         <div className="find-overlay"
             onClick={onClose}
@@ -121,7 +123,7 @@ const FindSQuot = ({ onClose }) => {
                                     <td className="text-center">
                                         <button className="btn btn-sm btn-secondary me-1"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}
-
+                                            onClick={() => onEdit(r.SQId)}
                                         >🖋️Edit</button>
                                         <button className="btn btn-sm btn-danger"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}

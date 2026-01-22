@@ -29,7 +29,7 @@ const SQuot = () => {
         sNo: '',
         product: '',
         productId: '',
-        unit: '',
+        unitType: '',
         unitId: '',
         brand: '',
         brandId: '',
@@ -86,6 +86,29 @@ const SQuot = () => {
     const [showMessage, setShowMessage] = useState(false);
     const [message, setMessage] = useState('');
     const [showFind, setShowFind] = useState(false);
+    const [showAddBrandModal, setShowAddBrandModal] = useState(false);
+    const [showLedgerModal, setShowLedgerModal] = useState(false);
+
+    const [ledgerName, setLedgerName] = useState('');
+    const [ledger, setLedger] = useState('');
+    const [ledgerPlace, setLedgerPlace] = useState('');
+    const [ledgerGroup, setLedgerGroup] = useState('');
+    const [ledgerState, setLedgerState] = useState('');
+    const [accountGroups, setAccountGroups] = useState([]);
+    const [statesList, setStatesList] = useState([]);
+
+    const [showProjectModal, setShowProjectModal] = useState(false)
+    const [projectName, setProjectName] = useState('');
+    const [projectNo, setProjectNo] = useState('');
+    const [projectDate, setProjectDate] = useState('');
+
+    const [showProductModal, setShowProductModal] = useState(false);
+    const [productName, setProductName] = useState('');
+
+
+
+
+
 
 
 
@@ -118,6 +141,10 @@ const SQuot = () => {
         }
     }, [id]);
 
+    useEffect(() => {
+        axiosInstance.get(`${gapi}/accgroup/list`).then(res => setAccountGroups(res.data.Data));
+        axiosInstance.get(`${gapi}/state/list`).then(res => setStatesList(res.data.Data));
+    }, []);
 
     const loadLedgers = async () => {
         try {
@@ -195,7 +222,36 @@ const SQuot = () => {
     //     loadPrimary()
     //     loadSecondary()
     // }, [id]);
+    const addBrand = async () => {
+        if (!brandQuery.trim()) return;
 
+        try {
+            const res = await axiosInstance.post(
+                `${gapi}/brand/insert`,
+                {
+                    BrandName: brandQuery.trim(),
+                    BrandId: 0,
+                    TBrandName: brandQuery.trim()
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+            if (res.data?.Success === true) {
+                // 🔥 instant dropdown update
+                // setGroupList(prev => [...prev, newGroup]);
+
+                // setGroupQuery(newGroup.GroupName);
+                // setGroupQuery("");
+                setShowBrandDropdown(false);
+                showTempMessage(res.data.Message, 'true');
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+        } catch (err) {
+            console.error("Add Group Error", err);
+        }
+    };
 
     const loadPrimary = async () => {
         const res = await axiosInstance.get(
@@ -278,10 +334,11 @@ const SQuot = () => {
     }
 
     const filteredUnit = unitList.filter(u =>
-        u.UnitType?.toLowerCase().includes(
-            unitQuery.toLowerCase()
+        (u.UnitType || '').toLowerCase().includes(
+            (unitQuery || '').toLowerCase()
         )
     );
+
 
     const filteredLedger = ledgerList.filter(item =>
         item.LedgerName?.toLowerCase().includes(ledgerQuery.toLowerCase())
@@ -462,9 +519,10 @@ const SQuot = () => {
 
     const filteredBrand = brandList.filter(item =>
         item.BrandName?.toLowerCase().includes(
-            brandQuery.toLowerCase()
+            (brandQuery || '').toLowerCase()
         )
     );
+
     const handleBrandKeyDown = (e) => {
         if (!showBrandDropdown || filteredBrand.length === 0) return;
 
@@ -639,6 +697,8 @@ const SQuot = () => {
         (sum, r) => sum + Number(r.amount || 0), 0
     )
 
+
+
     const handleEditRow = (index) => {
         const row = rows[index];
         setBottomData({
@@ -658,9 +718,9 @@ const SQuot = () => {
             vatAmt: row.vatAmt,
             amount: row.amount,
         });
-        setProductQuery(row.productName);
-        setBrandQuery(row.brandName);
-        setUnitQuery(row.unitType);
+        setProductQuery(row.productName || '');
+        setBrandQuery(row.brandName || '');
+        setUnitQuery(row.unit || '');
         setEditIndex(index);
     };
 
@@ -669,12 +729,22 @@ const SQuot = () => {
         if (editIndex !== null) {
             // Update existing row
             const updatedRows = [...rows];
-            updatedRows[editIndex] = { ...bottomData };
+            updatedRows[editIndex] = {
+                ...bottomData,
+                productName: productQuery,
+                brandName: brandQuery,
+                unitType: unitQuery,
+            };
             setRows(updatedRows);
             setEditIndex(null); // reset edit mode
         } else {
             // Add new row
-            setRows([...rows, { ...bottomData }]);
+            setRows([...rows, {
+                ...bottomData,
+                productName: productQuery,
+                brandName: brandQuery,
+                unitType: unitQuery
+            }]);
         }
 
         // Clear input fields after add/update
@@ -682,7 +752,6 @@ const SQuot = () => {
             sNo: '',
             productId: '',
             productName: '',
-            unitId: '',
             unitId: '',
             unit: '',
             brandId: '',
@@ -712,7 +781,7 @@ const SQuot = () => {
             productId: '',
             productName: '',
             unitId: '',
-            unitType: '',
+            unit: '',
             brandId: '',
             brandName: '',
             qty: '',
@@ -729,7 +798,7 @@ const SQuot = () => {
         setBrandQuery("");
         setShowProductDropdown(false);
         setShowBrandDropdown(false);
-        setEditIndex(index);
+        setUnitQuery('');
     };
 
     const handleDeleteRow = (index) => {
@@ -927,6 +996,41 @@ const SQuot = () => {
     //     }
     // };
 
+    const handleEditFromFind = async (sqId) => {
+        try {
+            // 🔥 header + detail API
+            const res = await axiosInstance.get(`${gapi}/suppquo/edit/${sqId}`);
+
+            console.log(res.data)
+
+            const data = res.data.Data;
+
+            // 🔹 HEADER LOAD
+            setFormData({
+                SQId: data.SQId,
+                SQNo: data.SQNo,
+                SQDate: data.SQDate,
+                ProjectId: data.ProjectId,
+                LedgerId: data.LedgerId,
+                Terms: data.Terms,
+                Narration: data.Narration
+            });
+
+            // 🔹 DETAILS LOAD
+            setRows(data.Details || []);
+
+            // 🔹 edit mode
+            setIsEdit(true);
+
+            // 🔹 close popup
+            setShowFind(false);
+
+            showTempMessage("Quotation loaded for edit ✅", "true");
+        } catch (err) {
+            console.error("Edit load error", err);
+            showTempMessage("Failed to load quotation ❌", "false");
+        }
+    }
     const handleSave = async () => {
         if (!topData.ledgerId) {
         }
@@ -1059,6 +1163,83 @@ const SQuot = () => {
     };
 
 
+
+
+    const openAddBrandModal = () => {
+        if (!brandQuery.trim()) return;
+        setShowAddBrandModal(true)
+    }
+
+    const cancelAddBrand = () => {
+        setShowAddBrandModal(false)
+    }
+
+    const confirmAddBrand = () => {
+        setShowAddBrandModal(false)
+        addBrand()
+    }
+
+    const handleAddLedger = async () => {
+        if (!ledgerName.trim() || !ledgerGroup || !ledgerState) {
+            return;
+        }
+        const payload = {
+            LedgerId: 0,
+            AccId: Number(ledgerGroup),
+            LedgerName: ledgerName.trim(),
+            TName: ledgerName.trim(),
+            TPlace: ledgerPlace?.trim() || "",
+            EPlace: ledgerPlace?.trim() || "",
+            CategoryId: 1,
+            State: Number(ledgerState),
+        };
+        try {
+            const res = await axiosInstance.post(
+                `${gapi}/ledger/insert`,
+                payload,
+                {
+                    headers: { "Content-Type": "application/json" }
+                }
+            );
+
+            console.log("LEDGER RES 👉", res.data);
+
+            // 🔥 SUCCESS CONDITION (THIS IS THE FIX)
+            if (res.data?.Success === true) {
+
+                const savedLedger = {
+                    LedgerId: res.data.LedgerId,
+                    LedgerName: res.data.LedgerName,
+                    EPlace: res.data.EPlace || "-",
+                    StateName:
+                        statesList.find(s => s.StateId == res.data.State)?.StateName || "-"
+                };
+
+                // 🔥 instant dropdown update
+                setLedgerList(prev => [...prev, savedLedger]);
+
+                // 🔥 auto select
+                setLedger(savedLedger.LedgerId);
+                setLedgerQuery(savedLedger.LedgerName);
+
+                // 🔥 reset + close
+                setLedgerName("");
+                setLedgerGroup("");
+                setLedgerState("");
+                setLedgerPlace("");
+                setLedgerQuery("");
+                setShowLedgerModal(false);
+                setShowLedgerDropdown(false);
+                showTempMessage(res.data.Message, 'true');
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+
+        } catch (err) {
+            console.error("Add Ledger Error", err);
+            showTempMessage("Failed to add ledger ❌");
+        }
+    };
     return (
         <div className='container-fluid mt-2'>
             {/* Card */}
@@ -1090,7 +1271,7 @@ const SQuot = () => {
                     <div className='d-flex align-items-center gap-3'>
                         <div style={{ flex: '0 0 100px' }}>
                             <div className='d-flex'>
-                                <label className='form-label fw-bold  mb-2 me-2'>QNo</label>
+                                <label className='form-label fw-bold  mb-2 me-2'>QNo<span className='required'>*</span></label>
                                 <input
                                     type='number'
                                     className='form-control form-control-sm fw-bold'
@@ -1106,7 +1287,7 @@ const SQuot = () => {
                         <div style={{ flex: '0 0 200px' }}>
                             <div className='d-flex align-items-center'>
                                 <label
-                                    className='form-label fw-bold mb-2 me-2'>Q.Date</label>
+                                    className='form-label fw-bold mb-2 me-2'>Q.Date<span className='required'>*</span></label>
                                 <input
                                     type='date'
                                     className='form-control form-control-sm fw-bold'
@@ -1148,7 +1329,7 @@ const SQuot = () => {
                                 />
 
                                 {/* DROPDOWN */}
-                                {showLedgerDropdown && filteredLedger.length > 0 && (
+                                {showLedgerDropdown && (
                                     <div
                                         className="position-absolute bg-white border shadow-sm"
                                         style={{
@@ -1160,42 +1341,62 @@ const SQuot = () => {
                                             zIndex: 9999
                                         }}
                                     >
-                                        {/* Header */}
-                                        <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
-                                            <div className="col-5">Name</div>
-                                            <div className="col-3">Place</div>
-                                            <div className="col-4">State</div>
-                                        </div>
+                                        {filteredLedger.length > 0 ? (
+                                            <>
+                                                {/* Header */}
+                                                <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
+                                                    <div className="col-5">Name</div>
+                                                    <div className="col-3">Place</div>
+                                                    <div className="col-4">State</div>
+                                                </div>
 
-                                        {/* Rows */}
-                                        {filteredLedger.map((item, index) => (
+                                                {/* Rows */}
+                                                {filteredLedger.map((item, index) => (
+                                                    <div
+                                                        key={item.LedgerId}
+                                                        className={`d-flex px-2 py-2 border-bottom ${index === activeLedgerIndex
+                                                            ? "bg-secondary text-white"
+                                                            : "hover-bg"
+                                                            }`}
+                                                        style={{ cursor: 'pointer' }}
+                                                        onMouseEnter={() => setActiveLedgerIndex(index)}
+                                                        onClick={() => {
+
+                                                            setLedgerQuery(item.LedgerName);
+
+                                                            setTopData(prev => ({
+                                                                ...prev,
+                                                                ledger: item.LedgerName,
+                                                                ledgerId: item.LedgerId
+                                                            }));
+
+                                                            setShowLedgerDropdown(false);
+                                                            setActiveLedgerIndex(-1);
+                                                        }}
+                                                    >
+                                                        <div className="col-5"> {highlightText(item.LedgerName, ledgerQuery)}</div>
+                                                        <div className="col-3">{highlightText(item.EPlace || "-", ledgerQuery)}</div>
+                                                        <div className="col-4">{highlightText(item.StateName || "-", ledgerQuery)}</div>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            /* 🔹 NO RESULT → ADD LEDGER */
                                             <div
-                                                key={item.LedgerId}
-                                                className={`d-flex px-2 py-2 border-bottom ${index === activeLedgerIndex
-                                                    ? "bg-secondary text-white"
-                                                    : "hover-bg"
-                                                    }`}
-                                                style={{ cursor: 'pointer' }}
-                                                onMouseEnter={() => setActiveLedgerIndex(index)}
+                                                className="d-flex align-items-center px-2 py-2 text-primary fw-bold"
+                                                style={{ cursor: "pointer" }}
+                                                onMouseDown={(e) => e.preventDefault()}
                                                 onClick={() => {
-
-                                                    setLedgerQuery(item.LedgerName);
-
-                                                    setTopData(prev => ({
-                                                        ...prev,
-                                                        ledger: item.LedgerName,
-                                                        ledgerId: item.LedgerId
-                                                    }));
-
+                                                    // STEP-2 la idha use pannuvom
+                                                    setShowLedgerModal(true);
                                                     setShowLedgerDropdown(false);
-                                                    setActiveLedgerIndex(-1);
+                                                    setLedgerName(ledgerQuery);
                                                 }}
                                             >
-                                                <div className="col-5"> {highlightText(item.LedgerName, ledgerQuery)}</div>
-                                                <div className="col-3">{highlightText(item.EPlace || "-", ledgerQuery)}</div>
-                                                <div className="col-4">{highlightText(item.StateName || "-", ledgerQuery)}</div>
+                                                <span className="me-2">+</span>
+                                                <span>Add Ledger</span><span className='ms-2'><i> (Click here to add a new Ledger)</i></span>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1208,10 +1409,10 @@ const SQuot = () => {
                             >
                                 {/* Label */}
                                 <label
-                                    className="form-label fw-bold mb-0 me-2"
+                                    className="form-label fw-bold mb-0 me-2 text-nowrap"
                                     style={{ minWidth: '60px' }}
                                 >
-                                    Project
+                                    Project<span className='required'>*</span>
                                 </label>
 
                                 {/* Input */}
@@ -1229,7 +1430,7 @@ const SQuot = () => {
                                 />
 
                                 {/* Dropdown */}
-                                {showProjectDropdown && filteredProject.length > 0 && (
+                                {showProjectDropdown && (
                                     <div
                                         className="position-absolute bg-white border shadow-sm"
                                         style={{
@@ -1241,24 +1442,44 @@ const SQuot = () => {
                                             zIndex: 9999
                                         }}
                                     >
-                                        <div className="fw-bold border-bottom bg-light px-2 py-2">
-                                            Name
-                                        </div>
+                                        {filteredProject.length > 0 ? (
+                                            <>
+                                                <div className="fw-bold border-bottom bg-light px-2 py-2">
+                                                    Name
+                                                </div>
 
-                                        {filteredProject.map((item, index) => (
+                                                {filteredProject.map((item, index) => (
+                                                    <div
+                                                        key={item.ProjId}
+                                                        className={`px-2 py-2 border-bottom ${index === activeProjectIndex
+                                                            ? "bg-secondary text-white"
+                                                            : "hover-bg"
+                                                            }`}
+                                                        style={{ cursor: 'pointer' }}
+                                                        onMouseEnter={() => setActiveProjectIndex(index)}
+                                                        onMouseDown={() => handleProjectSelect(item)}
+                                                    >
+                                                        {highlightText(item.ProjName, projectQuery)}
+                                                    </div>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            /* 🔹 NO RESULT → ADD LEDGER */
                                             <div
-                                                key={item.ProjId}
-                                                className={`px-2 py-2 border-bottom ${index === activeProjectIndex
-                                                    ? "bg-secondary text-white"
-                                                    : "hover-bg"
-                                                    }`}
-                                                style={{ cursor: 'pointer' }}
-                                                onMouseEnter={() => setActiveProjectIndex(index)}
-                                                onMouseDown={() => handleProjectSelect(item)}
+                                                className="d-flex align-items-center px-2 py-2 text-primary fw-bold"
+                                                style={{ cursor: "pointer" }}
+                                                onMouseDown={(e) => e.preventDefault()}
+                                                onClick={() => {
+                                                    // STEP-2 la idha use pannuvom
+                                                    setShowProjectModal(true);
+                                                    setShowProjectDropdown(false);
+                                                    setLedgerName(ledgerQuery);
+                                                }}
                                             >
-                                                {highlightText(item.ProjName, projectQuery)}
+                                                <span className="me-2">+</span>
+                                                <span>Add Project</span><span className='ms-2'><i> (Click here to add a new Project)</i></span>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1271,10 +1492,10 @@ const SQuot = () => {
                         <div style={{ flex: '0 0 100px' }}>
                             <div >
                                 <label
-                                    className='form-label fw-bold mb-2 me-2'  >S.No</label>
+                                    className='form-label fw-bold mb-2 me-2'  >S.No<span className='required'>*</span></label>
                                 <input
                                     name='sNo'
-                                    type='text'
+                                    type='number'
                                     className='form-control form-control-sm fw-bold'
                                     value={bottomData.sNo}
                                     onChange={handleBottomChange}
@@ -1290,7 +1511,7 @@ const SQuot = () => {
                             >
                                 {/* LABEL */}
                                 <label className="form-label fw-bold mb-1">
-                                    Product
+                                    Product<span className='required'>*</span>
                                 </label>
 
                                 {/* INPUT */}
@@ -1317,7 +1538,7 @@ const SQuot = () => {
                                 />
 
                                 {/* DROPDOWN */}
-                                {showProductDropdown && filteredProduct.length > 0 && (
+                                {showProductDropdown && (
                                     <div
                                         className="position-absolute bg-white border shadow-sm w-100"
                                         style={{
@@ -1327,31 +1548,51 @@ const SQuot = () => {
                                             zIndex: 9999
                                         }}
                                     >
-                                        {/* Header */}
-                                        <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
-                                            <div className="col-7">Name</div>
-                                        </div>
-
-                                        {/* Rows */}
-                                        {filteredProduct.map((item, index) => (
-                                            <div
-                                                key={item.ProductID}
-                                                className={`d-flex px-2 py-2 border-bottom
-                            ${index === activeProductIndex
-                                                        ? "bg-secondary text-white"
-                                                        : "hover-bg"
-                                                    }`}
-                                                style={{ cursor: 'pointer' }}
-                                                onMouseEnter={() =>
-                                                    setActiveProductIndex(index)
-                                                }
-                                                onMouseDown={() => selectProduct(item)}
-                                            >
-                                                <div className="col-7">
-                                                    {highlightText(item.ProductName, productQuery)}
+                                        {filteredProduct.length > 0 ? (
+                                            <>
+                                                {/* Header */}
+                                                <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
+                                                    <div className="col-7">Name</div>
                                                 </div>
+
+                                                {/* Rows */}
+                                                {filteredProduct.map((item, index) => (
+                                                    <div
+                                                        key={item.ProductID}
+                                                        className={`d-flex px-2 py-2 border-bottom
+                                                   ${index === activeProductIndex
+                                                                ? "bg-secondary text-white"
+                                                                : "hover-bg"
+                                                            }`}
+                                                        style={{ cursor: 'pointer' }}
+                                                        onMouseEnter={() =>
+                                                            setActiveProductIndex(index)
+                                                        }
+                                                        onMouseDown={() => selectProduct(item)}
+                                                    >
+                                                        <div className="col-7">
+                                                            {highlightText(item.ProductName, productQuery)}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            /* 🔹 NO RESULT → ADD LEDGER */
+                                            <div
+                                                className="d-flex align-items-center px-2 py-2 text-primary fw-bold"
+                                                style={{ cursor: "pointer" }}
+                                                onMouseDown={(e) => e.preventDefault()}
+                                                onClick={() => {
+                                                    // STEP-2 la idha use pannuvom
+                                                    setShowProductModal(true);
+                                                    setShowProductDropdown(false);
+                                                    setProductName(ledgerQuery);
+                                                }}
+                                            >
+                                                <span className="me-2">+</span>
+                                                <span>Add Product</span><span className='ms-2'><i> (Click here to add a new Product)</i></span>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1431,7 +1672,7 @@ const SQuot = () => {
                             <div style={{ position: 'relative', width: '100%' }}>
                                 {/* LABEL */}
                                 <label className="form-label fw-bold mb-1">
-                                    Brand
+                                    Brand<span className='required'>*</span>
                                 </label>
 
                                 {/* INPUT */}
@@ -1458,7 +1699,7 @@ const SQuot = () => {
                                 />
 
                                 {/* DROPDOWN */}
-                                {showBrandDropdown && filteredBrand.length > 0 && (
+                                {showBrandDropdown && (
                                     <div
                                         className="position-absolute bg-white border shadow-sm w-100"
                                         style={{
@@ -1468,29 +1709,45 @@ const SQuot = () => {
                                             zIndex: 9999
                                         }}
                                     >
-                                        {/* Header */}
-                                        <div className="fw-bold border-bottom bg-light px-2 py-2">
-                                            Brand Name
-                                        </div>
+                                        {filteredBrand.length > 0 ? (
+                                            <>
+                                                {/* Header */}
+                                                <div className="fw-bold border-bottom bg-light px-2 py-2">
+                                                    Brand Name
+                                                </div>
 
-                                        {/* Rows */}
-                                        {filteredBrand.map((item, index) => (
+                                                {/* Rows */}
+                                                {filteredBrand.map((item, index) => (
+                                                    <div
+                                                        key={item.BrandId}
+                                                        className={`px-2 py-2 border-bottom
+                                                 ${index === activeBrandIndex
+                                                                ? "bg-secondary text-white"
+                                                                : "hover-bg"
+                                                            }`}
+                                                        style={{ cursor: 'pointer' }}
+                                                        onMouseEnter={() =>
+                                                            setActiveBrandIndex(index)
+                                                        }
+                                                        onMouseDown={() => selectBrand(item)}
+                                                    >
+                                                        {highlightText(item.BrandName, brandQuery)}
+                                                    </div>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            /* SMALL Add Row */
                                             <div
-                                                key={item.BrandId}
-                                                className={`px-2 py-2 border-bottom
-                            ${index === activeBrandIndex
-                                                        ? "bg-secondary text-white"
-                                                        : "hover-bg"
-                                                    }`}
-                                                style={{ cursor: 'pointer' }}
-                                                onMouseEnter={() =>
-                                                    setActiveBrandIndex(index)
-                                                }
-                                                onMouseDown={() => selectBrand(item)}
+                                                className="d-flex align-items-center px-2 py-2 text-primary"
+                                                style={{ cursor: "pointer" }}
+                                                onMouseDown={(e) => e.preventDefault()}
+                                                onClick={openAddBrandModal}
                                             >
-                                                {highlightText(item.BrandName, brandQuery)}
+                                                <span className="me-2 fw-bold">+</span>
+                                                <span className='fw-bold'>Add Brand</span>
                                             </div>
-                                        ))}
+                                        )}
+
                                     </div>
                                 )}
                             </div>
@@ -1500,13 +1757,14 @@ const SQuot = () => {
                         <div style={{ flex: '0 0 120px' }}>
                             <div >
                                 <label
-                                    className='form-label fw-bold mb-2 me-2'  >Qty</label>
+                                    className='form-label fw-bold mb-2 me-2'  >Qty<span className='required'>*</span></label>
                                 <input
                                     name='qty'
-                                    type='text'
+                                    type='number'
                                     className='form-control form-control-sm fw-bold'
                                     value={bottomData.qty}
                                     autoComplete="off"
+                                    min={0}
                                     onChange={(e) => {
                                         const qty = e.target.value;
                                         const { sRate, taxable, vatAmt, amount } = calculateAll(
@@ -1536,10 +1794,10 @@ const SQuot = () => {
                         <div style={{ flex: '0 0 120px' }}>
                             <div >
                                 <label
-                                    className='form-label fw-bold mb-2 me-2'  >Rate</label>
+                                    className='form-label fw-bold mb-2 me-2'  >Rate<span className='required'>*</span></label>
                                 <input
                                     name='rate'
-                                    type='text'
+                                    type='number'
                                     autoComplete="off"
                                     className='form-control form-control-sm fw-bold'
                                     value={bottomData.rate}
@@ -1571,7 +1829,7 @@ const SQuot = () => {
                                     className='form-label fw-bold mb-2 me-2'  >Mar%</label>
                                 <input
                                     name='marPer'
-                                    type='text'
+                                    type='number'
                                     className='form-control form-control-sm fw-bold'
                                     value={bottomData.marPer}
                                     autoComplete="off"
@@ -1605,7 +1863,7 @@ const SQuot = () => {
                                     className='form-label fw-bold mb-2 me-2'  >SRate</label>
                                 <input
                                     name='sRate'
-                                    type='text'
+                                    type='number'
                                     className='form-control form-control-sm fw-bold'
                                     value={bottomData.sRate}
                                     onChange={handleBottomChange}
@@ -1620,7 +1878,7 @@ const SQuot = () => {
                                     className='form-label fw-bold mb-2 '  >Taxable</label>
                                 <input
                                     name='taxable'
-                                    type='text'
+                                    type='number'
                                     className='form-control form-control-sm fw-bold'
                                     value={bottomData.taxable}
                                     onChange={handleBottomChange}
@@ -1637,11 +1895,12 @@ const SQuot = () => {
                                     className='form-label fw-bold mb-2 me-2'  >Vat%</label>
                                 <input
                                     name='vatPer'
-                                    type='text'
+                                    type='number'
                                     className='form-control form-control-sm fw-bold'
                                     value={bottomData.vatPer}
                                     onChange={handleBottomChange}
                                     autoComplete="off"
+                                    disabled
                                 />
                             </div>
                         </div>
@@ -2092,7 +2351,245 @@ const SQuot = () => {
 
                     {/* ===== FIND POPUP ===== */}
                     {showFind && (
-                        <FindSQuot onClose={() => setShowFind(false)} />
+                        <FindSQuot
+                            onClose={() => setShowFind(false)}
+                            onEdit={handleEditFromFind}
+                        />
+
+                    )}
+
+                    {/* Add Brand Modal */}
+                    {showAddBrandModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Confirm Add</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={cancelAddBrand}
+                                        ></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <p>
+                                            Are you sure you want to add "
+                                            <strong>{brandQuery}</strong>"?
+                                        </p>
+                                    </div>
+
+                                    <div className="modal-footer">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={cancelAddBrand}
+                                        >
+                                            No
+                                        </button>
+                                        <button
+                                            className="btn btn-success"
+                                            onClick={confirmAddBrand}
+                                        >
+                                            Yes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showLedgerModal && (
+                        <div className="modal show d-block mt-5" tabIndex="-1">
+                            <div className="modal-dialog modal-lg">
+                                <div className="modal-content">
+                                    <div className="modal-header" style={{ backgroundColor: '#6a1b9a' }}>
+                                        <h5 className="modal-title" style={{ color: 'white' }}>Add Ledger</h5>
+                                        <button className="btn-close" style={{ backgroundColor: 'white' }} onClick={() => setShowLedgerModal(false)}></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <div className="mb-3">
+                                            <label className="form-label" >Ledger Name </label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={ledgerName}
+                                                onChange={e => setLedgerName(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Account Group </label>
+                                            <select
+                                                className="form-control"
+                                                value={ledgerGroup}
+                                                onChange={e => setLedgerGroup(e.target.value)}
+                                            >
+                                                <option value="">-- Select Group --</option>
+                                                {accountGroups.map(g => (
+                                                    <option key={g.AccId} value={g.AccId}>{g.AccName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">State </label>
+                                            <select
+                                                className="form-control"
+                                                value={ledgerState}
+                                                onChange={e => setLedgerState(e.target.value)}
+                                            >
+                                                <option value="">-- Select State --</option>
+                                                {statesList.map(s => (
+                                                    <option key={s.StateId} value={s.StateId}>{s.StateName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Place</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={ledgerPlace}
+                                                onChange={e => setLedgerPlace(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="modal-footer">
+                                        <button className="btn btn-secondary" onClick={() => setShowLedgerModal(false)}>Cancel</button>
+                                        <button type="button" className="btn btn-primary" onClick={handleAddLedger}>Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showProjectModal && (
+                        <div className="modal show d-block mt-5" tabIndex="-1">
+                            <div className="modal-dialog modal-lg">
+                                <div className="modal-content">
+                                    <div className="modal-header" style={{ backgroundColor: '#6a1b9a' }}>
+                                        <h5 className="modal-title" style={{ color: 'white' }}>Add Project</h5>
+                                        <button className="btn-close" style={{ backgroundColor: 'white' }} onClick={() => setShowProjectModal(false)}></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <div className="mb-3">
+                                            <label className="form-label" >Project No</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectNo}
+                                                onChange={e => setProjectNo(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Date</label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={projectDate}
+                                                onChange={e => setProjectDate(e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Project Name</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectName}
+                                                onChange={e => setProjectName(e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="modal-footer">
+                                            <button className="btn btn-secondary" onClick={() => setShowProjectModal(false)}>Cancel</button>
+                                            <button type="button" className="btn btn-primary" onClick={handleAddLedger}>Save</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showProductModal && (
+                        <div className="modal show d-block mt-5" tabIndex="-1">
+                            <div className="modal-dialog modal-lg">
+                                <div className="modal-content">
+                                    <div className="modal-header" style={{ backgroundColor: '#6a1b9a' }}>
+                                        <h5 className="modal-title" style={{ color: 'white' }}>Add Product</h5>
+                                        <button className="btn-close" style={{ backgroundColor: 'white' }} onClick={() => setShowProductModal(false)}></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <div className="mb-3">
+                                            <label className="form-label" >Product Code</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectNo}
+                                                onChange={e => setProjectNo(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Product Name</label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={projectDate}
+                                                onChange={e => setProjectDate(e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Group Name</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectName}
+                                                onChange={e => setProjectName(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Sales Unit</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectName}
+                                                onChange={e => setProjectName(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Vat %</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectName}
+                                                onChange={e => setProjectName(e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="modal-footer">
+                                            <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>Cancel</button>
+                                            <button type="button" className="btn btn-primary" onClick={handleAddLedger}>Save</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                 </div>
