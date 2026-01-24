@@ -25,6 +25,7 @@ const SQuot = () => {
         totVatAmt: 0,
     });
 
+
     const [bottomData, setBottomData] = useState({
         sNo: '',
         product: '',
@@ -98,20 +99,26 @@ const SQuot = () => {
     const [statesList, setStatesList] = useState([]);
 
     const [showProjectModal, setShowProjectModal] = useState(false)
+    const [project, setProject] = useState('');
     const [projectName, setProjectName] = useState('');
     const [projectNo, setProjectNo] = useState('');
     const [projectDate, setProjectDate] = useState('');
+    const [projectLedger, setProjectLedger] = useState('');
+    const [projectLedgerList, setProjectLedgerList] = useState([]);
+
+
+
 
     const [showProductModal, setShowProductModal] = useState(false);
     const [productName, setProductName] = useState('');
-
-
-
-
-
-
-
-
+    const [productCode, setProductCode] = useState('');
+    const [vatPer, setVatPer] = useState('');
+    const [salesUnit, setSalesUnit] = useState('');
+    const [groupQuery, setGroupQuery] = useState('');
+    const [addUnitList, setAddUnitList] = useState([]);
+    const [addGroupList, setAddGroupList] = useState([]);
+    const [product, setProduct] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
 
 
 
@@ -131,19 +138,29 @@ const SQuot = () => {
     }, [])
 
 
-    const navigate = useNavigate();
-    const { id } = useParams();
-    console.log("EDIT ID =", id);
+    // const navigate = useNavigate();
+    // const { id } = useParams();
+    // console.log("EDIT ID =", id);
 
-    useEffect(() => {
-        if (id) {
-            loadById(id);
-        }
-    }, [id]);
+    // useEffect(() => {
+    //     console.log('Id:',id)
+    //     if (id !== 'undefined') {
+    //         loadById(id);
+    //     }
+    // }, [id]);
 
     useEffect(() => {
         axiosInstance.get(`${gapi}/accgroup/list`).then(res => setAccountGroups(res.data.Data));
         axiosInstance.get(`${gapi}/state/list`).then(res => setStatesList(res.data.Data));
+    }, []);
+
+    useEffect(() => {
+        axiosInstance.get(`${gapi}/group/list`).then(res => setAddGroupList(res.data.Data));
+        axiosInstance.get(`${gapi}/unit/list`).then(res => setAddUnitList(res.data.Data));
+    }, []);
+
+    useEffect(() => {
+        axiosInstance.get(`${gapi}/ledger/list`).then(res => setProjectLedgerList(res.data.Data));
     }, []);
 
     const loadLedgers = async () => {
@@ -253,75 +270,7 @@ const SQuot = () => {
         }
     };
 
-    const loadPrimary = async () => {
-        const res = await axiosInstance.get(
-            `http://192.168.31.101:85/api/SQInfoes/${id}`
-        );
 
-        const d = res.data;
-
-        setSqHeader(d); // optional (nee already vachiruka)
-
-        setTopData(prev => ({
-            ...prev,
-            qNo: d.SQNo ?? '',
-            qDate: d.SQDate ? d.SQDate.substring(0, 10) : '',
-            ledger: d.LedgerName ?? '',
-            ledgerId: d.LedgerId ?? '',
-            project: d.ProjName ?? '',
-            terms: d.Terms ?? '',
-            narration: d.Narration ?? '',
-            netAmount: d.NetAmount ?? 0,
-            totalTaxableAmt: d.TotTaxableAmt ?? 0,
-            totVatAmt: d.TotVatAmt ?? 0,
-        }));
-
-        // 🔥 dropdown text also sync
-        setLedgerQuery(d.LedgerName ?? '');
-        setProjectQuery(d.ProjName ?? '');
-    };
-
-    const loadSecondary = async () => {
-        try {
-            const res = await axiosInstance.get(
-                `http://192.168.31.101:85/api/sqbills/${id}`
-            );
-            console.log(res.data)
-            const selected = (Array.isArray(res.data) ? res.data : [])
-                .filter(r => r.SQId === Number(id));
-
-            const mappedRows = selected.map((r, index) => ({
-                sNo: index + 1,
-
-                // 🔥 DISPLAY VALUES (direct from API)
-                productId: r.ProductId,
-                productName: r.ProductName ?? '',
-
-                brandId: r.BrandId,
-                brandName: r.BrandName ?? '',
-
-                unitId: r.UnitId,
-                unitType: r.UnitType ?? '',
-
-                qty: r.Qty ?? '',
-                rate: r.BRate ?? '',
-                marPer: r.ProfPer ?? '',
-                sRate: r.SRate ?? '',
-                taxable: r.Taxable ?? '',
-                vatPer: r.VatPer ?? '',
-                vatAmt: r.VatAmt ?? '',
-                amount: r.NetAmt ?? '',
-                description: r.Des ?? '',
-
-                // for update/delete
-                SQDetsId: r.SQDetsId ?? null
-            }));
-
-            setRows(mappedRows);
-        } catch (err) {
-            console.error("Secondary load failed:", err);
-        }
-    };
 
     const handleTopChange = (e) => {
         const { name, value } = e.target;
@@ -366,8 +315,11 @@ const SQuot = () => {
 
 
     const filteredProject = projectList.filter(item =>
-        item.ProjName?.toLowerCase().includes(projectQuery.toLowerCase())
+        (item?.ProjName || "").toLowerCase().includes(
+            (projectQuery || "").toLowerCase()
+        )
     );
+
 
     const handleUnitKeyDown = (e) => {
         if (!showUnitDropdown || filteredUnit.length === 0) return;
@@ -467,8 +419,8 @@ const SQuot = () => {
     };
 
     const filteredProduct = productList.filter(item =>
-        item.ProductName?.toLowerCase().includes(
-            productQuery.toLowerCase()
+        (item.ProductName || "").toLowerCase().includes(
+            (productQuery || "").toLowerCase()
         )
     );
 
@@ -575,31 +527,6 @@ const SQuot = () => {
         setActiveUnitIndex(-1);
     };
 
-    const loadById = async (sqId) => {
-        try {
-            const res = await axiosInstance.get(`${gapi}/suppquo/${sqId}`);
-            const data = res.data.Data;
-
-            // HEADER
-            setTopData({
-                SQNo: data.SQNo,
-                SQDate: data.SQDate,
-                ProjectId: data.ProjectId,
-                LedgerId: data.LedgerId,
-                TotTaxableAmt: data.TotTaxableAmt,
-                TotVatAmt: data.TotVatAmt,
-                NetAmount: data.NetAmount,
-                Terms: data.Terms,
-                Narration: data.Narration,
-            });
-
-            // DETAILS
-            setBottomData(data.Details || []);
-
-        } catch (err) {
-            console.error("Load SQuot error:", err);
-        }
-    };
 
 
     const handleAddRow = () => {
@@ -720,7 +647,7 @@ const SQuot = () => {
         });
         setProductQuery(row.productName || '');
         setBrandQuery(row.brandName || '');
-        setUnitQuery(row.unit || '');
+        setUnitQuery(row.unitType || '');
         setEditIndex(index);
     };
 
@@ -998,93 +925,123 @@ const SQuot = () => {
 
     const handleEditFromFind = async (sqId) => {
         try {
-            // 🔥 header + detail API
             const res = await axiosInstance.get(`${gapi}/suppquo/edit/${sqId}`);
-
-            console.log(res.data)
-
             const data = res.data.Data;
 
-            // 🔹 HEADER LOAD
-            setFormData({
-                SQId: data.SQId,
-                SQNo: data.SQNo,
-                SQDate: data.SQDate,
-                ProjectId: data.ProjectId,
-                LedgerId: data.LedgerId,
-                Terms: data.Terms,
-                Narration: data.Narration
-            });
+            console.log("FULL EDIT DATA 👉", data);
+            const header = data.Header?.[0] || {};
 
-            // 🔹 DETAILS LOAD
-            setRows(data.Details || []);
+            setIsEditMode(true);
+            // 🔹 Header load
+            setTopData(prev => ({
+                ...prev,
+                SQId: header.SQId,
+                qNo: header.SQNo,
+                qDate: header.SQDate?.split('T')[0],
+                projectId: header.ProjectId,
+                ledgerId: header.LedgerId,
+                terms: header.Terms ?? '',
+                narration: header.Narration ?? '',
+            }));
+            setLedgerQuery(header.LedgerName ?? '');
+            setProjectQuery(header.ProjName ?? '');
 
-            // 🔹 edit mode
-            setIsEdit(true);
+            // 🔹 Details rows
+            setRows(
+                (data.Details || []).map((r, i) => ({
+                    // 🔑 UI expects these
+                    RowId: i + 1,
+                    productId: r.ProductId ?? '',
+                    product: r.ProductName ?? '',
+                    productQuery: r.ProductName ?? '',
+                    qty: r.Qty ?? 0,
+                    sRate: r.BRate ?? 0,
+                    unitId: r.UnitId,
+                    unitType: r.UnitType ?? "",
 
-            // 🔹 close popup
+                    rate: r.BRate ?? r.SRate ?? 0,
+                    amount: r.NetAmt ?? 0,
+
+                    vatPer: r.VatPer ?? 0,
+                    vatAmt: r.VatAmt ?? 0,
+                    marPer: r.ProfPer ?? 0,
+                    brandId: r.BrandId ?? "",
+                    brand: r.BrandName ?? "",
+                    brandQuery: r.BrandName ?? '',
+                    taxable: r.Taxable ?? '',
+                    description: r.Des ?? "",
+
+                    // 🔒 keep original also (safe)
+                    _raw: r
+                }))
+            );
+            // console.log("DETAIL ROWS 👉", data.Details);
+            // if (data.Details && data.Details.length > 0) {
+            //     const first = data.Details[0];
+
+            //     setProductQuery(first.ProductName || "");
+            //     setBrandQuery(first.BrandName || "");
+
+            //     setShowProductDropdown(false);
+            //     setShowBrandDropdown(false);
+            // }
+
+            // 🔹 Close find popup
             setShowFind(false);
 
-            showTempMessage("Quotation loaded for edit ✅", "true");
-        } catch (err) {
-            console.error("Edit load error", err);
-            showTempMessage("Failed to load quotation ❌", "false");
-        }
-    }
-    const handleSave = async () => {
-        if (!topData.ledgerId) {
-        }
-        if (!topData.projectId) {
-            return;
-        }
-        if (!topData.qNo) {
-            return;
-        }
-        if (!topData.qDate) {
-            return;
-        }
 
-
-        try {
-            console.log("🔥 Saving (Header + Details)...");
-
-            // 1️⃣ Save header
-            const sqId = await handleSaveSuppQuo();
-            console.log("✔ New SQId:", sqId);
-
-            // 2️⃣ Save detail rows
-            await saveSuppQuoDetails(sqId);
-
-
-            // 3️⃣ Reset everything properly AFTER save
-            setTopData({
-                ledgerId: "",
-                projectId: "",
-                qNo: "",
-                qDate: "",
-                narration: "",
-                terms: "",
-
-            });
-
-            setRows([]);  // Clear all detail rows
-
-
-            setLedgerQuery("");
-            setProjectQuery("");
-            setShowProductDropdown(false);
-            setShowBrandDropdown(false);
-            setShowLedgerDropdown(false);
-            setShowProjectDropdown(false);
-
-            // focus product input for next entry
-            document.getElementById("productInput")?.focus();
 
         } catch (err) {
-            console.error("❌ SAVE FAILED:", err);
-            const serverMsg = err.response?.data || err.message;
+            console.error(err);
+            showTempMessage("Failed to load quotation ❌", false);
         }
     };
+
+    const handleUpdateSuppQuo = async () => {
+        try {
+            const payload = {
+                Header: {
+                    SQId: topData.SQId,   // 🔑 SAME SQId
+                    SQNo: topData.qNo,
+                    SQDate: topData.qDate,
+                    ProjectId: topData.projectId,
+                    LedgerId: topData.ledgerId,
+                    Terms: topData.terms,
+                    Narration: topData.narration,
+                },
+
+                Details: rows.map((r, index) => ({
+                    Sno: index + 1,
+                    ProductId: r.productId,
+                    UnitId: r.unitId,
+                    BrandId: r.brandId,
+                    Qty: Number(r.qty),
+                    BRate: Number(r.rate),
+                    SRate: Number(r.sRate),
+                    ProfPer: Number(r.marPer),
+                    VatPer: Number(r.vatPer),
+                    VatAmt: Number(r.vatAmt),
+                    NetAmt: Number(r.amount),
+                    Taxable: r.taxable,
+                    Des: r.description,
+                }))
+            };
+
+            await axiosInstance.put(
+                `${gapi}/suppquo/update/${topData.SQId}`, 
+                payload
+            );
+
+            showTempMessage("Quotation Updated ✅", true);
+            setIsEditMode(false);
+
+        } catch (err) {
+            console.error(err);
+            showTempMessage("Update Failed ❌", false);
+        }
+    };
+
+
 
     const handleReset = () => {
         setTopData({
@@ -1168,6 +1125,7 @@ const SQuot = () => {
     const openAddBrandModal = () => {
         if (!brandQuery.trim()) return;
         setShowAddBrandModal(true)
+
     }
 
     const cancelAddBrand = () => {
@@ -1240,6 +1198,149 @@ const SQuot = () => {
             showTempMessage("Failed to add ledger ❌");
         }
     };
+
+    const handleAddProductFromSQuot = async () => {
+
+        if (!productName.trim() || !groupQuery || !salesUnit) {
+            return;
+        }
+
+        const payload = {
+            // ProductID: 0,
+            // ProductCode: productCode?.trim() || "",
+            // ProductName: productName.trim(),
+            // GroupId: Number(groupQuery),
+            // UnitId: Number(salesUnit),
+            // VatPer: Number(vatPer) || 0,
+
+
+            ProductID: 0,
+            CGST: 0,
+            SGST: 0,
+            IGST: Number(vatPer),
+            ProductCode: productCode,
+            ProductName: productName,
+            ProductTamil: productName,
+            GroupId: Number(groupQuery),
+            Packing: 1.000,
+            Qty: null,
+            FreeQty: null,
+            VatPer: Number(vatPer),
+            ComCode: "",
+            Sch: null,
+            HSNCode: "",
+            HSNId: 0,
+            UnitId: Number(salesUnit)
+
+
+        };
+        console.log('Product:', payload)
+        try {
+            const res = await axiosInstance.post(
+                `${gapi}/product/insert`,
+                payload,
+                {
+                    headers: { "Content-Type": "application/json" }
+                }
+            );
+
+            console.log("PRODUCT RES 👉", res.data);
+
+            // 🔥 SUCCESS CHECK (ledger maari)
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                const savedProduct = {
+                    ProductID: res.data.ProductID,
+                    ProductName: res.data.ProductName,
+                    ProductCode: res.data.ProductCode,
+                    GroupName:
+                        addGroupList.find(g => g.GroupID == res.data.GroupId)?.GroupName || "-",
+                    UnitType:
+                        addUnitList.find(u => u.UnitId == res.data.UnitId)?.UnitType || "-"
+                };
+                loadProduct();
+                // 🔥 instant product dropdown update
+                setProductList(prev => [...prev, savedProduct]);
+
+                // 🔥 auto select newly added product
+                setProduct(savedProduct.ProductID);
+                setProductQuery(savedProduct.ProductName);
+
+                // 🔥 reset + close
+                setProductCode("");
+                setProductName("");
+                setGroupQuery("");
+                setSalesUnit("");
+                setVatPer("");
+                setShowProductModal(false);
+                setShowProductDropdown(false);
+                showTempMessage(res.data.Message, 'true');
+
+            } else {
+                showTempMessage(res.data?.Message || "Product add failed", 'false');
+            }
+
+        } catch (err) {
+            console.error("Add Product Error", err);
+            showTempMessage("Failed to add product ❌");
+        }
+    };
+
+    const handleProjectAdd = async () => {
+        const payload = {
+            // ProjId: 0,
+            // ProjNo: Number(projectNo),
+            // ProjDate: projectDate && projectDate.trim() !== "" ? `${projectDate}T00:00:00` : "2025-01-01T00:00:00",
+            // ProjName: projectName,
+            // LedgerId: Number(projectLedger),
+
+            ProjId: 0,
+            ProjNo: Number(projectNo),
+            ProjDate: projectDate && projectDate.trim() !== "" ? `${projectDate}T00:00:00` : "2025-01-01T00:00:00",
+            ProjName: projectName,
+            LedgerId: Number(projectLedger),
+            RefName: null,
+            Description: null,
+        }
+        try {
+            const res = await axiosInstance.post(
+                `${gapi}/project/insert`,
+                payload,
+                {
+                    headers: { "Content-Type": "application/json" }
+                }
+            );
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                const savedProject = {
+                    ProjId: res.data.ProjId,
+                    ProjName: res.data.ProjName,
+                    ProjNo: res.data.ProjNo,
+                    LedgerName:
+                        projectLedgerList.find(s => s.LedgerId == res.data.LedgerId)?.LedgerName || "-"
+                };
+                loadProject();
+                setProjectList(prev => [...prev, savedProject])
+                setProject(savedProject.ProjId);
+                setProjectQuery(savedProject.ProjName);
+                setProject('')
+                setProjectName('')
+                setProjectNo('')
+                setProjectDate('')
+                setProjectLedger('')
+                setShowProjectModal(false)
+                showTempMessage(res.data.Message, 'true');
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+
+        } catch (err) {
+            console.error("Add Project Error", err);
+            showTempMessage("Failed to add Project ❌");
+        }
+    }
+
+
     return (
         <div className='container-fluid mt-2'>
             {/* Card */}
@@ -1473,7 +1574,7 @@ const SQuot = () => {
                                                     // STEP-2 la idha use pannuvom
                                                     setShowProjectModal(true);
                                                     setShowProjectDropdown(false);
-                                                    setLedgerName(ledgerQuery);
+                                                    setProjectName(projectQuery);
                                                 }}
                                             >
                                                 <span className="me-2">+</span>
@@ -1586,7 +1687,7 @@ const SQuot = () => {
                                                     // STEP-2 la idha use pannuvom
                                                     setShowProductModal(true);
                                                     setShowProductDropdown(false);
-                                                    setProductName(ledgerQuery);
+                                                    setProductName(productQuery);
                                                 }}
                                             >
                                                 <span className="me-2">+</span>
@@ -2020,9 +2121,9 @@ const SQuot = () => {
                                         style={{ fontWeight: 'bold' }}
                                     >
                                         <td className="text-center">{index + 1}</td>
-                                        <td>{r.productName}</td>
-                                        <td className='text-center'>{r.unitType}</td>
-                                        <td>{r.brandName}</td>
+                                        <td>{r.productQuery}</td>
+                                        <td className='text-center'>{r.unitType || ""}</td>
+                                        <td>{r.brandQuery}</td>
                                         <td className="text-center">{r.qty}</td>
                                         <td className="text-end">{r.rate}</td>
                                         <td className="text-center">{r.marPer}</td>
@@ -2266,7 +2367,9 @@ const SQuot = () => {
                         className="mt-3 d-flex justify-content-center flex-wrap"
                         style={{ gap: '8px' }}
                     >
-                        <button className="btn btn-sm btn-success" onClick={handleSaveSuppQuo}>💾Save</button>
+                        <button className="btn btn-sm btn-success" onClick={handleSaveSuppQuo}>
+                            {isEditMode ? 'Update' : 'Save'}
+                        </button>
                         <button className="btn btn-sm btn-danger" onClick={() => setShowFind(true)}>🔎Find</button>
                         <button className="btn btn-sm btn-info text-white">🗑️Delete</button>
                         <button className="btn btn-sm btn-dark" onClick={handleReset}>🔄️Reset</button>
@@ -2349,14 +2452,7 @@ const SQuot = () => {
                         </div>
                     )}
 
-                    {/* ===== FIND POPUP ===== */}
-                    {showFind && (
-                        <FindSQuot
-                            onClose={() => setShowFind(false)}
-                            onEdit={handleEditFromFind}
-                        />
 
-                    )}
 
                     {/* Add Brand Modal */}
                     {showAddBrandModal && (
@@ -2507,10 +2603,24 @@ const SQuot = () => {
                                             />
                                         </div>
 
+                                        <div className="mb-3">
+                                            <label className="form-label">Ledger</label>
+                                            <select
+                                                className="form-control"
+                                                value={projectLedger}
+                                                onChange={e => setProjectLedger(e.target.value)}
+                                            >
+                                                <option value="">-- Select Ledger --</option>
+                                                {projectLedgerList.map(s => (
+                                                    <option key={s.LedgerId} value={s.LedgerId}>{s.LedgerName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
 
                                         <div className="modal-footer">
                                             <button className="btn btn-secondary" onClick={() => setShowProjectModal(false)}>Cancel</button>
-                                            <button type="button" className="btn btn-primary" onClick={handleAddLedger}>Save</button>
+                                            <button type="button" className="btn btn-primary" onClick={handleProjectAdd}>Save</button>
                                         </div>
 
                                     </div>
@@ -2534,40 +2644,48 @@ const SQuot = () => {
                                             <input
                                                 type="text"
                                                 className="form-control"
-                                                value={projectNo}
-                                                onChange={e => setProjectNo(e.target.value)}
+                                                value={productCode}
+                                                onChange={e => setProductCode(e.target.value)}
                                             />
                                         </div>
 
                                         <div className="mb-3">
                                             <label className="form-label">Product Name</label>
                                             <input
-                                                type="date"
+                                                type="text"
                                                 className="form-control"
-                                                value={projectDate}
-                                                onChange={e => setProjectDate(e.target.value)}
+                                                value={productName}
+                                                onChange={e => setProductName(e.target.value)}
                                             />
                                         </div>
 
 
                                         <div className="mb-3">
                                             <label className="form-label">Group Name</label>
-                                            <input
-                                                type="text"
+                                            <select
                                                 className="form-control"
-                                                value={projectName}
-                                                onChange={e => setProjectName(e.target.value)}
-                                            />
+                                                value={groupQuery}
+                                                onChange={e => setGroupQuery(e.target.value)}
+                                            >
+                                                <option value="">-- Select Group --</option>
+                                                {addGroupList.map(s => (
+                                                    <option key={s.GroupID} value={s.GroupID}>{s.GroupName}</option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div className="mb-3">
                                             <label className="form-label">Sales Unit</label>
-                                            <input
-                                                type="text"
+                                            <select
                                                 className="form-control"
-                                                value={projectName}
-                                                onChange={e => setProjectName(e.target.value)}
-                                            />
+                                                value={salesUnit}
+                                                onChange={e => setSalesUnit(e.target.value)}
+                                            >
+                                                <option value="">-- Select Unit --</option>
+                                                {addUnitList.map(s => (
+                                                    <option key={s.UnitId} value={s.UnitId}>{s.UnitType}</option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div className="mb-3">
@@ -2575,15 +2693,15 @@ const SQuot = () => {
                                             <input
                                                 type="text"
                                                 className="form-control"
-                                                value={projectName}
-                                                onChange={e => setProjectName(e.target.value)}
+                                                value={vatPer}
+                                                onChange={e => setVatPer(e.target.value)}
                                             />
                                         </div>
 
 
                                         <div className="modal-footer">
                                             <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>Cancel</button>
-                                            <button type="button" className="btn btn-primary" onClick={handleAddLedger}>Save</button>
+                                            <button type="button" className="btn btn-primary" onClick={handleAddProductFromSQuot}>Save</button>
                                         </div>
 
                                     </div>
@@ -2591,7 +2709,14 @@ const SQuot = () => {
                             </div>
                         </div>
                     )}
+                    {/* ===== FIND POPUP ===== */}
+                    {showFind && (
+                        <FindSQuot
+                            onClose={() => setShowFind(false)}
+                            onEdit={handleEditFromFind}
+                        />
 
+                    )}
                 </div>
             </div>
         </div>

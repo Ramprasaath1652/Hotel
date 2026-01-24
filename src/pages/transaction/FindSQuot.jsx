@@ -71,7 +71,7 @@ const FindSQuot = ({ onClose, onEdit }) => {
         setFiltered(result);
     };
 
-    
+
 
     return (
         <div className="find-overlay"
@@ -123,7 +123,10 @@ const FindSQuot = ({ onClose, onEdit }) => {
                                     <td className="text-center">
                                         <button className="btn btn-sm btn-secondary me-1"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}
-                                            onClick={() => onEdit(r.SQId)}
+                                            onClick={() => {
+                                                console.log("Row SQId 👉", r.SQId);
+                                                onEdit(r.SQId);
+                                            }}
                                         >🖋️Edit</button>
                                         <button className="btn btn-sm btn-danger"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}

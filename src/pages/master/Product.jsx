@@ -179,8 +179,6 @@ const Product = () => {
                 showTempMessage(res.data?.Message, 'false');
             }
 
-
-
             //alert("1 Project Added Successfully!");
 
 
@@ -203,6 +201,7 @@ const Product = () => {
             }
         }
     }
+
     const cancelEdit = () => {
         setShowEditModal(false);
         setProductToEdit(null);
