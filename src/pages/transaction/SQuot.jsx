@@ -3,7 +3,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axiosInstance from '../../api/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileSignature } from '@fortawesome/free-solid-svg-icons'
-import { useNavigate, useParams } from 'react-router-dom';
 import FindSQuot from './FindSQuot';
 
 
@@ -79,8 +78,7 @@ const SQuot = () => {
     const [suppQuot, setSuppQuot] = useState([])
     const [suppQuotDet, setSuppQuotDet] = useState([])
 
-    const [sqHeader, setSqHeader] = useState(null);
-    const [sqDetails, setSqDetails] = useState([]);
+
 
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [showMessage_Error, setShowMessage_Error] = useState(false);
@@ -590,6 +588,39 @@ const SQuot = () => {
         document.getElementById("productInput")?.focus();
     };
 
+    // const calculateAll = (qty, rate, marPer, vatPer) => {
+    //     qty = parseFloat(qty) || 0;
+    //     rate = parseFloat(rate) || 0;
+    //     marPer = parseFloat(marPer) || 0;
+    //     vatPer = parseFloat(vatPer) || 0;
+
+    //     // selling rate
+    //     const marginValue = rate * (marPer / 100);
+    //     const sRate = rate + marginValue;
+
+    //     // taxable
+    //     const taxable = qty * rate;
+
+    //     // vat amount
+    //     const vatAmt = (taxable * vatPer) / 100;
+
+    //     // total
+    //     const amount = taxable + vatAmt;
+
+    //     return { sRate, taxable, vatAmt, amount };
+    // };
+
+    // const totalAmount = rows.reduce(
+    //     (sum, r) => sum + Number(r.taxable || 0), 0
+    // )
+
+    // const totalVatAmount = rows.reduce(
+    //     (sum, r) => sum + Number(r.vatAmt || 0), 0
+    // )
+
+    // const totalActAmt = rows.reduce(
+    //     (sum, r) => sum + Number(r.amount || 0), 0
+    // )
     const calculateAll = (qty, rate, marPer, vatPer) => {
         qty = parseFloat(qty) || 0;
         rate = parseFloat(rate) || 0;
@@ -613,7 +644,7 @@ const SQuot = () => {
     };
 
     const totalAmount = rows.reduce(
-        (sum, r) => sum + Number(r.taxable || 0), 0
+        (sum, r) => sum + Number(r.amount || 0), 0
     )
 
     const totalVatAmount = rows.reduce(
@@ -621,9 +652,8 @@ const SQuot = () => {
     )
 
     const totalActAmt = rows.reduce(
-        (sum, r) => sum + Number(r.amount || 0), 0
+        (sum, r) => sum + Number(r.sRate || 0), 0
     )
-
 
 
     const handleEditRow = (index) => {
@@ -929,13 +959,14 @@ const SQuot = () => {
             const data = res.data.Data;
 
             console.log("FULL EDIT DATA 👉", data);
+            console.log("HEADER 👉", data.Header);
             const header = data.Header?.[0] || {};
 
             setIsEditMode(true);
             // 🔹 Header load
             setTopData(prev => ({
                 ...prev,
-                SQId: header.SQId,
+                SQId: Number(header.SQId),
                 qNo: header.SQNo,
                 qDate: header.SQDate?.split('T')[0],
                 projectId: header.ProjectId,
@@ -1000,35 +1031,37 @@ const SQuot = () => {
     const handleUpdateSuppQuo = async () => {
         try {
             const payload = {
-                Header: {
-                    SQId: topData.SQId,   // 🔑 SAME SQId
-                    SQNo: topData.qNo,
-                    SQDate: topData.qDate,
-                    ProjectId: topData.projectId,
-                    LedgerId: topData.ledgerId,
-                    Terms: topData.terms,
-                    Narration: topData.narration,
-                },
+                SQId: Number(topData.SQId),        // 🔑 THIS IS WHAT BACKEND USES
+                SQNo: topData.qNo,
+                SQDate: topData.qDate,
+                ProjectId: topData.projectId,
+                LedgerId: topData.ledgerId,
+                Terms: topData.terms,
+                Narration: topData.narration,
+                Create_By: 1, // or logged user id
 
                 Details: rows.map((r, index) => ({
                     Sno: index + 1,
                     ProductId: r.productId,
-                    UnitId: r.unitId,
+                    Des: r.description ?? "",
                     BrandId: r.brandId,
+                    UnitId: r.unitId,
                     Qty: Number(r.qty),
                     BRate: Number(r.rate),
-                    SRate: Number(r.sRate),
                     ProfPer: Number(r.marPer),
+                    SRate: Number(r.sRate),
+                    Taxable: Number(r.taxable),
                     VatPer: Number(r.vatPer),
                     VatAmt: Number(r.vatAmt),
                     NetAmt: Number(r.amount),
-                    Taxable: r.taxable,
-                    Des: r.description,
+                    NRate: Number(r.rate), // backend expects this
                 }))
             };
 
-            await axiosInstance.put(
-                `${gapi}/suppquo/update/${topData.SQId}`, 
+            console.log("UPDATE PAYLOAD 👉", payload);
+
+            const res = await axiosInstance.put(
+                `${gapi}/suppquo/update`,   // 🔑 NO SQId in URL
                 payload
             );
 
@@ -1040,7 +1073,6 @@ const SQuot = () => {
             showTempMessage("Update Failed ❌", false);
         }
     };
-
 
 
     const handleReset = () => {
@@ -2367,7 +2399,9 @@ const SQuot = () => {
                         className="mt-3 d-flex justify-content-center flex-wrap"
                         style={{ gap: '8px' }}
                     >
-                        <button className="btn btn-sm btn-success" onClick={handleSaveSuppQuo}>
+                        <button className="btn btn-sm btn-success"
+                            onClick={isEditMode ? handleUpdateSuppQuo : handleSaveSuppQuo}
+                        >
                             {isEditMode ? 'Update' : 'Save'}
                         </button>
                         <button className="btn btn-sm btn-danger" onClick={() => setShowFind(true)}>🔎Find</button>
