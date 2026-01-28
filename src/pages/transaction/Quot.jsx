@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axiosInstance from '../../api/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt } from '@fortawesome/free-solid-svg-icons'
+import FindQuot from './FindQuot';
 
 
 const Quot = () => {
@@ -60,7 +61,7 @@ const Quot = () => {
     const [showLedgerDropdown, setShowLedgerDropdown] = useState(false);
     const [activeLedgerIndex, setActiveLedgerIndex] = useState(-1);
 
-    const [productList, setProductList] = useState([]);   // API data
+    const [productList, setProductList] = useState([]);
     const [productQuery, setProductQuery] = useState("");
     const [showProductDropdown, setShowProductDropdown] = useState(false);
     const [activeProductIndex, setActiveProductIndex] = useState(-1);
@@ -76,6 +77,22 @@ const Quot = () => {
     const [activeBrandIndex, setActiveBrandIndex] = useState(-1);
 
     const [rows, setRows] = useState([]);
+    const [editIndex, setEditIndex] = useState(null);
+    const [rowToDelete, setRowToDelete] = useState(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    const [message, setMessage] = useState('');
+    const [showMessage_Error, setShowMessage_Error] = useState(false);
+    const [showMessage, setShowMessage] = useState(false);
+
+    const [Quot, setQuot] = useState([]);
+    const [showFind, setShowFind] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+
+
+
+
+
 
 
     const gapi = import.meta.env.VITE_API_URL;
@@ -86,7 +103,7 @@ const Quot = () => {
         loadProduct();
         loadUnit();
         loadBrands();
-
+        loadQuo();
     }, [])
 
     const loadProject = async () => {
@@ -280,10 +297,8 @@ const Quot = () => {
             productId: item.ProductID,
             productName: item.ProductName,
             unit: item.UnitType,
-            rate: item.URate ?? '',
             unitId: item.UnitId || "",
             unitType: item.UnitType,
-            vatPer: item.VatPer || "",
         }));
 
         setShowProductDropdown(false);
@@ -405,8 +420,6 @@ const Quot = () => {
         rate = parseFloat(rate) || 0;
         vatPer = parseFloat(vatPer) || 0;
 
-
-
         // taxable
         const taxable = qty * rate;
 
@@ -479,6 +492,282 @@ const Quot = () => {
         setShowBrandDropdown(false);
     };
 
+    // cancel edit Table row
+    const handleCancelEdit = () => {
+        setEditIndex(null); // exit edit mode
+        setBottomData({
+            sNo: '',
+            productId: '',
+            productName: '',
+            unitId: '',
+            unit: '',
+            brandId: '',
+            brandName: '',
+            qty: '',
+            rate: '',
+            taxable: '',
+            vatPer: '',
+            vatAmt: '',
+            amount: '',
+            description: ''
+        });
+        setProductQuery("");
+        setBrandQuery("");
+        setShowProductDropdown(false);
+        setShowBrandDropdown(false);
+        setUnitQuery('');
+    };
+
+    // Edit table row
+    const handleEditRow = (index) => {
+        const row = rows[index];
+        setBottomData({
+            sNo: index + 1,
+            product: row.product,
+            productId: row.productId,
+            unit: row.unit,
+            unitId: row.unitId,
+            brand: row.brand,
+            brandId: row.brandId,
+            qty: row.qty,
+            rate: row.rate,
+            taxable: row.taxable,
+            vatPer: row.vatPer,
+            vatAmt: row.vatAmt,
+            amount: row.amount,
+        });
+        setProductQuery(row.productName || '');
+        setBrandQuery(row.brandName || '');
+        setUnitQuery(row.unitType || '');
+        setEditIndex(index);
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setRowToDelete(null);
+    };
+
+    const handleDeleteRow = (index) => {
+        // Remove the row
+        const updatedRows = rows.filter((_, i) => i !== index);
+        setRows(updatedRows);
+
+        // If deleted row was being edited, reset edit mode
+        if (editIndex === index) {
+            handleCancelEdit();
+        }
+
+        // If rows shift up, fix editIndex
+        if (editIndex > index) {
+            setEditIndex(editIndex - 1);
+        }
+    };
+
+    const loadQuo = async () => {
+        try {
+            const res = await axiosInstance.get(`${gapi}/suppquo/list`)
+            console.log("Quo Data:", res.data)
+            setQuot(res.data.Data)
+
+        } catch (err) {
+            console.error("Error fetching suppQuo:", err);
+        }
+    }
+
+    const handleSaveQuo = async () => {
+        try {
+            const totalQty = rows.reduce((s, r) => s + Number(r.qty || 0), 0);
+            const netAmt = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
+
+            const nRate = totalQty > 0 ? netAmt / totalQty : 0;
+
+            const payload = {
+                QId: 0,
+                QNo: topData.qNo,
+                QDate: topData.qDate,
+                QRevNo: topData.rNo,
+                ProjId: Number(topData.projectId),
+                LedgerId: Number(topData.ledgerId),
+                Subject: topData.subject,
+                Delivery: topData.delivery,
+                Validity: topData.qValidity,
+                Terms: topData.payment,
+                Notes: topData.notes,
+                Warranty: topData.warranty,
+                Inclusion: topData.inclusion,
+                Exclusion: topData.exclusion,
+                Scope: topData.scope,
+                TotTaxableAmt: rows.reduce(
+                    (sum, r) => sum + Number(r.taxable || 0), 0
+                ),
+                TotVatamt: rows.reduce(
+                    (sum, r) => sum + Number(r.vatAmt || 0), 0
+                ),
+                NetAmount: netAmt,
+
+                Terms: topData.terms || "",
+                Narration: topData.narration || "",
+                Create_By: 1,
+
+                // 🔥 DETAILS ARRAY
+                Details: rows.map((r, index) => ({
+                    SNo: index + 1,
+                    ProductId: Number(r.productId),
+                    ProdDes: r.description || "",
+
+                    BrandId: Number(r.brandId || 0),
+                    UnitId: Number(r.unitId || 0),
+
+                    Qty: Number(r.qty || 0),
+                    Rate: Number(r.rate || 0),
+
+                    Taxable: Number(r.taxable || 0),
+                    VatPer: Number(r.vatPer || 0),
+                    VatAmt: Number(r.vatAmt || 0),
+
+                    NetAmt: Number(r.amount || 0),
+                    NRate: nRate,
+                }))
+            };
+            console.log('Quo Payload', payload)
+            // 🔥 SINGLE API CALL
+            const res = await axiosInstance.post(
+                `${gapi}/quo/insert`,
+                payload,
+                { headers: { "Content-Type": "application/json" } }
+            );
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                handleReset()
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+        }
+        catch (err) {
+            console.error("❌ SAVE ERROR:", err.response?.data || err);
+        }
+    };
+
+
+    const handleEditFromFind = async (qId) => {
+        try {
+            const res = await axiosInstance.get(`${gapi}/quo/edit/${qId}`);
+            const data = res.data.Data;
+
+            console.log("FULL EDIT DATA 👉", data);
+            console.log("HEADER 👉", data.Header);
+            const header = data.Header?.[0] || {};
+
+            setIsEditMode(true);
+            // 🔹 Header load
+            setTopData(prev => ({
+                ...prev,
+                QId: Number(header.QId),
+                qNo: header.QNo,
+                qDate: header.QDate?.split('T')[0],
+                projectId: header.ProjId,
+                ledgerId: header.LedgerId,
+                rNo: header.QRevNo,
+                subject: header.Subject,
+                payment: header.Terms,
+                delivery: header.Delivery,
+                qValidity: header.Validity,
+                totalAmt: header.TotTaxableAmt,
+                totVatAmt: header.TotVatamt,
+                totActAmt: header.NetAmount,
+                notes: header.Notes,
+                warranty: header.Warranty,
+                inclusion: header.Inclusion,
+                exclusion: header.Exclusion,
+                scope: header.Scope,
+            }));
+            setLedgerQuery(header.LedgerName ?? '');
+            setProjectQuery(header.ProjName ?? '');
+
+            // 🔹 Details rows
+            setRows(
+                (data.Details || []).map((r, i) => ({
+                    // 🔑 UI expects these
+                    RowId: i + 1,
+                    productId: r.ProductId ?? '',
+                    product: r.ProductName ?? '',
+                    productQuery: r.ProductName ?? '',
+                    qty: r.Qty ?? 0,
+                    unitId: r.UnitId,
+                    unitType: r.UnitType ?? "",
+
+                    rate: r.Rate ?? r.NRate ?? 0,
+                    amount: r.NetAmt ?? 0,
+
+                    vatPer: r.VatPer ?? 0,
+                    vatAmt: r.VatAmt ?? 0,
+                    brandId: r.BrandId ?? "",
+                    brand: r.BrandName ?? "",
+                    brandQuery: r.BrandName ?? '',
+                    taxable: r.Taxable ?? '',
+                    description: r.ProdDes ?? "",
+                    _raw: r
+                }))
+            );
+
+            setShowFind(false);
+        } catch (err) {
+            console.error(err);
+            showTempMessage("Failed to load quotation ❌", false);
+        }
+    };
+    const handleUpdateSuppQuo = async () => {
+        try {
+            const payload = {
+                QId: Number(topData.QId),        // 🔑 THIS IS WHAT BACKEND USES
+                QNo: topData.qNo,
+                QDate: topData.qDate,
+                ProjId: topData.projectId,
+                LedgerId: topData.ledgerId,
+                QRevNo: topData.rNo,
+                Subject: topData.subject,
+                Terms:topData.payment,
+                Delivery: topData.delivery,
+                Validity: topData.qValidity,
+                Notes: topData.notes,
+                Warranty: topData.warranty,
+                Inclusion: topData.inclusion,
+                Exclusion: topData.exclusion,
+                Scope: topData.scope,
+                Create_By: 1,
+
+                Details: rows.map((r, index) => ({
+                    Sno: index + 1,
+                    ProductId: r.productId,
+                    ProdDes: r.description ?? "",
+                    BrandId: r.brandId,
+                    UnitId: r.unitId,
+                    Qty: Number(r.qty),
+                    Rate: Number(r.rate),
+                    Taxable: Number(r.taxable),
+                    VatPer: Number(r.vatPer),
+                    VatAmt: Number(r.vatAmt),
+                    NetAmt: Number(r.amount),
+                    NRate: Number(r.rate),
+
+                }))
+            };
+
+            console.log("UPDATE PAYLOAD 👉", payload);
+
+            const res = await axiosInstance.put(
+                `${gapi}/quo/update`,
+                payload
+            );
+            console.log("UPDATE Popup 👉", res.data)
+            showTempMessage(res.data?.Message);
+            setIsEditMode(false);
+            handleReset();
+
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const highlightText = (text, search) => {
         if (!search || !text) return text;
@@ -502,6 +791,67 @@ const Quot = () => {
                 part
             )
         );
+    };
+
+    //common msg alert for all and to display error msg from be
+    const showTempMessage = (msg, msgtype) => {
+        setMessage(msg);
+        if (msgtype === 'true') {
+            setShowMessage(true);
+            setTimeout(() => setShowMessage(false), 3000);
+        } else {
+            setShowMessage_Error(true);
+            setTimeout(() => setShowMessage_Error(false), 3000);
+        }
+    };
+
+    const handleReset = () => {
+        setTopData({
+            qNo: '',
+            rNo: '',
+            ledger: '',
+            ledgerId: '',
+            project: '',
+            projectId: '',
+            qDate: '',
+            subject: '',
+            payment: '',
+            delivery: '',
+            item: 0,
+            qValidity: '',
+            totalAmt: 0,
+            totVatAmt: 0,
+            totActAmt: 0,
+            roundOff: '',
+            notes: '',
+            warranty: '',
+            inclusion: '',
+            exclusion: '',
+            scope: '',
+        });
+
+        setBottomData({
+            sNo: '',
+            product: '',
+            productId: '',
+            unitType: '',
+            unitId: '',
+            brand: '',
+            brandId: '',
+            qty: '',
+            rate: '',
+            taxable: '',
+            vatPer: '',
+            vatAmt: '',
+            amount: '',
+            description: '',
+        });
+        setLedgerQuery('');
+        setProductQuery('');
+        setProjectQuery('');
+        setBrandQuery('');
+        setUnitQuery('');
+        setRows([]);
     };
 
 
@@ -779,7 +1129,6 @@ const Quot = () => {
                                         <input
                                             type="text"
                                             className="form-control form-control-sm"
-                                            placeholder="🔎 Search Subject..."
                                             name='subject'
                                             value={topData.subject}
                                             onChange={handleTopChange}
@@ -926,6 +1275,7 @@ const Quot = () => {
                                                                 setShowUnitDropdown(true);
                                                         }}
                                                         onKeyDown={handleUnitKeyDown}
+                                                        disabled
                                                     />
 
                                                     {/* DROPDOWN */}
@@ -1136,6 +1486,7 @@ const Quot = () => {
                                                     name='vatPer'
                                                     value={bottomData.vatPer}
                                                     onChange={handleBottomChange}
+                                                    disabled
                                                 />
                                             </div>
 
@@ -1183,7 +1534,7 @@ const Quot = () => {
 
                                 <button
                                     className='btn btn-primary btn-sm' onClick={handleAddOrUpdateRow}>
-                                    Add
+                                    {editIndex !== null ? 'Update' : 'Add'}
                                 </button>
                             </div>
                             <hr className='mt-1' />
@@ -1220,36 +1571,69 @@ const Quot = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            {rows && rows.length > 0 ? (
+                                                rows.map((row, index) => (
+                                                    <tr key={index}>
+                                                        <td className="text-center">{index + 1}</td>
+                                                        <td>{row.product}</td>
+                                                        <td className="text-center">{row.unit}</td>
+                                                        <td>{row.brand}</td>
+                                                        <td className="text-center">{row.qty}</td>
+                                                        <td className="text-end">{row.rate}</td>
+                                                        <td className="text-end">{row.taxable}</td>
+                                                        <td className="text-center">{row.vatPer}</td>
+                                                        <td className="text-end">{row.vatAmt}</td>
+                                                        <td className="text-end">{row.amount}</td>
+                                                        <td className="text-center">
+                                                            {editIndex === index ? (
+                                                                // Show Cancel Edit ONLY for the selected row
+                                                                <button
+                                                                    className="btn btn-sm btn-warning"
+                                                                    style={{ padding: "0.2rem 0.4rem", fontSize: "10px", lineHeight: "1" }}
+                                                                    onClick={handleCancelEdit}
+                                                                >
+                                                                    Cancel Edit
+                                                                </button>
+                                                            ) : (
+                                                                // When NOT editing -> show edit & delete
+                                                                // When editing -> hide them for all rows
+                                                                <>
+                                                                    <button
+                                                                        className="btn btn-sm btn-secondary me-1"
+                                                                        style={{ padding: "0.2rem 0.4rem", fontSize: "10px", lineHeight: "1" }}
+                                                                        onClick={() => {
 
-                                            <tr >
-                                                <td className="text-center"></td>
-                                                <td></td>
-                                                <td className="text-center"></td>
-                                                <td></td>
-                                                <td className="text-center"></td>
-                                                <td className="text-end"></td>
-                                                <td className="text-end"></td>
-                                                <td className="text-center"></td>
-                                                <td className="text-end"></td>
-                                                <td className="text-end"></td>
-                                                <td className="text-center">
-                                                    <>
-                                                        <button
-                                                            className="btn btn-sm btn-secondary me-1"
-                                                            style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
-                                                        >
-                                                            Edit
-                                                        </button>
+                                                                            handleEditRow(index);
+                                                                            setEditIndex(index);
+                                                                        }}
+                                                                    >
+                                                                        Edit
+                                                                    </button>
 
-                                                        <button
-                                                            className="btn btn-sm btn-danger"
-                                                            style={{ padding: "0.2rem 0.4rem", fontSize: "8px" }}
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </>
-                                                </td>
-                                            </tr>
+                                                                    <button
+                                                                        className="btn btn-sm btn-danger"
+                                                                        style={{ padding: "0.2rem 0.4rem", fontSize: "10px", lineHeight: "1" }}
+                                                                        onClick={() => {
+                                                                            setRowToDelete(index);     // store which row to delete
+                                                                            setShowDeleteModal(true);
+                                                                        }}
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </>
+
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="11" className="text-center text-muted">
+                                                        No data available
+                                                    </td>
+                                                </tr>
+                                            )}
+
 
                                         </tbody>
                                     </table>
@@ -1257,7 +1641,46 @@ const Quot = () => {
                             </div>
                         </div>
 
+                        {/* Delete Modal */}
+                        {showDeleteModal && (
+                            <div className="modal show d-block" tabIndex="-1">
+                                <div className="modal-dialog">
+                                    <div className="modal-content">
+                                        <div className="modal-header">
+                                            <h5 className="modal-title">Confirm Delete</h5>
+                                            <button
+                                                type="button"
+                                                className="btn-close"
+                                                onClick={cancelDelete}
+                                            ></button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <p>
+                                                Are you sure you want to delete "
 
+                                            </p>
+                                        </div>
+                                        <div className="modal-footer">
+                                            <button
+                                                className="btn btn-secondary"
+                                                onClick={cancelDelete}
+                                            >
+                                                No
+                                            </button>
+                                            <button
+                                                className="btn btn-danger"
+                                                onClick={() => {
+                                                    handleDeleteRow(rowToDelete); // delete now
+                                                    setShowDeleteModal(false);    // close modal
+                                                    setRowToDelete(null);
+                                                }}>
+                                                Yes
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="right-panel ps-lg-3 mt-0">
                             <div
@@ -1282,7 +1705,7 @@ const Quot = () => {
                                         className="form-control form-control-sm"
                                         name='payment'
                                         value={topData.payment}
-                                        onChange={handleBottomChange}
+                                        onChange={handleTopChange}
                                     />
                                 </div>
 
@@ -1292,7 +1715,7 @@ const Quot = () => {
                                         className="form-control form-control-sm"
                                         name='delivery'
                                         value={topData.delivery}
-                                        onChange={handleBottomChange}
+                                        onChange={handleTopChange}
                                     />
                                 </div>
 
@@ -1302,7 +1725,7 @@ const Quot = () => {
                                         className="form-control form-control-sm"
                                         name='qValidity'
                                         value={topData.qValidity}
-                                        onChange={handleBottomChange}
+                                        onChange={handleTopChange}
                                     />
                                 </div>
 
@@ -1318,8 +1741,8 @@ const Quot = () => {
                                             <input
                                                 className="form-control form-control-sm"
                                                 name='item'
-                                                value={topData.item}
-                                                onChange={handleBottomChange}
+                                                value={rows.length}
+                                                onChange={handleTopChange}
                                             />
                                         </div>
                                     </div>
@@ -1332,8 +1755,8 @@ const Quot = () => {
                                             <input
                                                 className="form-control form-control-sm"
                                                 name='totalAmt'
-                                                value={topData.totalAmt}
-                                                onChange={handleBottomChange}
+                                                value={totalAmount}
+                                                onChange={handleTopChange}
                                             />
                                         </div>
                                     </div>
@@ -1346,8 +1769,8 @@ const Quot = () => {
                                             <input
                                                 className="form-control form-control-sm"
                                                 name='totVatAmt'
-                                                value={topData.totVatAmt}
-                                                onChange={handleBottomChange}
+                                                value={totalVatAmount}
+                                                onChange={handleTopChange}
                                             />
                                         </div>
                                     </div>
@@ -1360,8 +1783,8 @@ const Quot = () => {
                                             <input
                                                 className="form-control form-control-sm"
                                                 name='totActAmt'
-                                                value={topData.totActAmt}
-                                                onChange={handleBottomChange}
+                                                value={totalActAmt}
+                                                onChange={handleTopChange}
                                             />
                                         </div>
                                     </div>
@@ -1375,7 +1798,7 @@ const Quot = () => {
                                                 className="form-control form-control-sm"
                                                 name='roundOff'
                                                 value={topData.roundOff}
-                                                onChange={handleBottomChange}
+                                                onChange={handleTopChange}
                                             />
                                         </div>
                                     </div>
@@ -1395,7 +1818,7 @@ const Quot = () => {
                                 rows={2}
                                 name='notes'
                                 value={topData.notes}
-                                onChange={handleBottomChange}
+                                onChange={handleTopChange}
                             />
                         </div>
 
@@ -1407,7 +1830,7 @@ const Quot = () => {
                                 rows={2}
                                 name='warranty'
                                 value={topData.warranty}
-                                onChange={handleBottomChange}
+                                onChange={handleTopChange}
                             />
                         </div>
 
@@ -1423,7 +1846,7 @@ const Quot = () => {
                                 rows={2}
                                 name='inclusion'
                                 value={topData.inclusion}
-                                onChange={handleBottomChange}
+                                onChange={handleTopChange}
                             />
                         </div>
 
@@ -1435,7 +1858,7 @@ const Quot = () => {
                                 rows={2}
                                 name='exclusion'
                                 value={topData.exclusion}
-                                onChange={handleBottomChange}
+                                onChange={handleTopChange}
                             />
                         </div>
 
@@ -1451,25 +1874,110 @@ const Quot = () => {
                                 rows={2}
                                 name='scope'
                                 value={topData.scope}
-                                onChange={handleBottomChange}
+                                onChange={handleTopChange}
                             />
                         </div>
 
                         {/* RIGHT */}
                         <div style={{ width: "50%" }} className="col-md-6 d-flex align-items-center justify-content-center mt-5" >
                             <div className='d-flex gap-3 flex-wrap '>
-                                <button className='btn btn-sm btn-primary'>Find</button>
-                                <button className='btn btn-sm btn-success'>Save</button>
+                                <button className='btn btn-sm btn-primary' onClick={() => setShowFind(true)}>Find</button>
+                                <button className='btn btn-sm btn-success' onClick={isEditMode ? handleUpdateSuppQuo : handleSaveQuo}
+                                >
+                                    {isEditMode ? 'Update' : 'Save'}
+                                </button>
                                 <button className='btn btn-sm btn-secondary'>Print</button>
                                 <button className='btn btn-sm btn-danger'>Delete</button>
-                                <button className='btn btn-sm btn-warning'>Reset</button>
+                                <button className='btn btn-sm btn-warning' onClick={handleReset}>Reset</button>
                             </div>
                         </div>
-
                     </div>
 
+                    {/* Error Message */}
+                    {showMessage_Error && (
+                        <div
+                            className="toast-container position-fixed top-0 end-0 pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
+                        >
+                            <div className="toast show" role="alert">
 
+                                <div
+                                    className="toast-header"
+                                    style={{
+                                        backgroundColor: "#d60707",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Error</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage_Error(false)}
+                                    ></button>
+                                </div>
 
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Success Message */}
+                    {showMessage && (
+                        <div
+                            aria-live="polite"
+                            aria-atomic="true"
+                            className="toast-container position-fixed top-0 end-0  pe-3"
+                            style={{ zIndex: 9999, paddingTop: '70px' }}
+                        >
+                            <div
+                                className="toast show text-bg-success"
+                                role="alert"
+                                aria-live="assertive"
+                                aria-atomic="true"
+                            >
+                                <div
+                                    className="toast-header text-bg-blue"
+                                    style={{
+                                        backgroundColor: "#0f8532",
+                                        color: "#fff"
+                                    }}
+                                >
+                                    <strong className="me-auto">Success</strong>
+                                    <button
+                                        type="button"
+                                        className="btn-close btn-close-white"
+                                        onClick={() => setShowMessage(false)}
+                                    ></button>
+                                </div>
+
+                                <div
+                                    className="toast-body fw-bold"
+                                    style={{
+                                        backgroundColor: "#fff",
+                                        color: "#000"
+                                    }}
+                                >
+                                    {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ===== FIND POPUP ===== */}
+                    {showFind && (
+                        <FindQuot
+                            onClose={() => setShowFind(false)}
+                            onEdit={handleEditFromFind}
+                        />
+                    )}
 
                 </div>
             </div>

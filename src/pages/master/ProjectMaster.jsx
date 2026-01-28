@@ -402,6 +402,7 @@ const ProjectMaster = () => {
         setEditingIndex(null);
         setProjectToEdit(null);
     }
+    
     const handleAddLedger = async () => {
         if (!ledgerName.trim() || !ledgerGroup || !ledgerState) {
             return;

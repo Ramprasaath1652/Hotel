@@ -457,7 +457,7 @@ const SQuot = () => {
             productId: item.ProductID,
             productName: item.ProductName,
             unit: item.UnitType,
-            rate: item.URate ?? '',
+           
             unitId: item.UnitId || "",
             unitType: item.UnitType,
             vatPer: item.VatPer || "",
@@ -683,36 +683,33 @@ const SQuot = () => {
 
     //Row Add/ Update
     const handleAddOrUpdateRow = () => {
+        const rowData = {
+            ...bottomData,
+
+            // 🔹 DISPLAY FIELDS (TABLE)
+            productName: productQuery,
+            brandName: brandQuery,
+            unitType: unitQuery,
+        };
+
         if (editIndex !== null) {
-            // Update existing row
             const updatedRows = [...rows];
-            updatedRows[editIndex] = {
-                ...bottomData,
-                productName: productQuery,
-                brandName: brandQuery,
-                unitType: unitQuery,
-            };
+            updatedRows[editIndex] = rowData;
             setRows(updatedRows);
-            setEditIndex(null); // reset edit mode
+            setEditIndex(null);
         } else {
-            // Add new row
-            setRows([...rows, {
-                ...bottomData,
-                productName: productQuery,
-                brandName: brandQuery,
-                unitType: unitQuery
-            }]);
+            setRows(prev => [...prev, rowData]);
         }
 
-        // Clear input fields after add/update
+        // OPTIONAL: clear form after add
         setBottomData({
             sNo: '',
+            product: '',
             productId: '',
-            productName: '',
-            unitId: '',
             unit: '',
+            unitId: '',
+            brand: '',
             brandId: '',
-            brandName: '',
             qty: '',
             rate: '',
             marPer: '',
@@ -721,13 +718,11 @@ const SQuot = () => {
             vatPer: '',
             vatAmt: '',
             amount: '',
-            description: ''
         });
-        setProductQuery("");
-        setBrandQuery("");
+
+        setProductQuery('');
+        setBrandQuery('');
         setUnitQuery('');
-        setShowProductDropdown(false);
-        setShowBrandDropdown(false);
     };
 
     // cancel edit row
@@ -1067,6 +1062,7 @@ const SQuot = () => {
 
             showTempMessage("Quotation Updated ✅", true);
             setIsEditMode(false);
+            handleReset()
 
         } catch (err) {
             console.error(err);
