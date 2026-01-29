@@ -9,6 +9,10 @@ const FindSQuot = ({ onClose, onEdit }) => {
     const [ledgerList, setLedgerList] = useState([]);
     const [projectList, setProjectList] = useState([]);
 
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [rowToDelete, setRowToDelete] = useState(null);
+
+
     const gapi = import.meta.env.VITE_API_URL;
 
 
@@ -71,6 +75,28 @@ const FindSQuot = ({ onClose, onEdit }) => {
         setFiltered(result);
     };
 
+    const confirmDelete = async () => {
+        try {
+            await axiosInstance.delete(`${gapi}/suppquo/delete/${rowToDelete}`);
+
+            setFiltered(prev => prev.filter(r => r.SQId !== rowToDelete));
+            setQuot(prev => prev.filter(r => r.SQId !== rowToDelete));
+
+            setShowDeleteModal(false);
+            setRowToDelete(null);
+
+            onClose(); // optional → close find popup also
+
+        } catch (err) {
+            console.error(err);
+            alert("Delete failed ❌");
+        }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setRowToDelete(null);
+    };
 
 
     return (
@@ -130,6 +156,10 @@ const FindSQuot = ({ onClose, onEdit }) => {
                                         >🖋️Edit</button>
                                         <button className="btn btn-sm btn-danger"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}
+                                            onClick={() => {
+                                                setRowToDelete(r.SQId);
+                                                setShowDeleteModal(true);
+                                            }}
                                         >🗑️Delete</button>
                                     </td>
                                 </tr>
@@ -141,6 +171,47 @@ const FindSQuot = ({ onClose, onEdit }) => {
                 <div className="mt-4 text-end">
                     <button className="btn btn-sm btn-danger" onClick={onClose}>Close</button>
                 </div>
+
+                {showDeleteModal && (
+                    <div className="modal show d-block" tabIndex="-1">
+                        <div className="modal-dialog modal-sm">
+                            <div className="modal-content">
+
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Confirm Delete</h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={cancelDelete}
+                                    />
+                                </div>
+
+                                <div className="modal-body">
+                                    <p>Are you sure you want to delete this quotation?</p>
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={cancelDelete}
+                                    >
+                                        No
+                                    </button>
+
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={confirmDelete}
+                                    >
+                                        Yes
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
             </div>
         </div>
     );

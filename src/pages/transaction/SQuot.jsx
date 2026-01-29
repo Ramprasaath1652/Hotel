@@ -457,7 +457,7 @@ const SQuot = () => {
             productId: item.ProductID,
             productName: item.ProductName,
             unit: item.UnitType,
-           
+
             unitId: item.UnitId || "",
             unitType: item.UnitType,
             vatPer: item.VatPer || "",
@@ -948,6 +948,10 @@ const SQuot = () => {
     //     }
     // };
 
+    const handleDeleteFromFind = async (sqId) => {
+
+    }
+
     const handleEditFromFind = async (sqId) => {
         try {
             const res = await axiosInstance.get(`${gapi}/suppquo/edit/${sqId}`);
@@ -1153,7 +1157,6 @@ const SQuot = () => {
     const openAddBrandModal = () => {
         if (!brandQuery.trim()) return;
         setShowAddBrandModal(true)
-
     }
 
     const cancelAddBrand = () => {
@@ -2401,7 +2404,7 @@ const SQuot = () => {
                             {isEditMode ? 'Update' : 'Save'}
                         </button>
                         <button className="btn btn-sm btn-danger" onClick={() => setShowFind(true)}>🔎Find</button>
-                        <button className="btn btn-sm btn-info text-white">🗑️Delete</button>
+                        <button className="btn btn-sm btn-info text-white" onClick={() => setShowFind(true)}>🗑️Delete</button>
                         <button className="btn btn-sm btn-dark" onClick={handleReset}>🔄️Reset</button>
                     </div>
 
@@ -2744,6 +2747,7 @@ const SQuot = () => {
                         <FindSQuot
                             onClose={() => setShowFind(false)}
                             onEdit={handleEditFromFind}
+                            onDelete={handleDeleteFromFind}
                         />
 
                     )}

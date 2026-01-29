@@ -21,11 +21,11 @@ const Quot = () => {
         subject: '',
         payment: '',
         delivery: '',
-        item: 0,
+        item: '',
         qValidity: '',
-        totalAmt: 0,
-        totVatAmt: 0,
-        totActAmt: 0,
+        totalAmt: '',
+        totVatAmt: '',
+        totActAmt: '',
         roundOff: '',
         notes: '',
         warranty: '',
@@ -89,6 +89,29 @@ const Quot = () => {
     const [showFind, setShowFind] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
 
+    const [showProjectModal, setShowProjectModal] = useState(false)
+    const [project, setProject] = useState('');
+    const [projectName, setProjectName] = useState('');
+    const [projectNo, setProjectNo] = useState('');
+    const [projectDate, setProjectDate] = useState('');
+    const [projectLedger, setProjectLedger] = useState('');
+    const [projectLedgerList, setProjectLedgerList] = useState([]);
+
+    const [showProductModal, setShowProductModal] = useState(false);
+    const [productName, setProductName] = useState('');
+    const [productCode, setProductCode] = useState('');
+    const [vatPer, setVatPer] = useState('');
+    const [salesUnit, setSalesUnit] = useState('');
+    const [groupQuery, setGroupQuery] = useState('');
+    const [addUnitList, setAddUnitList] = useState([]);
+    const [addGroupList, setAddGroupList] = useState([]);
+    const [product, setProduct] = useState(null);
+
+    const [showAddBrandModal, setShowAddBrandModal] = useState(false);
+
+
+
+
 
 
 
@@ -105,6 +128,16 @@ const Quot = () => {
         loadBrands();
         loadQuo();
     }, [])
+
+    useEffect(() => {
+        axiosInstance.get(`${gapi}/ledger/list`).then(res => setProjectLedgerList(res.data.Data));
+    }, []);
+
+    useEffect(() => {
+        axiosInstance.get(`${gapi}/group/list`).then(res => setAddGroupList(res.data.Data));
+        axiosInstance.get(`${gapi}/unit/list`).then(res => setAddUnitList(res.data.Data));
+    }, []);
+
 
     const loadProject = async () => {
         try {
@@ -125,11 +158,13 @@ const Quot = () => {
 
     const handleProjectSelect = (item) => {
         setProjectQuery(item.ProjName);
-
+        setLedgerQuery(item.LedgerName || '')
         setTopData(prev => ({
             ...prev,
             project: item.ProjName,
-            projectId: item.ProjId
+            projectId: item.ProjId,
+            ledger: item.LedgerName,
+            ledgerId: item.LedgerId
         }));
 
         setShowProjectDropdown(false);
@@ -716,28 +751,35 @@ const Quot = () => {
             showTempMessage("Failed to load quotation ❌", false);
         }
     };
+
+
     const handleUpdateSuppQuo = async () => {
         try {
             const payload = {
                 QId: Number(topData.QId),        // 🔑 THIS IS WHAT BACKEND USES
                 QNo: topData.qNo,
                 QDate: topData.qDate,
-                ProjId: topData.projectId,
-                LedgerId: topData.ledgerId,
                 QRevNo: topData.rNo,
                 Subject: topData.subject,
-                Terms:topData.payment,
-                Delivery: topData.delivery,
-                Validity: topData.qValidity,
+                Scope: topData.scope,
                 Notes: topData.notes,
                 Warranty: topData.warranty,
                 Inclusion: topData.inclusion,
                 Exclusion: topData.exclusion,
-                Scope: topData.scope,
-                Create_By: 1,
+                TotTaxableAmt: totalAmount,
+                TotVatamt: totalVatAmount,
+                NetAmount: totalActAmt,
+                Terms: topData.payment,
+                Delivery: topData.delivery,
+                Validity: topData.qValidity,
+                ProjId: topData.projectId,
+                LedgerId: topData.ledgerId,
+                Update_By: 1,
 
                 Details: rows.map((r, index) => ({
-                    Sno: index + 1,
+                    QDetsId: 0,
+                    QId: 0,
+                    SNo: index + 1,
                     ProductId: r.productId,
                     ProdDes: r.description ?? "",
                     BrandId: r.brandId,
@@ -854,6 +896,192 @@ const Quot = () => {
         setRows([]);
     };
 
+    const handleProjectAdd = async () => {
+        const payload = {
+            // ProjId: 0,
+            // ProjNo: Number(projectNo),
+            // ProjDate: projectDate && projectDate.trim() !== "" ? `${projectDate}T00:00:00` : "2025-01-01T00:00:00",
+            // ProjName: projectName,
+            // LedgerId: Number(projectLedger),
+
+            ProjId: 0,
+            ProjNo: Number(projectNo),
+            ProjDate: projectDate && projectDate.trim() !== "" ? `${projectDate}T00:00:00` : "2025-01-01T00:00:00",
+            ProjName: projectName,
+            LedgerId: Number(projectLedger),
+            RefName: null,
+            Description: null,
+        }
+        try {
+            const res = await axiosInstance.post(
+                `${gapi}/project/insert`,
+                payload,
+                {
+                    headers: { "Content-Type": "application/json" }
+                }
+            );
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                const savedProject = {
+                    ProjId: res.data.ProjId,
+                    ProjName: res.data.ProjName,
+                    ProjNo: res.data.ProjNo,
+                    LedgerName:
+                        projectLedgerList.find(s => s.LedgerId == res.data.LedgerId)?.LedgerName || "-"
+                };
+                loadProject();
+                setProjectList(prev => [...prev, savedProject])
+                setProject(savedProject.ProjId);
+                setProjectQuery(savedProject.ProjName);
+                setProject('')
+                setProjectName('')
+                setProjectNo('')
+                setProjectDate('')
+                setProjectLedger('')
+                setShowProjectModal(false)
+                showTempMessage(res.data.Message, 'true');
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+
+        } catch (err) {
+            console.error("Add Project Error", err);
+            showTempMessage("Failed to add Project ❌");
+        }
+    }
+
+    const handleAddProductFromSQuot = async () => {
+
+        if (!productName.trim() || !groupQuery || !salesUnit) {
+            return;
+        }
+
+        const payload = {
+            // ProductID: 0,
+            // ProductCode: productCode?.trim() || "",
+            // ProductName: productName.trim(),
+            // GroupId: Number(groupQuery),
+            // UnitId: Number(salesUnit),
+            // VatPer: Number(vatPer) || 0,
+
+
+            ProductID: 0,
+            CGST: 0,
+            SGST: 0,
+            IGST: Number(vatPer),
+            ProductCode: productCode,
+            ProductName: productName,
+            ProductTamil: productName,
+            GroupId: Number(groupQuery),
+            Packing: 1.000,
+            Qty: null,
+            FreeQty: null,
+            VatPer: Number(vatPer),
+            ComCode: "",
+            Sch: null,
+            HSNCode: "",
+            HSNId: 0,
+            UnitId: Number(salesUnit)
+
+
+        };
+        console.log('Product:', payload)
+        try {
+            const res = await axiosInstance.post(
+                `${gapi}/product/insert`,
+                payload,
+                {
+                    headers: { "Content-Type": "application/json" }
+                }
+            );
+
+            console.log("PRODUCT RES 👉", res.data);
+
+            // 🔥 SUCCESS CHECK (ledger maari)
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                const savedProduct = {
+                    ProductID: res.data.ProductID,
+                    ProductName: res.data.ProductName,
+                    ProductCode: res.data.ProductCode,
+                    GroupName:
+                        addGroupList.find(g => g.GroupID == res.data.GroupId)?.GroupName || "-",
+                    UnitType:
+                        addUnitList.find(u => u.UnitId == res.data.UnitId)?.UnitType || "-"
+                };
+                loadProduct();
+                // 🔥 instant product dropdown update
+                setProductList(prev => [...prev, savedProduct]);
+
+                // 🔥 auto select newly added product
+                setProduct(savedProduct.ProductID);
+                setProductQuery(savedProduct.ProductName);
+
+                // 🔥 reset + close
+                setProductCode("");
+                setProductName("");
+                setGroupQuery("");
+                setSalesUnit("");
+                setVatPer("");
+                setShowProductModal(false);
+                setShowProductDropdown(false);
+                showTempMessage(res.data.Message, 'true');
+
+            } else {
+                showTempMessage(res.data?.Message || "Product add failed", 'false');
+            }
+
+        } catch (err) {
+            console.error("Add Product Error", err);
+            showTempMessage("Failed to add product ❌");
+        }
+    };
+
+    const openAddBrandModal = () => {
+        if (!brandQuery.trim()) return;
+        setShowAddBrandModal(true)
+    }
+
+    const confirmAddBrand = () => {
+        setShowAddBrandModal(false)
+        addBrand()
+    }
+
+    const cancelAddBrand = () => {
+        setShowAddBrandModal(false)
+    }
+
+    const addBrand = async () => {
+        if (!brandQuery.trim()) return;
+
+        try {
+            const res = await axiosInstance.post(
+                `${gapi}/brand/insert`,
+                {
+                    BrandName: brandQuery.trim(),
+                    BrandId: 0,
+                    TBrandName: brandQuery.trim()
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+            if (res.data?.Success === true) {
+                // 🔥 instant dropdown update
+                // setGroupList(prev => [...prev, newGroup]);
+
+                // setGroupQuery(newGroup.GroupName);
+                // setGroupQuery("");
+                setShowBrandDropdown(false);
+                showTempMessage(res.data.Message, 'true');
+                setBrandQuery('')
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
+        } catch (err) {
+            console.error("Add Group Error", err);
+        }
+    };
 
     return (
         <div className='container-fluid mt-2'>
@@ -1018,7 +1246,6 @@ const Quot = () => {
                                         <input
                                             type="text"
                                             className="form-control form-control-sm"
-                                            placeholder="🔎 Search Ledger..."
                                             onChange={handleLedgerChange}
                                             value={ledgerQuery}
                                             onFocus={() => {
@@ -1028,6 +1255,7 @@ const Quot = () => {
                                             onBlur={() => {
                                                 setTimeout(() => setShowLedgerDropdown(false), 150);
                                             }}
+                                            disabled
                                         />
 
                                         {/* DROPDOWN */}
@@ -1395,10 +1623,7 @@ const Quot = () => {
                                                                     className="d-flex align-items-center px-2 py-2 text-primary fw-bold"
                                                                     style={{ cursor: "pointer" }}
                                                                     onMouseDown={(e) => e.preventDefault()}
-                                                                    onClick={() => {
-                                                                        setShowBrandDropdown(false);
-                                                                        setShowBrandModal(true);
-                                                                    }}
+                                                                    onClick={openAddBrandModal}
                                                                 >
                                                                     <span className="me-2">+</span>
                                                                     <span>Add Brand</span>
@@ -1887,7 +2112,7 @@ const Quot = () => {
                                     {isEditMode ? 'Update' : 'Save'}
                                 </button>
                                 <button className='btn btn-sm btn-secondary'>Print</button>
-                                <button className='btn btn-sm btn-danger'>Delete</button>
+                                <button className='btn btn-sm btn-danger' onClick={() => setShowFind(true)}>Delete</button>
                                 <button className='btn btn-sm btn-warning' onClick={handleReset}>Reset</button>
                             </div>
                         </div>
@@ -1966,6 +2191,198 @@ const Quot = () => {
                                     }}
                                 >
                                     {message}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Project Model */}
+
+                    {showProjectModal && (
+                        <div className="modal show d-block mt-5" tabIndex="-1">
+                            <div className="modal-dialog modal-lg">
+                                <div className="modal-content">
+                                    <div className="modal-header" style={{ backgroundColor: '#6a1b9a' }}>
+                                        <h5 className="modal-title" style={{ color: 'white' }}>Add Project</h5>
+                                        <button className="btn-close" style={{ backgroundColor: 'white' }} onClick={() => setShowProjectModal(false)}></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <div className="mb-3">
+                                            <label className="form-label" >Project No</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectNo}
+                                                onChange={e => setProjectNo(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Date</label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={projectDate}
+                                                onChange={e => setProjectDate(e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Project Name</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={projectName}
+                                                onChange={e => setProjectName(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Ledger</label>
+                                            <select
+                                                className="form-control"
+                                                value={projectLedger}
+                                                onChange={e => setProjectLedger(e.target.value)}
+                                            >
+                                                <option value="">-- Select Ledger --</option>
+                                                {projectLedgerList.map(s => (
+                                                    <option key={s.LedgerId} value={s.LedgerId}>{s.LedgerName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+
+                                        <div className="modal-footer">
+                                            <button className="btn btn-secondary" onClick={() => setShowProjectModal(false)}>Cancel</button>
+                                            <button type="button" className="btn btn-primary" onClick={handleProjectAdd}>Save</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Product Model */}
+
+                    {showProductModal && (
+                        <div className="modal show d-block mt-5" tabIndex="-1">
+                            <div className="modal-dialog modal-lg">
+                                <div className="modal-content">
+                                    <div className="modal-header" style={{ backgroundColor: '#6a1b9a' }}>
+                                        <h5 className="modal-title" style={{ color: 'white' }}>Add Product</h5>
+                                        <button className="btn-close" style={{ backgroundColor: 'white' }} onClick={() => setShowProductModal(false)}></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <div className="mb-3">
+                                            <label className="form-label" >Product Code</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={productCode}
+                                                onChange={e => setProductCode(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Product Name</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={productName}
+                                                onChange={e => setProductName(e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Group Name</label>
+                                            <select
+                                                className="form-control"
+                                                value={groupQuery}
+                                                onChange={e => setGroupQuery(e.target.value)}
+                                            >
+                                                <option value="">-- Select Group --</option>
+                                                {addGroupList.map(s => (
+                                                    <option key={s.GroupID} value={s.GroupID}>{s.GroupName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Sales Unit</label>
+                                            <select
+                                                className="form-control"
+                                                value={salesUnit}
+                                                onChange={e => setSalesUnit(e.target.value)}
+                                            >
+                                                <option value="">-- Select Unit --</option>
+                                                {addUnitList.map(s => (
+                                                    <option key={s.UnitId} value={s.UnitId}>{s.UnitType}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            <label className="form-label">Vat %</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={vatPer}
+                                                onChange={e => setVatPer(e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="modal-footer">
+                                            <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>Cancel</button>
+                                            <button type="button" className="btn btn-primary" onClick={handleAddProductFromSQuot}>Save</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Brand Modal */}
+                    {showAddBrandModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Confirm Add</h5>
+                                        <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={cancelAddBrand}
+                                        ></button>
+                                    </div>
+
+                                    <div className="modal-body">
+                                        <p>
+                                            Are you sure you want to add "
+                                            <strong>{brandQuery}</strong>"?
+                                        </p>
+                                    </div>
+
+                                    <div className="modal-footer">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={cancelAddBrand}
+                                        >
+                                            No
+                                        </button>
+                                        <button
+                                            className="btn btn-success"
+                                            onClick={confirmAddBrand}
+                                        >
+                                            Yes
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

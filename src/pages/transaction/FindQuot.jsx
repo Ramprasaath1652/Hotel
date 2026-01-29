@@ -5,8 +5,11 @@ const FindQuot = ({ onClose, onEdit }) => {
     const [search, setSearch] = useState('');
     const [filtered, setFiltered] = useState([]);
     const [quot, setQuot] = useState([]);
-    const [ledgerList, setLedgerList] = useState([]);
-    const [projectList, setProjectList] = useState([]);
+    const [quotLedgerList, setQuotLedgerList] = useState([]);
+    const [quotProjectList, setQuotProjectList] = useState([]);
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [rowToDelete, setRowToDelete] = useState(null);
     const gapi = import.meta.env.VITE_API_URL;
 
     useEffect(() => {
@@ -17,10 +20,10 @@ const FindQuot = ({ onClose, onEdit }) => {
     const loadMasters = async () => {
         try {
             const ledgers = await axiosInstance.get(`${gapi}/ledger/list`);
-            setLedgerList(ledgers.data.Data);
+            setQuotLedgerList(ledgers.data.Data);
 
             const projects = await axiosInstance.get(`${gapi}/project/list`);
-            setProjectList(projects.data.Data);
+            setQuotProjectList(projects.data.Data);
         } catch (err) {
             console.error('Masters load error:', err);
         }
@@ -29,6 +32,7 @@ const FindQuot = ({ onClose, onEdit }) => {
     const loadQuot = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/quo/list`);
+            console.log('Quot res:', res)
             const data = res.data.Data;
 
             // Map to include LedgerName & ProjName if missing
@@ -36,11 +40,11 @@ const FindQuot = ({ onClose, onEdit }) => {
                 ...r,
                 LedgerName:
                     r.LedgerName ||
-                    ledgerList.find(l => l.LedgerId === r.LedgerId)?.LedgerName ||
+                    quotLedgerList.find(l => l.LedgerId === r.LedgerId)?.LedgerName ||
                     '',
                 ProjName:
                     r.ProjName ||
-                    projectList.find(p => p.ProjId === r.ProjectId)?.ProjName ||
+                    quotProjectList.find(p => p.ProjId === r.ProjectId)?.ProjName ||
                     '',
             }));
 
@@ -50,6 +54,7 @@ const FindQuot = ({ onClose, onEdit }) => {
             console.error(err);
         }
     };
+
     const handleFilter = value => {
         setSearch(value);
         const q = value.toLowerCase();
@@ -60,6 +65,29 @@ const FindQuot = ({ onClose, onEdit }) => {
             (r.LedgerName ?? '').toLowerCase().includes(q)
         );
         setFiltered(result);
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setRowToDelete(null);
+    }
+
+    const confirmDelete = async () => {
+        try {
+            await axiosInstance.delete(`${gapi}/quo/delete/${rowToDelete}`);
+
+            setFiltered(prev => prev.filter(r => r.QId !== rowToDelete));
+            setQuot(prev => prev.filter(r => r.QId !== rowToDelete));
+
+            setShowDeleteModal(false);
+            setRowToDelete(null);
+
+            onClose(); // optional → close find popup also
+
+        } catch (err) {
+            console.error(err);
+            alert("Delete failed ❌");
+        }
     };
 
     return (
@@ -119,6 +147,10 @@ const FindQuot = ({ onClose, onEdit }) => {
                                         >🖋️Edit</button>
                                         <button className="btn btn-sm btn-danger"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}
+                                            onClick={()=>{
+                                                setRowToDelete(r.QId)
+                                                setShowDeleteModal(true)
+                                            }}
                                         >🗑️Delete</button>
                                     </td>
                                 </tr>
@@ -130,6 +162,46 @@ const FindQuot = ({ onClose, onEdit }) => {
                 <div className="mt-4 text-end">
                     <button className="btn btn-sm btn-danger" onClick={onClose}>Close</button>
                 </div>
+
+                {showDeleteModal && (
+                    <div className="modal show d-block" tabIndex="-1">
+                        <div className="modal-dialog modal-sm">
+                            <div className="modal-content">
+
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Confirm Delete</h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={cancelDelete}
+                                    />
+                                </div>
+
+                                <div className="modal-body">
+                                    <p>Are you sure you want to delete this quotation?</p>
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={cancelDelete}
+                                    >
+                                        No
+                                    </button>
+
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={confirmDelete}
+                                    >
+                                        Yes
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </div>
         </div>
     )

@@ -602,7 +602,6 @@ const Product = () => {
                                             setShowGroupDropdown(false);
                                         }, 150);
                                     }}
-
                                 />
 
                                 {/* Dropdown */}
