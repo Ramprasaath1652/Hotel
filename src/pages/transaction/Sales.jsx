@@ -110,6 +110,24 @@ const Sales = () => {
     const [showAddBrandModal, setShowAddBrandModal] = useState(false);
     const [invType, setInvType] = useState("");
 
+    const [qNoQuery, setQNoQuery] = useState('');
+
+    // quotation master list
+    const [quotationList, setQuotationList] = useState([]);
+    const [filteredQuotation, setFilteredQuotation] = useState([]);
+
+    // input
+    const [quotationQuery, setQuotationQuery] = useState("");
+    const [showQuotationDropdown, setShowQuotationDropdown] = useState(false);
+    const [activeQuotationIndex, setActiveQuotationIndex] = useState(-1);
+
+    // selected
+    const [selectedQId, setSelectedQId] = useState(null);
+
+    const quotationInputRef = useRef(null);
+
+    const [qId, setQId] = useState('')
+
 
 
 
@@ -127,6 +145,7 @@ const Sales = () => {
         loadUnit();
         loadBrands();
         loadQuo();
+        loadQuotationById();
     }, [])
 
     useEffect(() => {
@@ -137,6 +156,177 @@ const Sales = () => {
         axiosInstance.get(`${gapi}/group/list`).then(res => setAddGroupList(res.data.Data));
         axiosInstance.get(`${gapi}/unit/list`).then(res => setAddUnitList(res.data.Data));
     }, []);
+
+    useEffect(() => {
+        loadQuotation();
+    }, []);
+
+    const loadQuotation = async () => {
+        const res = await axiosInstance.get(`${gapi}/quo/list`);
+        setQuotationList(res.data.Data);
+        setFilteredQuotation(res.data.Data);
+    };
+
+    const handleQuotationChange = (e) => {
+        const value = e.target.value;
+        setQuotationQuery(value);
+
+        if (value.trim() === "") {
+            setShowQuotationDropdown(false);
+            return;
+        }
+
+        const result = quotationList.filter(q =>
+            q.QNo?.toString().includes(value) ||
+            q.ProjName?.toLowerCase().includes(value.toLowerCase()) ||
+            q.LedgerName?.toLowerCase().includes(value.toLowerCase())
+        );
+
+        setFilteredQuotation(result);
+        setShowQuotationDropdown(true);
+        setActiveQuotationIndex(-1);
+    };
+
+    const selectQuotation = async (item) => {
+        try {
+            // show QID beside input
+            setSelectedQId(item.QId);
+
+            // close dropdown
+            setShowQuotationDropdown(false);
+            setQuotationQuery(item.QNo);
+
+            const res = await axiosInstance.get(
+                `${gapi}/quo/edit/${item.QId}`
+            );
+
+            const data = res.data.Data;
+
+            const header = data.Header?.[0] || {};
+
+            // ============================
+            // ✅ HEADER LOAD
+            // ============================
+            setTopData(prev => ({
+                ...prev,
+                qNo: header.QNo ?? '',
+                rNo: header.QRevNo ?? '',
+                qDate: header.QDate?.split('T')[0] ?? '',
+
+                projectId: header.ProjId ?? '',
+                project: header.ProjName ?? '',
+
+                ledgerId: header.LedgerId ?? '',
+                ledger: header.LedgerName ?? '',
+
+                subject: header.Subject ?? '',
+                payment: header.Terms ?? '',
+                delivery: header.Delivery ?? '',
+                qValidity: header.Validity ?? '',
+
+                totalAmt: header.TotTaxableAmt ?? 0,
+                totVatAmt: header.TotVatamt ?? 0,
+                totActAmt: header.NetAmount ?? 0,
+
+                notes: header.Notes ?? '',
+                warranty: header.Warranty ?? '',
+                inclusion: header.Inclusion ?? '',
+                exclusion: header.Exclusion ?? '',
+                scope: header.Scope ?? '',
+            }));
+
+            // ============================
+            // ✅ DETAILS LOAD
+            // ============================
+            const mappedRows = (data.Details || []).map((r, i) => ({
+                RowId: i + 1,
+
+                productId: r.ProductId,
+                product: r.ProductName,
+
+                unitId: r.UnitId,
+                unitType: r.UnitType,
+
+                brandId: r.BrandId,
+                brand: r.BrandName,
+
+                qty: r.Qty,
+                rate: r.Rate,
+
+                taxable: r.Taxable,
+                vatPer: r.VatPer,
+                vatAmt: r.VatAmt,
+
+                amount: r.NetAmt,
+                description: r.ProdDes ?? ''
+            }));
+
+            setRows(mappedRows);
+
+        } catch (err) {
+            console.error(err);
+            alert("Quotation load failed ❌");
+        }
+    };
+
+
+    const loadQuotationById = async (qid) => {
+        try {
+            const res = await axiosInstance.get(
+                `${gapi}/quotation/edit/${qid}`
+            );
+
+            const header = res.data.Data.Header[0];
+            const details = res.data.Data.Details;
+
+            loadHeader(header);
+            loadDetails(details);
+
+        } catch (err) {
+            console.error("Quotation load error", err);
+        }
+    };
+
+
+    const handleQuotationKeyDown = (e) => {
+
+        // 🔼 UP ARROW → show full list
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+
+            setFilteredQuotation(quotationList); // full list
+            setShowQuotationDropdown(true);
+            setActiveQuotationIndex(-1);
+        }
+
+        // 🔽 DOWN ARROW
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+
+            setShowQuotationDropdown(true);
+            setActiveQuotationIndex(prev =>
+                prev < filteredQuotation.length - 1 ? prev + 1 : prev
+            );
+        }
+
+        // ⏎ ENTER
+        if (e.key === "Enter") {
+            e.preventDefault();
+
+            if (activeQuotationIndex >= 0) {
+                selectQuotation(filteredQuotation[activeQuotationIndex]);
+            }
+        }
+
+        // ❌ ESC
+        if (e.key === "Escape") {
+            setShowQuotationDropdown(false);
+        }
+    };
+
+
+
+
 
 
     const loadProject = async () => {
@@ -1083,6 +1273,9 @@ const Sales = () => {
         }
     };
 
+
+
+
     return (
         <div className='container-fluid mt-2'>
             <div
@@ -1149,22 +1342,88 @@ const Sales = () => {
                                     </div>
                                 </div>
 
+                                {/* Q.NO SEARCH DROPDOWN */}
                                 <div className="col-12 col-md-6 col-lg-6">
-                                    <div className="d-flex align-items-center gap-1">
-                                        <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
-                                            Q.No
-                                        </label>
-                                        <input
-                                            type="number"
-                                            className="form-control form-control-sm"
+                                    <div className="d-flex align-items-center gap-2" >
+                                        <label className="fw-bold mb-1">Q.No</label>
 
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            placeholder="🔎 Search Quotation..."
+                                            ref={quotationInputRef}
+                                            value={quotationQuery}
+                                            onChange={handleQuotationChange}
+                                            onKeyDown={handleQuotationKeyDown}
+                                            onFocus={() => {
+                                                if (quotationQuery.trim() !== "")
+                                                    setShowQuotationDropdown(true);
+                                            }}
                                         />
+                                        🔎
+                                        {selectedQId && (
+                                            <div
+                                                className="px-2 py-1 rounded"
+                                                style={{
+                                                    background: "#f1f3f5",
+                                                    border: "1px solid #ccc",
+                                                    fontSize: "13px",
+                                                    fontWeight: "600",
+                                                    whiteSpace: "nowrap"
+                                                }}
+                                            >
+                                                QID : {selectedQId}
+                                            </div>
+                                        )}
+
+                                        {showQuotationDropdown && quotationInputRef.current && (
+                                            <div
+                                                className="position-fixed bg-white border shadow-sm"
+                                                style={{
+                                                    top: quotationInputRef.current.getBoundingClientRect().bottom,
+                                                    left: quotationInputRef.current.getBoundingClientRect().left,
+                                                    width: quotationInputRef.current.getBoundingClientRect().width,
+                                                    maxHeight: "250px",
+                                                    overflowY: "auto",
+                                                    zIndex: 9999
+                                                }}
+                                            >
+                                                {/* HEADER */}
+                                                <div className="d-flex fw-bold border-bottom bg-light px-2 py-2">
+                                                    <div className="col-3">Q.No</div>
+                                                    <div className="col-5">Project</div>
+                                                    <div className="col-4 text-end">Amount</div>
+                                                </div>
+
+                                                {/* ROWS */}
+                                                {filteredQuotation.map((item, index) => (
+                                                    <div
+                                                        key={item.QId}
+                                                        className={`d-flex px-2 py-2 border-bottom
+                                                         ${index === activeQuotationIndex
+                                                                ? "bg-secondary text-white"
+                                                                : "hover-bg"}`}
+                                                        style={{ cursor: "pointer" }}
+                                                        onMouseEnter={() => setActiveQuotationIndex(index)}
+                                                        onMouseDown={(e) => {
+                                                            e.preventDefault();
+                                                            selectQuotation(item);
+                                                        }}
+                                                    >
+                                                        <div className="col-3">{item.QNo}</div>
+                                                        <div className="col-5">{item.ProjName}</div>
+                                                        <div className="col-4 text-end">{item.NetAmount}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                                🔎
+
+
                             </div>
 
-                            
+
                             {/* Row 1 */}
                             <div className="row g align-items-center mt-2">
 
