@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axiosInstance from '../../api/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt } from '@fortawesome/free-solid-svg-icons'
-import FindQuot from './FindQuot';
+import FindSales from './FindSales';
 
 
 const Sales = () => {
@@ -15,9 +15,11 @@ const Sales = () => {
         rNo: '',
         ledger: '',
         ledgerId: '',
+        invNo: '',
         project: '',
         projectId: '',
         qDate: '',
+        invDate: '',
         subject: '',
         payment: '',
         delivery: '',
@@ -32,6 +34,7 @@ const Sales = () => {
         inclusion: '',
         exclusion: '',
         scope: '',
+        invType: '',
     });
 
     const [bottomData, setBottomData] = useState({
@@ -108,7 +111,6 @@ const Sales = () => {
     const [product, setProduct] = useState(null);
 
     const [showAddBrandModal, setShowAddBrandModal] = useState(false);
-    const [invType, setInvType] = useState("");
 
     const [qNoQuery, setQNoQuery] = useState('');
 
@@ -123,15 +125,12 @@ const Sales = () => {
 
     // selected
     const [selectedQId, setSelectedQId] = useState(null);
+    const [selectedRNo, setSelectedRNo] = useState(null);
+    const [selectedQDate, setSelectedQDate] = useState(null);
+
+
 
     const quotationInputRef = useRef(null);
-
-    const [qId, setQId] = useState('')
-
-
-
-
-
 
 
 
@@ -191,14 +190,18 @@ const Sales = () => {
         try {
             // show QID beside input
             setSelectedQId(item.QId);
+            setSelectedRNo(item.QRevNo);
+            setSelectedQDate(item.QDate);
+
 
             // close dropdown
             setShowQuotationDropdown(false);
-            setQuotationQuery(item.QNo);
+            // setQuotationQuery(item.InvoiceNo);
 
             const res = await axiosInstance.get(
                 `${gapi}/quo/edit/${item.QId}`
             );
+            console.log('Edit From Quot:', res.data)
 
             const data = res.data.Data;
 
@@ -215,9 +218,11 @@ const Sales = () => {
 
                 projectId: header.ProjId ?? '',
                 project: header.ProjName ?? '',
+                projectQuery: header.ProjName ?? '',
 
                 ledgerId: header.LedgerId ?? '',
                 ledger: header.LedgerName ?? '',
+                ledgerQuery: header.ProjName ?? '',
 
                 subject: header.Subject ?? '',
                 payment: header.Terms ?? '',
@@ -234,6 +239,8 @@ const Sales = () => {
                 exclusion: header.Exclusion ?? '',
                 scope: header.Scope ?? '',
             }));
+            setLedgerQuery(header.LedgerName ?? '');
+            setProjectQuery(header.ProjName ?? '');
 
             // ============================
             // ✅ DETAILS LOAD
@@ -243,12 +250,21 @@ const Sales = () => {
 
                 productId: r.ProductId,
                 product: r.ProductName,
+                productQuery: r.ProductName ?? '',
+                productName: r.ProductName ?? '',
+
 
                 unitId: r.UnitId,
                 unitType: r.UnitType,
+                unitQuery: r.UnitType,
+                unit: r.UnitType ?? "",
+
+
 
                 brandId: r.BrandId,
                 brand: r.BrandName,
+                brandQuery: r.BrandName ?? "",
+                brandName: r.BrandName ?? "",
 
                 qty: r.Qty,
                 rate: r.Rate,
@@ -799,7 +815,7 @@ const Sales = () => {
         }
     }
 
-    const handleSaveQuo = async () => {
+    const handleSaveSales = async () => {
         try {
             const totalQty = rows.reduce((s, r) => s + Number(r.qty || 0), 0);
             const netAmt = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
@@ -808,9 +824,14 @@ const Sales = () => {
 
             const payload = {
                 QId: 0,
-                QNo: topData.qNo,
-                QDate: topData.qDate,
-                QRevNo: topData.rNo,
+                SalesId: 0,
+                InvoiceNo: topData.invNo,
+                InvType: invType,
+                QuoId: Number(selectedQId),
+                QNo: quotationQuery,
+                QDate: Number(selectedQDate),
+                RevNo: Number(selectedRNo),
+                SalesDate: topData.invDate,
                 ProjId: Number(topData.projectId),
                 LedgerId: Number(topData.ledgerId),
                 Subject: topData.subject,
@@ -857,7 +878,7 @@ const Sales = () => {
             console.log('Quo Payload', payload)
             // 🔥 SINGLE API CALL
             const res = await axiosInstance.post(
-                `${gapi}/quo/insert`,
+                `${gapi}/sales/insert`,
                 payload,
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -876,23 +897,27 @@ const Sales = () => {
 
     const handleEditFromFind = async (qId) => {
         try {
-            const res = await axiosInstance.get(`${gapi}/quo/edit/${qId}`);
+            const res = await axiosInstance.get(`${gapi}/sales/edit/${qId}`);
             const data = res.data.Data;
 
             console.log("FULL EDIT DATA 👉", data);
-            console.log("HEADER 👉", data.Header);
+            // console.log("HEADER 👉", data.Header);
             const header = data.Header?.[0] || {};
 
             setIsEditMode(true);
             // 🔹 Header load
             setTopData(prev => ({
                 ...prev,
-                QId: Number(header.QId),
+                SalesId: Number(header.SalesId),
+                invNo: Number(header.InvoiceNo),
+                invType: header.InvType ?? "",
+                QId: Number(header.QuoId),
                 qNo: header.QNo,
+                quotationQuery: header.QNo,
                 qDate: header.QDate?.split('T')[0],
                 projectId: header.ProjId,
                 ledgerId: header.LedgerId,
-                rNo: header.QRevNo,
+                rNo: header.RevNo,
                 subject: header.Subject,
                 payment: header.Terms,
                 delivery: header.Delivery,
@@ -905,36 +930,64 @@ const Sales = () => {
                 inclusion: header.Inclusion,
                 exclusion: header.Exclusion,
                 scope: header.Scope,
+                QuoId: Number(selectedQId),
+                RevNo: Number(selectedRNo),
+                QDate: selectedQDate,
+                invDate: header.SalesDate
+                    ? header.SalesDate.split("T")[0]
+                    : "",
             }));
             setLedgerQuery(header.LedgerName ?? '');
             setProjectQuery(header.ProjName ?? '');
+            setSelectedQId(header.QuoId ?? '');
+            setSelectedRNo(header.RevNo ?? '');
+            setSelectedQDate(header.QDate?.split('T')[0] ?? '');
+            setQuotationQuery(header.QNo ?? "");
 
-            // 🔹 Details rows
+
             setRows(
-                (data.Details || []).map((r, i) => ({
-                    // 🔑 UI expects these
-                    RowId: i + 1,
-                    productId: r.ProductId ?? '',
-                    product: r.ProductName ?? '',
-                    productQuery: r.ProductName ?? '',
-                    qty: r.Qty ?? 0,
-                    unitId: r.UnitId,
-                    unitType: r.UnitType ?? "",
+                (data.Details || []).map((r, i) => {
 
-                    rate: r.Rate ?? r.NRate ?? 0,
-                    amount: r.NetAmt ?? 0,
+                    console.log("Row index:", i);
+                    console.log("r object values 👉", r);
 
-                    vatPer: r.VatPer ?? 0,
-                    vatAmt: r.VatAmt ?? 0,
-                    brandId: r.BrandId ?? "",
-                    brand: r.BrandName ?? "",
-                    brandQuery: r.BrandName ?? '',
-                    taxable: r.Taxable ?? '',
-                    description: r.ProdDes ?? "",
-                    _raw: r
-                }))
+                    return {
+                        // 🔑 UI expects these
+                        RowId: i + 1,
+
+                        productId: r.ProductId ?? '',
+                        product: r.ProductName ?? '',
+                        productQuery: r.ProductName ?? '',
+                        productName: r.ProductName ?? '',
+
+
+                        qty: r.Qty ?? 0,
+
+                        unitId: r.UnitId,
+                        unitType: r.UnitType ?? "",
+                        unitQuery: r.UnitType ?? "",
+                        unit: r.UnitType ?? "",
+
+
+                        rate: r.Rate ?? r.NRate ?? 0,
+                        amount: r.NetAmt ?? 0,
+
+                        vatPer: r.VatPer ?? 0,
+                        vatAmt: r.VatAmt ?? 0,
+
+                        brandId: r.BrandId ?? "",
+                        brand: r.BrandName ?? "",
+                        brandQuery: r.BrandName ?? "",
+                        brandName: r.BrandName ?? "",
+
+
+                        taxable: r.Taxable ?? '',
+                        description: r.ProdDes ?? "",
+
+                        _raw: r
+                    };
+                })
             );
-
             setShowFind(false);
         } catch (err) {
             console.error(err);
@@ -942,64 +995,113 @@ const Sales = () => {
         }
     };
 
-
-    const handleUpdateSuppQuo = async () => {
+    const handleUpdateSales = async () => {
         try {
+
+            const totalQty = rows.reduce(
+                (s, r) => s + Number(r.qty || 0),
+                0
+            );
+
+            const netAmt = rows.reduce(
+                (s, r) => s + Number(r.amount || 0),
+                0
+            );
+
+            const nRate =
+                totalQty > 0 ? netAmt / totalQty : 0;
+
             const payload = {
-                QId: Number(topData.QId),        // 🔑 THIS IS WHAT BACKEND USES
-                QNo: topData.qNo,
+                // 🔥 HEADER
+                SalesId: Number(topData.SalesId),
+                InvoiceNo: Number(topData.invNo),
+
+                SalesDate: topData.invDate, // yyyy-mm-dd
+
+                InvType: topData.invType,
+
+                QuoId: Number(topData.QId),
+                QNo: Number(topData.qNo),
                 QDate: topData.qDate,
-                QRevNo: topData.rNo,
+                RevNo: Number(topData.rNo),
+
+                ProjId: Number(topData.projectId),
+                LedgerId: Number(topData.ledgerId),
+
                 Subject: topData.subject,
                 Scope: topData.scope,
                 Notes: topData.notes,
                 Warranty: topData.warranty,
                 Inclusion: topData.inclusion,
                 Exclusion: topData.exclusion,
-                TotTaxableAmt: totalAmount,
-                TotVatamt: totalVatAmount,
-                NetAmount: totalActAmt,
+
+                TotTaxableAmt: rows.reduce(
+                    (s, r) => s + Number(r.taxable || 0),
+                    0
+                ),
+
+                TotVatamt: rows.reduce(
+                    (s, r) => s + Number(r.vatAmt || 0),
+                    0
+                ),
+
+                NetAmount: netAmt,
+
                 Terms: topData.payment,
                 Delivery: topData.delivery,
                 Validity: topData.qValidity,
-                ProjId: topData.projectId,
-                LedgerId: topData.ledgerId,
+
                 Update_By: 1,
 
+                // 🔥 DETAILS
                 Details: rows.map((r, index) => ({
-                    QDetsId: 0,
-                    QId: 0,
-                    SNo: index + 1,
-                    ProductId: r.productId,
-                    ProdDes: r.description ?? "",
-                    BrandId: r.brandId,
-                    UnitId: r.unitId,
-                    Qty: Number(r.qty),
-                    Rate: Number(r.rate),
-                    Taxable: Number(r.taxable),
-                    VatPer: Number(r.vatPer),
-                    VatAmt: Number(r.vatAmt),
-                    NetAmt: Number(r.amount),
-                    NRate: Number(r.rate),
+                    SalesDetsId: r.SalesDetsId ?? 0,
+                    SalesId: Number(topData.SalesId),
 
+                    SNo: index + 1,
+
+                    ProductId: Number(r.productId),
+                    ProdDes: r.description ?? "",
+
+                    BrandId: Number(r.brandId || 0),
+                    UnitId: Number(r.unitId || 0),
+
+                    Qty: Number(r.qty || 0),
+                    Rate: Number(r.rate || 0),
+
+                    Taxable: Number(r.taxable || 0),
+                    VatPer: Number(r.vatPer || 0),
+                    VatAmt: Number(r.vatAmt || 0),
+
+                    NetAmt: Number(r.amount || 0),
+                    NRate: nRate
                 }))
             };
 
-            console.log("UPDATE PAYLOAD 👉", payload);
+            console.log("🔥 SALES UPDATE PAYLOAD 👉", payload);
 
             const res = await axiosInstance.put(
-                `${gapi}/quo/update`,
-                payload
+                `${gapi}/sales/update`,
+                payload,
+                { headers: { "Content-Type": "application/json" } }
             );
-            console.log("UPDATE Popup 👉", res.data)
-            showTempMessage(res.data?.Message);
-            setIsEditMode(false);
-            handleReset();
+
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, true);
+                setIsEditMode(false);
+                handleReset();
+            } else {
+                showTempMessage(res.data?.Message, false);
+            }
 
         } catch (err) {
-            console.error(err);
+            console.error("❌ SALES UPDATE ERROR:", err.response?.data || err);
+            showTempMessage("Update failed ❌", false);
         }
     };
+
+
+
 
     const highlightText = (text, search) => {
         if (!search || !text) return text;
@@ -1043,6 +1145,8 @@ const Sales = () => {
             rNo: '',
             ledger: '',
             ledgerId: '',
+            invNo: '',
+            invDate: '',
             project: '',
             projectId: '',
             qDate: '',
@@ -1083,7 +1187,11 @@ const Sales = () => {
         setProjectQuery('');
         setBrandQuery('');
         setUnitQuery('');
+        setQuotationQuery('')
         setRows([]);
+        setSelectedQId(null);
+        setSelectedRNo(null);
+        setSelectedQDate(null);
     };
 
     const handleProjectAdd = async () => {
@@ -1323,27 +1431,35 @@ const Sales = () => {
                                 minHeight: '530px',
                             }}
                         >
+
+
                             <div className="row gap-1 align-items-center">
-                                <div className="col-12 col-md-6 col-lg-4">
+                                <div className="col-12 col-md-3">
                                     <div className="d-flex align-items-center gap-1">
                                         <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
                                             Inv.Type
                                         </label>
                                         <select
-                                            className='form-control form-control-sm'
-                                            value={invType}
-                                            onChange={(e) => setInvType(e.target.value)}
+                                            className="form-control form-control-sm"
+                                            value={topData.invType || ""}
+                                            onChange={(e) =>
+                                                setTopData(prev => ({
+                                                    ...prev,
+                                                    invType: e.target.value
+                                                }))
+                                            }
                                         >
-                                            <option value="" disabled hidden className='text-center'>-- Select Invoice --</option>
-                                            <option value='proforma'>Proforma Inv</option>
-                                            <option value='Invoice'>Inv No</option>
-
+                                            <option value="" disabled hidden>
+                                                -- Select Invoice --
+                                            </option>
+                                            <option value="proforma">Proforma Inv</option>
+                                            <option value="Invoice">Invoice</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 {/* Q.NO SEARCH DROPDOWN */}
-                                <div className="col-12 col-md-6 col-lg-6">
+                                <div className="col-12 col-md-6 ">
                                     <div className="d-flex align-items-center gap-2" >
                                         <label className="fw-bold mb-1">Q.No</label>
 
@@ -1360,21 +1476,23 @@ const Sales = () => {
                                                     setShowQuotationDropdown(true);
                                             }}
                                         />
-                                        🔎
-                                        {selectedQId && (
-                                            <div
-                                                className="px-2 py-1 rounded"
-                                                style={{
-                                                    background: "#f1f3f5",
-                                                    border: "1px solid #ccc",
-                                                    fontSize: "13px",
-                                                    fontWeight: "600",
-                                                    whiteSpace: "nowrap"
-                                                }}
-                                            >
-                                                QID : {selectedQId}
-                                            </div>
-                                        )}
+                                       
+                                        <div
+                                            className="d-flex gap-4 ms-5  fw-bold"
+                                            style={{
+
+                                                fontSize: "15px",
+                                                fontWeight: "600",
+                                                whiteSpace: "nowrap",
+                                                minWidth: ""
+                                            }}
+                                        >
+                                            <span>QID : {selectedQId ?? "--"}</span>
+                                            <span>RNo : {selectedRNo ?? "--"}</span>
+                                            <span>QDate : {selectedQDate
+                                                ? selectedQDate.split("T")[0]
+                                                : "--"}</span>
+                                        </div>
 
                                         {showQuotationDropdown && quotationInputRef.current && (
                                             <div
@@ -1419,8 +1537,6 @@ const Sales = () => {
                                         )}
                                     </div>
                                 </div>
-
-
                             </div>
 
 
@@ -1436,8 +1552,8 @@ const Sales = () => {
                                         <input
                                             type="number"
                                             className="form-control form-control-sm"
-                                            name='qNo'
-                                            value={topData.qNo}
+                                            name='invNo'
+                                            value={topData.invNo}
                                             onChange={handleTopChange}
                                         />
                                     </div>
@@ -1454,12 +1570,12 @@ const Sales = () => {
                                         <input
                                             type="text"
                                             className="form-control form-control-sm"
-                                            placeholder="🔎 Search Project..."
                                             onChange={handleProjectChange}
                                             onKeyDown={handleProjectKeyDown}
                                             value={projectQuery}
                                             onFocus={() => projectQuery && setShowProjectDropdown(true)}
                                             onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
+                                            disabled
                                         />
                                         {/* Dropdown */}
                                         {showProjectDropdown && (
@@ -1622,8 +1738,8 @@ const Sales = () => {
                                         <input
                                             type="date"
                                             className="form-control form-control-sm"
-                                            name='qDate'
-                                            value={topData.qDate}
+                                            name='invDate'
+                                            value={topData.invDate}
                                             onChange={handleTopChange}
                                         />
                                     </div>
@@ -2359,8 +2475,8 @@ const Sales = () => {
                             <textarea
                                 className="form-control form-control-sm"
                                 rows={2}
-                                name='inclusion'
-                                value={topData.inclusion}
+                                name='exclusion'
+                                value={topData.exclusion}
                                 onChange={handleTopChange}
                             />
                         </div>
@@ -2371,15 +2487,15 @@ const Sales = () => {
                             <textarea
                                 className="form-control form-control-sm"
                                 rows={2}
-                                name='exclusion'
-                                value={topData.exclusion}
+                                name='scope'
+                                value={topData.scope}
                                 onChange={handleTopChange}
                             />
                         </div>
 
                         <div style={{ width: "33%" }} className="col-md-6 d-flex align-items-center justify-content-center mt-3 gap-2">
                             <button className='btn btn-sm btn-primary' onClick={() => setShowFind(true)}>Find</button>
-                            <button className='btn btn-sm btn-success' onClick={isEditMode ? handleUpdateSuppQuo : handleSaveQuo}
+                            <button className='btn btn-sm btn-success' onClick={isEditMode ? handleUpdateSales : handleSaveSales}
                             >
                                 {isEditMode ? 'Update' : 'Save'}
                             </button>
@@ -2664,7 +2780,7 @@ const Sales = () => {
 
                     {/* ===== FIND POPUP ===== */}
                     {showFind && (
-                        <FindQuot
+                        <FindSales
                             onClose={() => setShowFind(false)}
                             onEdit={handleEditFromFind}
                         />

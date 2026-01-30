@@ -690,7 +690,7 @@ const Quot = () => {
             const data = res.data.Data;
 
             console.log("FULL EDIT DATA 👉", data);
-            console.log("HEADER 👉", data.Header);
+            // console.log("HEADER 👉", data.Header);
             const header = data.Header?.[0] || {};
 
             setIsEditMode(true);
@@ -720,30 +720,79 @@ const Quot = () => {
             setProjectQuery(header.ProjName ?? '');
 
             // 🔹 Details rows
+            // setRows(
+            //     (data.Details || []).map((r, i) => ({
+
+            //         // 🔑 UI expects these
+            //         RowId: i + 1,
+            //         productId: r.ProductId ?? '',
+            //         product: r.ProductName ?? '',
+            //         productQuery: r.ProductName ?? '',
+            //         qty: r.Qty ?? 0,
+            //         unitId: r.UnitId,
+            //         unitType: r.UnitType ?? "",
+            //         unitQuery: r.UnitType ?? "",
+
+
+            //         rate: r.Rate ?? r.NRate ?? 0,
+            //         amount: r.NetAmt ?? 0,
+
+            //         vatPer: r.VatPer ?? 0,
+            //         vatAmt: r.VatAmt ?? 0,
+            //         brandId: r.BrandId ?? "",
+            //         brand: r.BrandName ?? "",
+            //         brandQuery: r.BrandName ?? '',
+            //         taxable: r.Taxable ?? '',
+            //         description: r.ProdDes ?? "",
+            //         _raw: r
+            //     }))
+            // );
+
             setRows(
-                (data.Details || []).map((r, i) => ({
-                    // 🔑 UI expects these
-                    RowId: i + 1,
-                    productId: r.ProductId ?? '',
-                    product: r.ProductName ?? '',
-                    productQuery: r.ProductName ?? '',
-                    qty: r.Qty ?? 0,
-                    unitId: r.UnitId,
-                    unitType: r.UnitType ?? "",
+                (data.Details || []).map((r, i) => {
 
-                    rate: r.Rate ?? r.NRate ?? 0,
-                    amount: r.NetAmt ?? 0,
+                    console.log("Row index:", i);
+                    console.log("r object values 👉", r);
 
-                    vatPer: r.VatPer ?? 0,
-                    vatAmt: r.VatAmt ?? 0,
-                    brandId: r.BrandId ?? "",
-                    brand: r.BrandName ?? "",
-                    brandQuery: r.BrandName ?? '',
-                    taxable: r.Taxable ?? '',
-                    description: r.ProdDes ?? "",
-                    _raw: r
-                }))
+                    return {
+                        // 🔑 UI expects these
+                        RowId: i + 1,
+
+                        productId: r.ProductId ?? '',
+                        product: r.ProductName ?? '',
+                        productQuery: r.ProductName ?? '',
+                        productName: r.ProductName ?? '',
+
+
+                        qty: r.Qty ?? 0,
+
+                        unitId: r.UnitId,
+                        unitType: r.UnitType ?? "",
+                        unitQuery: r.UnitType ?? "",
+                        unit: r.UnitType ?? "",
+
+
+                        rate: r.Rate ?? r.NRate ?? 0,
+                        amount: r.NetAmt ?? 0,
+
+                        vatPer: r.VatPer ?? 0,
+                        vatAmt: r.VatAmt ?? 0,
+
+                        brandId: r.BrandId ?? "",
+                        brand: r.BrandName ?? "",
+                        brandQuery: r.BrandName ?? "",
+                        brandName: r.BrandName ?? "",
+
+
+                        taxable: r.Taxable ?? '',
+                        description: r.ProdDes ?? "",
+
+                        _raw: r
+                    };
+                })
             );
+
+
 
             setShowFind(false);
         } catch (err) {
