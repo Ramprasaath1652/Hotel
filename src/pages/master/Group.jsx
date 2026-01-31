@@ -41,20 +41,24 @@ const Group = () => {
     // console.log('main url : ' + gapi + '/group');
     // console.log('new:',API);
     loadGroups();
-  }, []);
+  }, []);//https://gtfin.in/abnapi/api/group/list
 
   const loadGroups = async () => {
     try {
-      const res = await axiosInstance.get(API + 'list');//https://gtfin.in/abnapi/api/group/list
-      if (res.data?.Success) {
+      const res = await axiosInstance.get(API + 'list');
+
+      if (res.data?.Success && Array.isArray(res.data.Data)) {
         setGroups(res.data.Data);
       } else {
-        setGroups([]);
+        setGroups([]);   // 🔥 THIS IS THE KEY
       }
+
     } catch (err) {
       console.error('Error fetching groups:', err);
+      setGroups([]);     // 🔥 ALSO HERE
     }
   };
+
 
   const showTempMessage = (msg, msgtype) => {
     setMessage(msg);
@@ -315,7 +319,7 @@ const Group = () => {
             <CommonTableLayout
               title={
                 <h5 className="mb-0 w-100 w-md-auto text-md-end" style={{ color: '#6a1b9a' }}>
-                  Showing {filteredGroups.length} of {groups.length} Records
+                  Showing {filteredGroups.length || 0} of {groups.length || 0} Records
                 </h5>
               }
               placeholder="🔎 Search Groups..."
@@ -364,7 +368,7 @@ const Group = () => {
               aria-live="polite"
               aria-atomic="true"
               className="toast-container position-fixed top-0 end-0 pe-3"
-              style={{ zIndex: 9999 ,paddingTop: '70px'}}
+              style={{ zIndex: 9999, paddingTop: '70px' }}
             >
               <div
                 className="toast show text-bg-success"
@@ -403,7 +407,7 @@ const Group = () => {
           {showMessage_Error && (
             <div
               className="toast-container position-fixed top-0 end-0 pe-3"
-              style={{ zIndex: 9999 ,paddingTop: '70px' }}
+              style={{ zIndex: 9999, paddingTop: '70px' }}
             >
               <div className="toast show" role="alert">
 

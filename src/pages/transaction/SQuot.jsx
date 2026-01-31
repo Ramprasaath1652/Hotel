@@ -163,65 +163,90 @@ const SQuot = () => {
 
     const loadLedgers = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/ledger/list`)
-            console.log('ledgers res:', res.data)
-            setLedgerList(res.data.Data)
+            const res = await axiosInstance.get(`${gapi}/ledger/list`);
+
+            setLedgerList(Array.isArray(res.data?.Data) ? res.data.Data : []);
+
         } catch (err) {
-            console.error('Ledger Load Error:', err)
+            console.error(err);
+            setLedgerList([]);   // 🔥 safety
         }
-    }
+    };
+
 
     const loadProject = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/project/list`)
-            console.log('project res:', res.data)
-            setProjectList(res.data.Data)
+            const res = await axiosInstance.get(`${gapi}/project/list`);
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setProjectList(res.data.Data);
+            } else {
+                setProjectList([]);   // 🔥 THIS IS THE KEY
+            }
+
         } catch (err) {
-            console.error('Project load error:', err)
+            console.error('Error fetching groups:', err);
+            setProjectList([]);     // 🔥 ALSO HERE
         }
-    }
+    };
 
     const loadProduct = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/product/list`)
-            //console.log("LOAD Product RESPONSE:", res.data);
-            setProductList(res.data.Data)
+            const res = await axiosInstance.get(`${gapi}/product/list`);
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setProductList(res.data.Data);
+            } else {
+                setProductList([]);   // 🔥 THIS IS THE KEY
+            }
+
         } catch (err) {
-            console.error('product fetching error', err);
+            console.error('Error fetching groups:', err);
+            setProductList([]);     // 🔥 ALSO HERE
         }
-    }
+    };
 
     const loadBrands = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/brand/list`);
-            //    console.log("LOAD Brand RESPONSE:", res.data);
-            setBrandList(res.data.Data);
-
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setBrandList(res.data.Data);
+            } else {
+                setBrandList([])
+            }
         } catch (err) {
             console.error("Error fetching brands:", err);
+            setBrandList([])
         }
     };
 
     const loadUnit = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/unit/list`);
-            console.log("LOAD UNIT RESPONSE:", res.data);
-            setUnitList(res.data.Data)
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setUnitList(res.data.Data)
+            } else {
+                setUnitList([]);
+            }
         } catch (err) {
-            console.error('Unit Load Error:', err)
+            console.error('Error fetching units:', err);
+            setUnitList([]);
         }
-    }
+    };
 
     const loadSupp = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/suppquo/list`);
-            console.log("LOAD table RESPONSE:", res.data);
-            setSuppQuot(res.data.Data)
-
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setSuppQuot(res.data.Data);
+            } else {
+                setSuppQuot([])
+            }
         } catch (err) {
-            console.error("Error fetching suppQuo:", err);
+            console.error("Error fetching brands:", err);
+            setSuppQuot([])
         }
-    }
+    };
 
     const loadSuppDets = async () => {
         try {
@@ -280,14 +305,13 @@ const SQuot = () => {
         setBottomData((prev) => ({ ...prev, [name]: value }))
     }
 
-    const filteredUnit = unitList.filter(u =>
+    const filteredUnit = (unitList ?? []).filter(u =>
         (u.UnitType || '').toLowerCase().includes(
             (unitQuery || '').toLowerCase()
         )
     );
 
-
-    const filteredLedger = ledgerList.filter(item =>
+    const filteredLedger = (ledgerList ?? []).filter(item =>
         item.LedgerName?.toLowerCase().includes(ledgerQuery.toLowerCase())
     );
 
@@ -353,6 +377,13 @@ const SQuot = () => {
 
 
     const handleLedgerKeyDown = (e) => {
+        if (e.key === "ArrowUp" && !showLedgerDropdown) {
+            e.preventDefault();
+            setLedgerQuery("");            // 🔥 empty query = all records
+            setShowLedgerDropdown(true);
+            setActiveLedgerIndex(-1);
+            return;
+        }
         if (!showLedgerDropdown || filteredLedger.length === 0) return;
 
         if (e.key === "ArrowDown") {
@@ -387,7 +418,15 @@ const SQuot = () => {
             }
         }
     };
+
     const handleProjectKeyDown = (e) => {
+        if (e.key === 'ArrowUp' && !showProjectDropdown) {
+            e.preventDefault();
+            setProjectQuery('');
+            setShowProjectDropdown(true);
+            setActiveLedgerIndex(-1);
+            return;
+        }
         if (!showProjectDropdown || filteredProject.length === 0) return;
 
         if (e.key === "ArrowDown") {
@@ -423,6 +462,14 @@ const SQuot = () => {
     );
 
     const handleProductKeyDown = (e) => {
+        if (e.key === 'ArrowUp' && !showProductDropdown) {
+            e.preventDefault();
+            setProductQuery('');
+            setShowProductDropdown(true);
+            setActiveLedgerIndex(-1);
+            return;
+        }
+
         if (!showProductDropdown || filteredProduct.length === 0) return;
 
         if (e.key === "ArrowDown") {
@@ -455,12 +502,14 @@ const SQuot = () => {
             ...prev,
             product: item.ProductName,
             productId: item.ProductID,
-            productName: item.ProductName,
-            unit: item.UnitType,
+
 
             unitId: item.UnitId || "",
             unitType: item.UnitType,
             vatPer: item.VatPer || "",
+
+            productName: item.ProductName,
+            unitType: item.UnitType || "",
         }));
 
         setShowProductDropdown(false);
@@ -474,6 +523,13 @@ const SQuot = () => {
     );
 
     const handleBrandKeyDown = (e) => {
+        if (e.key === 'ArrowUp' && !showBrandDropdown) {
+            e.preventDefault();
+            setBrandQuery('');
+            setShowBrandDropdown(true);
+            setActiveLedgerIndex(-1);
+            return;
+        }
         if (!showBrandDropdown || filteredBrand.length === 0) return;
 
         if (e.key === "ArrowDown") {
@@ -518,7 +574,8 @@ const SQuot = () => {
         setBottomData(prev => ({
             ...prev,
             unit: item.UnitType,
-            unitId: item.UnitId
+            unitId: item.UnitId,
+            unitType: item.UnitType,
         }));
 
         setShowUnitDropdown(false);
@@ -687,6 +744,10 @@ const SQuot = () => {
             ...bottomData,
 
             // 🔹 DISPLAY FIELDS (TABLE)
+            productName: productName,
+
+
+
             productName: productQuery,
             brandName: brandQuery,
             unitType: unitQuery,
@@ -984,6 +1045,7 @@ const SQuot = () => {
                     productId: r.ProductId ?? '',
                     product: r.ProductName ?? '',
                     productQuery: r.ProductName ?? '',
+                    productName: r.ProductName ?? '',
                     qty: r.Qty ?? 0,
                     sRate: r.BRate ?? 0,
                     unitId: r.UnitId,
@@ -998,6 +1060,7 @@ const SQuot = () => {
                     brandId: r.BrandId ?? "",
                     brand: r.BrandName ?? "",
                     brandQuery: r.BrandName ?? '',
+                    brandName: r.BrandName ?? '',
                     taxable: r.Taxable ?? '',
                     description: r.Des ?? "",
 
@@ -2152,9 +2215,9 @@ const SQuot = () => {
                                         style={{ fontWeight: 'bold' }}
                                     >
                                         <td className="text-center">{index + 1}</td>
-                                        <td>{r.productQuery}</td>
+                                        <td>{r.productName}</td>
                                         <td className='text-center'>{r.unitType || ""}</td>
-                                        <td>{r.brandQuery}</td>
+                                        <td>{r.brandName}</td>
                                         <td className="text-center">{r.qty}</td>
                                         <td className="text-end">{r.rate}</td>
                                         <td className="text-center">{r.marPer}</td>
@@ -2747,7 +2810,9 @@ const SQuot = () => {
                         <FindSQuot
                             onClose={() => setShowFind(false)}
                             onEdit={handleEditFromFind}
-                            onDelete={handleDeleteFromFind}
+                            onReset={handleReset}
+                            onBtnDelete={() => setIsEditMode(false)}
+                            showTempMessage={showTempMessage}
                         />
 
                     )}

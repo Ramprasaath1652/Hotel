@@ -38,13 +38,14 @@ const BrandMaster = () => {
   const loadBrands = async () => {
     try {
       const res = await axiosInstance.get(API + 'list');
-      if (res.data?.Success) {
+      if (res.data?.Success && Array.isArray(res.data.Data)) {
         setBrands(res.data.Data);
       } else {
         setBrands([])
       }
     } catch (err) {
       console.error("Error fetching brands:", err);
+        setBrands([])
     }
   };
 

@@ -84,23 +84,35 @@ const Product = () => {
     const loadUnit = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/unit/list`);
-            console.log('unit url : ' + gapi + '/unit');
-            setUnitList(res.data.Data)
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setUnitList(res.data.Data);
+            } else {
+                setUnitList([]);   // 🔥 force empty array
+            }
+
         } catch (err) {
-            console.error('Unit Load Error:', err)
+            console.error(err);
+            setUnitList([]);     // 🔥 safety
         }
-    }
+    };
 
     const loadProduct = async () => {
         try {
-            const res = await axiosInstance.get(API + 'list')
-            setProducts(res.data.Data)
+            const res = await axiosInstance.get(API + 'list');
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setProducts(res.data.Data);
+            } else {
+                setProducts([]);   // 🔥 THIS IS THE KEY
+            }
 
         } catch (err) {
-            console.error('product fetching error', err);
-            alert('Could not load product. Check API connection.');
+            console.error('Error fetching groups:', err);
+            setProducts([]);     // 🔥 ALSO HERE
         }
-    }
+    };
+
 
     const showTempMessage = (msg, msgtype) => {
         setMessage(msg);

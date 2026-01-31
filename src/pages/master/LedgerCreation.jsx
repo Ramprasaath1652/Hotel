@@ -94,13 +94,19 @@ const LedgerCreation = () => {
     const loadLedgers = async () => {
         try {
             const res = await axiosInstance.get(API + 'list');
-            console.log(' Ledgers received from API:', res.data)
-            setLedgers(res.data.Data);
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setLedgers(res.data.Data);
+            } else {
+                setLedgers([]);   // 🔥 THIS IS THE KEY
+            }
 
         } catch (err) {
             console.error('Error fetching groups:', err);
+            setLedgers([]);     // 🔥 ALSO HERE
         }
     };
+
 
     const loadAccountGroups = async () => {
         try {
@@ -177,12 +183,12 @@ const LedgerCreation = () => {
             Pin: formData.Pin?.trim() || '',
             Phone: formData.Phone?.trim() || '',
             Mobile: formData.Mobile?.trim() || '',
-            TinNo: formData.TinNo?.trim() || '',
+            // TinNo: formData.TinNo?.trim() || 0,
             Debit: !isNaN(parseFloat(formData.Debit)) ? parseFloat(formData.Debit) : 0,
             Credit: !isNaN(parseFloat(formData.Credit)) ? parseFloat(formData.Credit) : 0,
             CategoryId: Number(formData.CategoryId) || 1,
             State: Number(formData.State) || 0,
-            GSTinNo: formData.TinNo?.trim() || '',
+            GSTinNo: formData.GSTinNo?.trim() || 0,
             Country: formData.Country?.trim() || ''
         };
 
@@ -196,16 +202,16 @@ const LedgerCreation = () => {
             if (res.data?.Success === true) {
 
                 showTempMessage(res.data.Message, 'true');
-                console.log('00')
+                // console.log('00')
 
                 await loadLedgers();
-                console.log('444')
+                // console.log('444')
 
                 setFormData({
                     LedgerId: 0,
                     LedgerName: ''
                 })
-                console.log('11111')
+                // console.log('11111')
                 setFormData(initialFormData);
                 console.log('22')
 
@@ -258,12 +264,12 @@ const LedgerCreation = () => {
             Pin: formData.Pin,
             Phone: formData.Phone,
             Mobile: formData.Mobile,
-            TinNo: formData.TinNo,
+            // TinNo: formData.TinNo,
             Debit: parseFloat(formData.Debit) || 0,
             Credit: parseFloat(formData.Credit) || 0,
             CategoryId: Number(formData.CategoryId) || 1,
             State: Number(formData.State) || 0,
-            GSTinNo: formData.TinNo,
+            GSTinNo: formData.GSTinNo,
             Country: formData.Country,
         };
 
@@ -309,7 +315,7 @@ const LedgerCreation = () => {
             Pin: ledgerToEdit.Pin || "",
             Phone: ledgerToEdit.Phone || "",
             Mobile: ledgerToEdit.Mobile || "",
-            TinNo: ledgerToEdit.TinNo || "",
+            // TinNo: ledgerToEdit.TinNo || "",
             Debit: ledgerToEdit.Debit || 0,
             Credit: ledgerToEdit.Credit || 0,
             CategoryId: ledgerToEdit.CategoryId || "",
@@ -347,6 +353,7 @@ const LedgerCreation = () => {
                     LedgerId: 0,
                     LedgerName: ''
                 })
+                handleReset();
             } else {
                 showTempMessage(res.data?.Message, 'false');
             }
@@ -607,9 +614,9 @@ const LedgerCreation = () => {
                                     <input
                                         className='form-control'
                                         type='text'
-                                        placeholder='Enter Country here '
-                                        name='TinNo'
-                                        value={formData.TinNo}
+                                        placeholder='Enter TRN here '
+                                        name='GSTinNo'
+                                        value={formData.GSTinNo}
                                         onChange={handleChange}
                                         autoComplete="off"
                                     />

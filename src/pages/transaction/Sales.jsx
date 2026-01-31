@@ -161,10 +161,19 @@ const Sales = () => {
     }, []);
 
     const loadQuotation = async () => {
-        const res = await axiosInstance.get(`${gapi}/quo/list`);
-        setQuotationList(res.data.Data);
-        setFilteredQuotation(res.data.Data);
+        try {
+            const res = await axiosInstance.get(`${gapi}/quo/list`);
+            const list = Array.isArray(res.data?.Data) ? res.data.Data : [];
+
+            setQuotationList(list);
+            setFilteredQuotation(list);
+        } catch (err) {
+            console.error(err);
+            setQuotationList([]);
+            setFilteredQuotation([]);
+        }
     };
+
 
     const handleQuotationChange = (e) => {
         const value = e.target.value;
@@ -341,19 +350,21 @@ const Sales = () => {
     };
 
 
-
-
-
-
     const loadProject = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/project/list`)
-            console.log('project res:', res.data)
-            setProjectList(res.data.Data)
+            const res = await axiosInstance.get(`${gapi}/project/list`);
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setProjectList(res.data.Data);
+            } else {
+                setProjectList([]);   // 🔥 THIS IS THE KEY
+            }
+
         } catch (err) {
-            console.error('Project load error:', err)
+            console.error('Error fetching groups:', err);
+            setProjectList([]);     // 🔥 ALSO HERE
         }
-    }
+    };
 
     const handleProjectChange = (e) => {
         const value = e.target.value;
@@ -415,13 +426,20 @@ const Sales = () => {
 
     const loadLedgers = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/ledger/list`)
-            console.log('ledgers res:', res.data)
-            setLedgerList(res.data.Data)
+            const res = await axiosInstance.get(API + 'list');
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setLedgerList(res.data.Data);
+            } else {
+                setLedgerList([]);   // 🔥 THIS IS THE KEY
+            }
+
         } catch (err) {
-            console.error('Ledger Load Error:', err)
+            console.error('Error fetching groups:', err);
+            setLedgerList([]);     // 🔥 ALSO HERE
         }
-    }
+    };
+
     const filteredLedger = ledgerList.filter(item =>
         item.LedgerName?.toLowerCase().includes(ledgerQuery.toLowerCase())
     );
@@ -472,13 +490,20 @@ const Sales = () => {
 
     const loadProduct = async () => {
         try {
-            const res = await axiosInstance.get(`${gapi}/product/list`)
-            //console.log("LOAD Product RESPONSE:", res.data);
-            setProductList(res.data.Data)
+            const res = await axiosInstance.get(`${gapi}/product/list`);
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setProductList(res.data.Data);
+            } else {
+                setProductList([]);   // 🔥 THIS IS THE KEY
+            }
+
         } catch (err) {
-            console.error('product fetching error', err);
+            console.error('Error fetching groups:', err);
+            setProductList([]);     // 🔥 ALSO HERE
         }
-    }
+    };
+
 
     const filteredProduct = productList.filter(item =>
         (item.ProductName || "").toLowerCase().includes(
@@ -487,6 +512,13 @@ const Sales = () => {
     );
 
     const handleProductKeyDown = (e) => {
+        if (e.key === 'ArrowUp' && !showProductDropdown) {
+            e.preventDefault();
+            setProductQuery('');
+            setShowProductDropdown(true);
+            setActiveLedgerIndex(-1);
+            return;
+        }
         if (!showProductDropdown || filteredProduct.length === 0) return;
 
         if (e.key === "ArrowDown") {
@@ -549,12 +581,16 @@ const Sales = () => {
     const loadUnit = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/unit/list`);
-            console.log("LOAD UNIT RESPONSE:", res.data);
-            setUnitList(res.data.Data)
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setUnitList(res.data.Data)
+            } else {
+                setUnitList([]);
+            }
         } catch (err) {
-            console.error('Unit Load Error:', err)
+            console.error('Error fetching units:', err);
+            setUnitList([]);
         }
-    }
+    };
 
     const selectUnit = (item) => {
         setUnitQuery(item.UnitType);
@@ -603,19 +639,16 @@ const Sales = () => {
     const loadBrands = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/brand/list`);
-            //    console.log("LOAD Brand RESPONSE:", res.data);
-            setBrandList(res.data.Data);
-
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setBrandList(res.data.Data);
+            } else {
+                setBrandList([])
+            }
         } catch (err) {
             console.error("Error fetching brands:", err);
+            setBrandList([])
         }
     };
-
-    const filteredBrand = brandList.filter(item =>
-        item.BrandName?.toLowerCase().includes(
-            (brandQuery || '').toLowerCase()
-        )
-    );
 
     const selectBrand = (item) => {
         setBrandQuery(item.BrandName);
@@ -631,7 +664,20 @@ const Sales = () => {
         setActiveBrandIndex(-1);
     };
 
+    const filteredBrand = brandList.filter(item =>
+        item.BrandName?.toLowerCase().includes(
+            (brandQuery || '').toLowerCase()
+        )
+    );
+
     const handleBrandKeyDown = (e) => {
+        if (e.key === 'ArrowUp' && !showBrandDropdown) {
+            e.preventDefault();
+            setBrandQuery('');
+            setShowBrandDropdown(true);
+            setActiveLedgerIndex(-1);
+            return;
+        }
         if (!showBrandDropdown || filteredBrand.length === 0) return;
 
         if (e.key === "ArrowDown") {
@@ -826,7 +872,7 @@ const Sales = () => {
                 QId: 0,
                 SalesId: 0,
                 InvoiceNo: topData.invNo,
-                InvType: invType,
+                InvType: topData.invType,
                 QuoId: Number(selectedQId),
                 QNo: quotationQuery,
                 QDate: Number(selectedQDate),
@@ -1475,8 +1521,11 @@ const Sales = () => {
                                                 if (quotationQuery.trim() !== "")
                                                     setShowQuotationDropdown(true);
                                             }}
+                                            onBlur={() => {
+                                                setTimeout(() => setShowQuotationDropdown(false), 150);
+                                            }}
                                         />
-                                       
+
                                         <div
                                             className="d-flex gap-4 ms-5  fw-bold"
                                             style={{
@@ -1797,7 +1846,9 @@ const Sales = () => {
                                                         placeholder="🔎 Search Product..."
                                                         ref={productInputRef}
                                                         value={productQuery}
-
+                                                        onBlur={() => {
+                                                            setTimeout(() => setShowProductDropdown(false), 150);
+                                                        }}
                                                         onFocus={() => {
                                                             if (productQuery.trim() !== "")
                                                                 setShowProductDropdown(true);
@@ -1967,6 +2018,9 @@ const Sales = () => {
                                                                 setShowBrandDropdown(true);
                                                         }}
                                                         onKeyDown={handleBrandKeyDown}
+                                                        onBlur={() => {
+                                                            setTimeout(() => setShowBrandDropdown(false), 150);
+                                                        }}
                                                     />
 
                                                     {/* DROPDOWN */}
@@ -2193,7 +2247,10 @@ const Sales = () => {
                                         <tbody>
                                             {rows && rows.length > 0 ? (
                                                 rows.map((row, index) => (
-                                                    <tr key={index}>
+                                                    <tr key={index}
+                                                        className={editIndex === index ? "edit-highlight" : ""}
+                                                        style={{ fontWeight: 'bold' }}
+                                                    >
                                                         <td className="text-center">{index + 1}</td>
                                                         <td>{row.product}</td>
                                                         <td className="text-center">{row.unit}</td>

@@ -38,13 +38,14 @@ const Unit = () => {
   const loadUnits = async () => {
     try {
       const res = await axiosInstance.get(API + 'list');
-      if (res.data?.Success) {
+      if (res.data?.Success && Array.isArray(res.data.Data)) {
         setUnits(res.data.Data)
       } else {
         setUnits([]);
       }
     } catch (err) {
       console.error('Error fetching units:', err);
+      setUnits([]);
     }
   };
 

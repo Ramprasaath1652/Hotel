@@ -83,13 +83,19 @@ const ProjectMaster = () => {
     const loadProjects = async () => {
         try {
             const res = await axiosInstance.get(API + 'list');
-            // console.log("LOAD PROJECTS RESPONSE:", res.data);
-            setProjects(res.data.Data);
+
+            if (res.data?.Success && Array.isArray(res.data.Data)) {
+                setProjects(res.data.Data);
+            } else {
+                setProjects([]);   // 🔥 THIS IS THE KEY
+            }
+
         } catch (err) {
             console.error('Error fetching groups:', err);
-            console.log("Server error:", err.response?.data);
+            setProjects([]);     // 🔥 ALSO HERE
         }
     };
+
     const showTempMessage = (msg, msgtype) => {
         setMessage(msg);
         if (msgtype === 'true') {
@@ -402,7 +408,7 @@ const ProjectMaster = () => {
         setEditingIndex(null);
         setProjectToEdit(null);
     }
-    
+
     const handleAddLedger = async () => {
         if (!ledgerName.trim() || !ledgerGroup || !ledgerState) {
             return;
@@ -440,7 +446,7 @@ const ProjectMaster = () => {
                 };
 
                 // 🔥 instant dropdown update
-                setLedgerList(prev => [...prev,savedLedger ]);
+                setLedgerList(prev => [...prev, savedLedger]);
 
                 // 🔥 auto select
                 setLedger(savedLedger.LedgerId);
@@ -692,7 +698,7 @@ const ProjectMaster = () => {
                                 <input
                                     type='text'
                                     className='form-control w-50'
-                                    placeholder='🔎 search ledgers...'
+                                    placeholder='🔎 search projects...'
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -924,7 +930,7 @@ const ProjectMaster = () => {
                     )}
 
                     {showLedgerModal && (
-                        <div className="modal show d-block mt-5" tabIndex="-1"> 
+                        <div className="modal show d-block mt-5" tabIndex="-1">
                             <div className="modal-dialog modal-lg">
                                 <div className="modal-content">
                                     <div className="modal-header" style={{ backgroundColor: '#6a1b9a' }}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import axiosInstance from '../../api/axiosInstance';
 
-const FindQuot = ({ onClose, onEdit }) => {
+const FindQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) => {
     const [search, setSearch] = useState('');
     const [filtered, setFiltered] = useState([]);
     const [quot, setQuot] = useState([]);
@@ -32,28 +32,30 @@ const FindQuot = ({ onClose, onEdit }) => {
     const loadQuot = async () => {
         try {
             const res = await axiosInstance.get(`${gapi}/quo/list`);
-            console.log('Quot res:', res)
-            const data = res.data.Data;
+            console.log('Quot res:', res);
 
-            // Map to include LedgerName & ProjName if missing
+            const data = res.data?.Data ?? [];   // 🔥 IMPORTANT
+
             const mapped = data.map(r => ({
                 ...r,
                 LedgerName:
                     r.LedgerName ||
-                    quotLedgerList.find(l => l.LedgerId === r.LedgerId)?.LedgerName ||
+                    quotLedgerList?.find(l => l.LedgerId === r.LedgerId)?.LedgerName ||
                     '',
                 ProjName:
                     r.ProjName ||
-                    quotProjectList.find(p => p.ProjId === r.ProjectId)?.ProjName ||
+                    quotProjectList?.find(p => p.ProjId === r.ProjectId)?.ProjName ||
                     '',
             }));
 
             setQuot(mapped);
             setFiltered(mapped);
+
         } catch (err) {
             console.error(err);
         }
     };
+
 
     const handleFilter = value => {
         setSearch(value);
@@ -78,12 +80,11 @@ const FindQuot = ({ onClose, onEdit }) => {
 
             setFiltered(prev => prev.filter(r => r.QId !== rowToDelete));
             setQuot(prev => prev.filter(r => r.QId !== rowToDelete));
-
+            onClose(); // optional → close find popup also
+            onReset();
+            onBtnDelete();
             setShowDeleteModal(false);
             setRowToDelete(null);
-
-            onClose(); // optional → close find popup also
-
         } catch (err) {
             console.error(err);
             alert("Delete failed ❌");
@@ -147,7 +148,7 @@ const FindQuot = ({ onClose, onEdit }) => {
                                         >🖋️Edit</button>
                                         <button className="btn btn-sm btn-danger"
                                             style={{ padding: '0.2rem 0.4rem', fontSize: '8px' }}
-                                            onClick={()=>{
+                                            onClick={() => {
                                                 setRowToDelete(r.QId)
                                                 setShowDeleteModal(true)
                                             }}

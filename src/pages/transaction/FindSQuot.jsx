@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 
-const FindSQuot = ({ onClose, onEdit }) => {
+const FindSQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) => {
     const [quot, setQuot] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState('');
@@ -77,21 +77,45 @@ const FindSQuot = ({ onClose, onEdit }) => {
 
     const confirmDelete = async () => {
         try {
-            await axiosInstance.delete(`${gapi}/suppquo/delete/${rowToDelete}`);
+            const res = await axiosInstance.delete(
+                `${gapi}/suppquo/delete/${rowToDelete}`
+            );
 
-            setFiltered(prev => prev.filter(r => r.SQId !== rowToDelete));
-            setQuot(prev => prev.filter(r => r.SQId !== rowToDelete));
+            // 🔹 Backend success
+            if (res.data?.Success) {
+                setFiltered(prev => prev.filter(r => r.SQId !== rowToDelete));
+                setQuot(prev => prev.filter(r => r.SQId !== rowToDelete));
 
-            setShowDeleteModal(false);
-            setRowToDelete(null);
+                showTempMessage(
+                    res.data.Message,
+                    'true'
+                );
 
-            onClose(); // optional → close find popup also
+                setShowDeleteModal(false);
+                setRowToDelete(null);
+
+                onClose();   // close find popup
+                onReset();   // reset main page (Save mode)
+                onBtnDelete();
+
+            } else {
+                // 🔹 Backend logical failure
+                showTempMessage(
+                    res.data?.Message || "Delete failed ❌",
+                    'false'
+                );
+            }
 
         } catch (err) {
             console.error(err);
-            alert("Delete failed ❌");
+
+            showTempMessage(
+                err.response?.data?.Message || "Delete failed ❌",
+                'false'
+            );
         }
     };
+
 
     const cancelDelete = () => {
         setShowDeleteModal(false);
