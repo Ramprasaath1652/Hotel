@@ -76,18 +76,24 @@ const FindQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) =>
 
     const confirmDelete = async () => {
         try {
-            await axiosInstance.delete(`${gapi}/quo/delete/${rowToDelete}`);
+            const res = await axiosInstance.delete(`${gapi}/quo/delete/${rowToDelete}`);
 
-            setFiltered(prev => prev.filter(r => r.QId !== rowToDelete));
-            setQuot(prev => prev.filter(r => r.QId !== rowToDelete));
-            onClose(); // optional → close find popup also
-            onReset();
-            onBtnDelete();
-            setShowDeleteModal(false);
-            setRowToDelete(null);
+            if (res.data?.Success === true) {
+                setFiltered(prev => prev.filter(r => r.QId !== rowToDelete));
+                setQuot(prev => prev.filter(r => r.QId !== rowToDelete));
+                showTempMessage(res.data.Message, "true");
+                onClose(); // optional → close find popup also
+                onReset();
+                onBtnDelete();
+                setShowDeleteModal(false);
+                setRowToDelete(null);
+            } else {
+                showTempMessage(res.data?.Message, "false");
+            }
+
         } catch (err) {
-            console.error(err);
-            alert("Delete failed ❌");
+            console.error("Delete Error",err);
+            showTempMessage(res.data?.Message, "false");
         }
     };
 

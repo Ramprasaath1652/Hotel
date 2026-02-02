@@ -4,13 +4,17 @@ import axiosInstance from '../../api/axiosInstance';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt } from '@fortawesome/free-solid-svg-icons'
 import FindQuot from './FindQuot';
+import GSTReport from '../reports/GSTReport';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 
-const Quot = () => {
+const Quot = ({ gstReportData }) => {
     const productInputRef = useRef(null);
     const unitInputRef = useRef(null);
     const brandInputRef = useRef(null);
     const [topData, setTopData] = useState({
+        QId: null,
         qNo: '',
         rNo: '',
         ledger: '',
@@ -108,7 +112,7 @@ const Quot = () => {
     const [product, setProduct] = useState(null);
 
     const [showAddBrandModal, setShowAddBrandModal] = useState(false);
-
+    const reportRef = useRef(null);
 
 
 
@@ -222,7 +226,7 @@ const Quot = () => {
 
     const loadLedgers = async () => {
         try {
-            const res = await axiosInstance.get(API + 'list');
+            const res = await axiosInstance.get(`${gapi}/ledger/list`);
 
             if (res.data?.Success && Array.isArray(res.data.Data)) {
                 setLedgerList(res.data.Data);
@@ -685,8 +689,6 @@ const Quot = () => {
                     (sum, r) => sum + Number(r.vatAmt || 0), 0
                 ),
                 NetAmount: netAmt,
-
-                Terms: topData.terms || "",
                 Narration: topData.narration || "",
                 Create_By: 1,
 
@@ -730,6 +732,9 @@ const Quot = () => {
         }
     };
 
+    useEffect(() => {
+        console.log("🔥 Quotation TOPDATA QId =", topData.QId);
+    }, [topData.QId]);
 
     const handleEditFromFind = async (qId) => {
         try {
@@ -838,9 +843,6 @@ const Quot = () => {
                     };
                 })
             );
-
-
-
             setShowFind(false);
         } catch (err) {
             console.error(err);
@@ -898,12 +900,17 @@ const Quot = () => {
                 payload
             );
             console.log("UPDATE Popup 👉", res.data)
-            showTempMessage(res.data?.Message);
-            setIsEditMode(false);
-            handleReset();
-
+            if (res.data?.Success === true) {
+                showTempMessage(res.data?.Message, true);
+                setIsEditMode(false);
+                handleReset();
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
         } catch (err) {
             console.error(err);
+            showTempMessage(res.data?.Message, 'false');
+
         }
     };
 
@@ -1178,6 +1185,29 @@ const Quot = () => {
             console.error("Add Group Error", err);
         }
     };
+
+    const handlePrint = async () => {
+        if (!reportRef.current) return;
+
+        await new Promise(res => setTimeout(res, 300)); // 🔥 allow render
+
+        const canvas = await html2canvas(reportRef.current, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#fff",
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = 210;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+        window.open(pdf.output("bloburl"), "_blank");
+    };
+
 
     return (
         <div className='container-fluid mt-2'>
@@ -1871,16 +1901,16 @@ const Quot = () => {
                                     border: '2px solid #6a1b9a',
                                     borderRadius: '5px',
                                     backgroundColor: '#f8f9fa',
-                                    flexGrow: 1,
                                     width: '100%',
-                                    minHeight: 0,
-                                    overflowY: 'auto'
+                                    height: '210px',
+                                    overflowY: 'auto',      // 🔥 VERTICAL SCROLL
+                                    overflowX: 'hidden',
                                 }}
                             >
                                 <div className='m-2' style={{ width: '99%' }}>
                                     {/* future content */}
                                     <table className="table table-bordered table-sm" style={{ fontSize: "12px", minWidth: "900px" }}>
-                                        <thead className="table-light">
+                                        <thead className="table-light" style={{ position: "sticky", top: 0 }}>
                                             <tr>
                                                 <th style={{ width: "60px" }} className="text-center">S.No</th>
                                                 <th style={{ width: "150px" }}>Product</th>
@@ -2215,9 +2245,12 @@ const Quot = () => {
                                 >
                                     {isEditMode ? 'Update' : 'Save'}
                                 </button>
-                                <button className='btn btn-sm btn-secondary'>Print</button>
+                                <button className='btn btn-sm btn-secondary' onClick={handlePrint}>Print</button>
                                 <button className='btn btn-sm btn-danger' onClick={() => setShowFind(true)}>Delete</button>
-                                <button className='btn btn-sm btn-warning' onClick={handleReset}>Reset</button>
+                                <button className='btn btn-sm btn-warning' onClick={() => {
+                                    handleReset();
+                                    setIsEditMode(false)
+                                }}>Reset</button>
                             </div>
                         </div>
                     </div>
@@ -2492,6 +2525,19 @@ const Quot = () => {
                         </div>
                     )}
 
+                    <div
+                        style={{
+                            position: "absolute",
+                            top: 0,   // 🔥 safer than opacity 0
+                            left: '9999px',
+                            width: "210mm",
+                            background: "#fff"
+                        }}
+                    >
+                        <GSTReport ref={reportRef} qId={topData.QId} reportData={gstReportData || []} />
+                    </div>
+
+
                     {/* ===== FIND POPUP ===== */}
                     {showFind && (
                         <FindQuot
@@ -2502,6 +2548,8 @@ const Quot = () => {
                             showTempMessage={showTempMessage}
                         />
                     )}
+
+
 
                 </div>
             </div>

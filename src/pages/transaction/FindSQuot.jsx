@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 
 const FindSQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) => {
-    const [quot, setQuot] = useState([]);
-    const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState('');
-
+    const [filtered, setFiltered] = useState([]);
+    const [quot, setQuot] = useState([]);
     const [ledgerList, setLedgerList] = useState([]);
     const [projectList, setProjectList] = useState([]);
 
@@ -75,51 +74,34 @@ const FindSQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) =
         setFiltered(result);
     };
 
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setRowToDelete(null);
+    };
+
     const confirmDelete = async () => {
+        setShowDeleteModal(false)
         try {
             const res = await axiosInstance.delete(
                 `${gapi}/suppquo/delete/${rowToDelete}`
             );
-
-            // 🔹 Backend success
-            if (res.data?.Success) {
+            setShowDeleteModal(false);
+            onClose();
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, "true");
                 setFiltered(prev => prev.filter(r => r.SQId !== rowToDelete));
                 setQuot(prev => prev.filter(r => r.SQId !== rowToDelete));
-
-                showTempMessage(
-                    res.data.Message,
-                    'true'
-                );
-
-                setShowDeleteModal(false);
-                setRowToDelete(null);
-
-                onClose();   // close find popup
-                onReset();   // reset main page (Save mode)
+                onReset();
                 onBtnDelete();
-
+                setRowToDelete(null);
             } else {
-                // 🔹 Backend logical failure
-                showTempMessage(
-                    res.data?.Message || "Delete failed ❌",
-                    'false'
-                );
+                showTempMessage(res.data?.Message, "false");
             }
 
         } catch (err) {
-            console.error(err);
-
-            showTempMessage(
-                err.response?.data?.Message || "Delete failed ❌",
-                'false'
-            );
+            console.error("Delete Error", err);
+            showTempMessage(res.data?.Message, "false");
         }
-    };
-
-
-    const cancelDelete = () => {
-        setShowDeleteModal(false);
-        setRowToDelete(null);
     };
 
 

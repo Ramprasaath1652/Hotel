@@ -1,16 +1,18 @@
 import React, { useEffect, useState, useRef, forwardRef } from 'react';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import './GSTReport.css';
 import { useSearchParams } from 'react-router-dom';
 
 
 
-const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
+const GSTReport = forwardRef((props, ref) => {
+    const { gstReportData = [], qId } = props;
     const [reportData, setReportData] = useState([]);
 
     const [searchParams] = useSearchParams();
     const hasPrintedRef = useRef(false);
 
+    const gapi = import.meta.env.VITE_API_URL;
 
 
     useEffect(() => {
@@ -21,7 +23,7 @@ const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
     }, []);
 
     useEffect(() => {
-        loadReport();
+        loadReport()
     }, []);
 
     useEffect(() => {
@@ -36,10 +38,7 @@ const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
     }, [searchParams, reportData]);
 
 
-    useEffect(() => {
 
-        loadReport()
-    }, [])
 
     useEffect(() => {
         window.focus();
@@ -66,18 +65,20 @@ const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
             }
         };
         window.addEventListener('afterprint', afterPrint);
-
         return () => {
             window.removeEventListener('afterprint', afterPrint)
         }
     }, [])
 
 
+
     const loadReport = async () => {
         try {
-            const res = await axios.get('http://192.168.31.101:85/api/QUOBILLS/')
-            // console.log('repport:', res)
-            setReportData(res.data)
+            const res = await axiosInstance.get(`${gapi}/quo/bill/5`)
+
+            console.log("API data:", res.data.Data);
+            setReportData(res.data.Data)
+            console.log(reportData)
         } catch (err) {
             console.error(err)
         }
@@ -153,8 +154,8 @@ const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
                                     <td>{item.ProductName}</td>
                                     <td className="c">{item.UnitType}</td>
                                     <td className="c">{item.Qty}</td>
-                                    <td className="r">{item.NRate}</td>
-                                    <td className="r">{item.NetAmount}</td>
+                                    <td className="r">{item.Rate}</td>
+                                    <td className="r">{item.NetAmt}</td>
                                 </tr>
                             ))}
 
@@ -183,7 +184,7 @@ const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
                                 <td></td>
                                 <td className="r gt-label">Grand Total</td>
                                 <td></td>
-                                <td className="r gt-value">{summary.Taxable}</td>
+                                <td className="r gt-value">{summary.NetAmount}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -243,7 +244,7 @@ const GSTReport = forwardRef(({ gstReportData =[]}, ref ) => {
                     <div className="invoice-header footer">
                         <img src="/Footer_2024.jpeg" alt="Invoice Header" />
                     </div>
-                    
+
 
                 </div>
 

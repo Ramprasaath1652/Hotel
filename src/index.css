@@ -185,3 +185,20 @@
     max-width: 30%;
   }
 }
+
+/* Sales topData css code*/
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-label-fixed {
+  width: 90px;        /* 🔑 same width for all labels */
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.form-input-flex {
+  flex: 1;
+}

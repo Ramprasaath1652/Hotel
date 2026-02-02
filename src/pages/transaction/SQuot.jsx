@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axiosInstance from '../../api/axiosInstance';
@@ -1009,10 +1010,7 @@ const SQuot = () => {
     //     }
     // };
 
-    const handleDeleteFromFind = async (sqId) => {
-
-    }
-
+  
     const handleEditFromFind = async (sqId) => {
         try {
             const res = await axiosInstance.get(`${gapi}/suppquo/edit/${sqId}`);
@@ -2468,7 +2466,10 @@ const SQuot = () => {
                         </button>
                         <button className="btn btn-sm btn-danger" onClick={() => setShowFind(true)}>🔎Find</button>
                         <button className="btn btn-sm btn-info text-white" onClick={() => setShowFind(true)}>🗑️Delete</button>
-                        <button className="btn btn-sm btn-dark" onClick={handleReset}>🔄️Reset</button>
+                        <button className="btn btn-sm btn-dark" onClick={() => {
+                            handleReset()
+                            setIsEditMode(false)
+                        }}>🔄️Reset</button>
                     </div>
 
                     {/* Success Message */}

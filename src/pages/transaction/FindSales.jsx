@@ -1,7 +1,7 @@
-import React, {useState , useEffect} from 'react'
+import React, { useState, useEffect } from 'react'
 import axiosInstance from '../../api/axiosInstance';
 
-const FindSales = ({ onClose, onEdit }) => {
+const FindSales = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) => {
     const [search, setSearch] = useState('');
     const [filtered, setFiltered] = useState([]);
     const [quot, setQuot] = useState([]);
@@ -74,19 +74,25 @@ const FindSales = ({ onClose, onEdit }) => {
 
     const confirmDelete = async () => {
         try {
-            await axiosInstance.delete(`${gapi}/sales/delete/${rowToDelete}`);
+            const res = await axiosInstance.delete(`${gapi}/sales/delete/${rowToDelete}`);
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, "true");
+                setFiltered(prev => prev.filter(r => r.SalesId !== rowToDelete));
+                setQuot(prev => prev.filter(r => r.SalesId !== rowToDelete));
+                onReset();
+                onBtnDelete();
+                setShowDeleteModal(false);
+                setRowToDelete(null);
 
-            setFiltered(prev => prev.filter(r => r.SalesId !== rowToDelete));
-            setQuot(prev => prev.filter(r => r.SalesId !== rowToDelete));
+                onClose(); // optional → close find popup also
 
-            setShowDeleteModal(false);
-            setRowToDelete(null);
-
-            onClose(); // optional → close find popup also
+            } else {
+                showTempMessage(res.data?.Message, "false");
+            }
 
         } catch (err) {
             console.error(err);
-            alert("Delete failed ❌");
+            showTempMessage(res.data?.Message, "false");
         }
     };
     return (

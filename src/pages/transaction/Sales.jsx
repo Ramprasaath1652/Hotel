@@ -426,7 +426,7 @@ const Sales = () => {
 
     const loadLedgers = async () => {
         try {
-            const res = await axiosInstance.get(API + 'list');
+            const res = await axiosInstance.get(`${gapi}/ledger/list`);
 
             if (res.data?.Success && Array.isArray(res.data.Data)) {
                 setLedgerList(res.data.Data);
@@ -1477,70 +1477,74 @@ const Sales = () => {
                                 minHeight: '530px',
                             }}
                         >
-
-
-                            <div className="row gap-1 align-items-center">
-                                <div className="col-12 col-md-3">
-                                    <div className="d-flex align-items-center gap-1">
-                                        <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
-                                            Inv.Type
-                                        </label>
-                                        <select
-                                            className="form-control form-control-sm"
-                                            value={topData.invType || ""}
-                                            onChange={(e) =>
-                                                setTopData(prev => ({
-                                                    ...prev,
-                                                    invType: e.target.value
-                                                }))
-                                            }
-                                        >
-                                            <option value="" disabled hidden>
-                                                -- Select Invoice --
-                                            </option>
-                                            <option value="proforma">Proforma Inv</option>
-                                            <option value="Invoice">Invoice</option>
-                                        </select>
+                            <div className="row align-items-center ">
+                                <div className="col-12 col-md-3 col-lg-3">
+                                    <div className="row align-items-center ">
+                                        <div className="col-3">
+                                            <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
+                                                Inv.Type
+                                            </label>
+                                        </div>
+                                        <div className="col-9">
+                                            <select
+                                                className="form-control form-control-sm"
+                                                value={topData.invType || ""}
+                                                onChange={(e) =>
+                                                    setTopData(prev => ({
+                                                        ...prev,
+                                                        invType: e.target.value
+                                                    }))
+                                                }
+                                            >
+                                                <option value="" disabled hidden>
+                                                    -- Select Invoice --
+                                                </option>
+                                                <option value="proforma">Proforma Inv</option>
+                                                <option value="Invoice">Invoice</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Q.NO SEARCH DROPDOWN */}
-                                <div className="col-12 col-md-6 ">
-                                    <div className="d-flex align-items-center gap-2" >
-                                        <label className="fw-bold mb-1">Q.No</label>
+                                <div className="col-12 col-md-5 col-lg-9">
+                                    <div className="row align-items-center " >
+                                        <div className="col-1">
+                                            <label className="fw-bold mb-0">Q.No</label>
+                                        </div>
+                                        <div className="col-4">
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                placeholder="🔎 Search Quotation..."
+                                                ref={quotationInputRef}
+                                                value={quotationQuery}
+                                                onChange={handleQuotationChange}
+                                                onKeyDown={handleQuotationKeyDown}
+                                                onFocus={() => {
+                                                    if (quotationQuery.trim() !== "")
+                                                        setShowQuotationDropdown(true);
+                                                }}
+                                                onBlur={() => {
+                                                    setTimeout(() => setShowQuotationDropdown(false), 150);
+                                                }}
+                                            />
+                                        </div>
 
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            placeholder="🔎 Search Quotation..."
-                                            ref={quotationInputRef}
-                                            value={quotationQuery}
-                                            onChange={handleQuotationChange}
-                                            onKeyDown={handleQuotationKeyDown}
-                                            onFocus={() => {
-                                                if (quotationQuery.trim() !== "")
-                                                    setShowQuotationDropdown(true);
-                                            }}
-                                            onBlur={() => {
-                                                setTimeout(() => setShowQuotationDropdown(false), 150);
-                                            }}
-                                        />
-
-                                        <div
-                                            className="d-flex gap-4 ms-5  fw-bold"
-                                            style={{
-
-                                                fontSize: "15px",
-                                                fontWeight: "600",
-                                                whiteSpace: "nowrap",
-                                                minWidth: ""
-                                            }}
-                                        >
-                                            <span>QID : {selectedQId ?? "--"}</span>
-                                            <span>RNo : {selectedRNo ?? "--"}</span>
-                                            <span>QDate : {selectedQDate
-                                                ? selectedQDate.split("T")[0]
-                                                : "--"}</span>
+                                        <div className="col-7 ">
+                                            <div
+                                                className="d-flex gap-5  fw-bold"
+                                                style={{
+                                                    fontSize: "14px",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                <span>QID : {selectedQId ?? "--"}</span>
+                                                <span>RNo : {selectedRNo ?? "--"}</span>
+                                                <span>QDate : {selectedQDate
+                                                    ? selectedQDate.split("T")[0]
+                                                    : "--"}</span>
+                                            </div>
                                         </div>
 
                                         {showQuotationDropdown && quotationInputRef.current && (
@@ -1589,43 +1593,51 @@ const Sales = () => {
                             </div>
 
 
-                            {/* Row 1 */}
+
                             <div className="row g align-items-center mt-2">
 
                                 {/* Q.No */}
-                                <div className="col-12 col-md-6 col-lg-2">
-                                    <div className="d-flex align-items-center gap-2">
-                                        <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
-                                            Inv.No
-                                        </label>
-                                        <input
-                                            type="number"
-                                            className="form-control form-control-sm"
-                                            name='invNo'
-                                            value={topData.invNo}
-                                            onChange={handleTopChange}
-                                        />
+                                <div className="col-12 col-md-4 col-lg-3">
+                                    <div className="row align-items-center ">
+                                        <div className="col-3">
+                                            <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
+                                                Inv.No
+                                            </label>
+                                        </div>
+                                        <div className="col-9">
+                                            <input
+                                                type="number"
+                                                className="form-control form-control-sm"
+                                                name='invNo'
+                                                value={topData.invNo}
+                                                onChange={handleTopChange}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
 
 
                                 {/* Project */}
-                                <div className="col-12 col-md-6 col-lg-5  ">
-                                    <div className="d-flex align-items-center gap-2"
+                                <div className="col-12 col-md-4 col-lg-4">
+                                    <div className="row align-items-center "
                                         style={{ position: 'relative', width: '100%' }}
                                     >
-                                        <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Project</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            onChange={handleProjectChange}
-                                            onKeyDown={handleProjectKeyDown}
-                                            value={projectQuery}
-                                            onFocus={() => projectQuery && setShowProjectDropdown(true)}
-                                            onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
-                                            disabled
-                                        />
+                                        <div className="col-3 ">
+                                            <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Project</label>
+                                        </div>
+                                        <div className="col-9">
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                onChange={handleProjectChange}
+                                                onKeyDown={handleProjectKeyDown}
+                                                value={projectQuery}
+                                                onFocus={() => projectQuery && setShowProjectDropdown(true)}
+                                                onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
+                                                disabled
+                                            />
+                                        </div>
                                         {/* Dropdown */}
                                         {showProjectDropdown && (
                                             <div
@@ -1683,25 +1695,29 @@ const Sales = () => {
                                 </div>
 
                                 {/* Ledger */}
-                                <div className="col-12 col-md-6 col-lg-5  ">
-                                    <div className="d-flex align-items-center gap-2"
+                                <div className="col-12 col-md-4 col-lg-5">
+                                    <div className="d-flex align-items-center "
                                         style={{ position: 'relative', width: '100%' }}
                                     >
-                                        <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Ledger</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            onChange={handleLedgerChange}
-                                            value={ledgerQuery}
-                                            onFocus={() => {
-                                                if (ledgerQuery.trim() !== '') setShowLedgerDropdown(true);
-                                            }}
-                                            onKeyDown={handleLedgerKeyDown}
-                                            onBlur={() => {
-                                                setTimeout(() => setShowLedgerDropdown(false), 150);
-                                            }}
-                                            disabled
-                                        />
+                                        <div className="col-2">
+                                            <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Ledger</label>
+                                        </div>
+                                        <div className="col-10">
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                onChange={handleLedgerChange}
+                                                value={ledgerQuery}
+                                                onFocus={() => {
+                                                    if (ledgerQuery.trim() !== '') setShowLedgerDropdown(true);
+                                                }}
+                                                onKeyDown={handleLedgerKeyDown}
+                                                onBlur={() => {
+                                                    setTimeout(() => setShowLedgerDropdown(false), 150);
+                                                }}
+                                                disabled
+                                            />
+                                        </div>
 
                                         {/* DROPDOWN */}
                                         {showLedgerDropdown && (
@@ -1778,36 +1794,45 @@ const Sales = () => {
 
                             </div>
 
-                            {/* Row 2 */}
-                            <div className='row align-items-center g-1 mt-1'>
+                            <div className='row align-items-center  mt-2'>
 
-                                <div className="col-12 col-md-6 col-lg-3 ">
-                                    <div className="d-flex align-items-center gap-2">
-                                        <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Inv.Date</label>
-                                        <input
-                                            type="date"
-                                            className="form-control form-control-sm"
-                                            name='invDate'
-                                            value={topData.invDate}
-                                            onChange={handleTopChange}
-                                        />
+                                <div className="col-12 col-md-4 col-lg-3 ">
+                                    <div className="row align-items-center">
+                                        <div className="col-3">
+                                            <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Inv.Date</label>
+                                        </div>
+                                        <div className="col-9">
+                                            <input
+                                                type="date"
+                                                className="form-control form-control-sm"
+                                                name='invDate'
+                                                value={topData.invDate}
+                                                onChange={handleTopChange}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
 
-                                <div className="col-12 col-md-6 col-lg-9  ">
-                                    <div className="d-flex align-items-center gap-2 ">
-                                        <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Subject</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            name='subject'
-                                            value={topData.subject}
-                                            onChange={handleTopChange}
-                                        />
+                                <div className="col-12 col-md-8 col-lg-9  ">
+                                    <div className="row align-items-center  ">
+                                        <div className="col-1">
+                                            <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Subject</label>
+                                        </div>
+                                        <div className="col-11">
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                name='subject'
+                                                value={topData.subject}
+                                                onChange={handleTopChange}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+
                             <hr className='mt-1 mb-1' />
                             {/* 10 Bottom Input Boxes */}
                             <div className="table-responsive" >
@@ -2558,7 +2583,10 @@ const Sales = () => {
                             </button>
                             <button className='btn btn-sm btn-secondary'>Print</button>
                             <button className='btn btn-sm btn-danger' onClick={() => setShowFind(true)}>Delete</button>
-                            <button className='btn btn-sm btn-warning' onClick={handleReset}>Reset</button>
+                            <button className='btn btn-sm btn-warning' onClick={() => {
+                                handleReset()
+                                setIsEditMode(false)
+                            }}>Reset</button>
                         </div>
 
                     </div>
@@ -2840,6 +2868,9 @@ const Sales = () => {
                         <FindSales
                             onClose={() => setShowFind(false)}
                             onEdit={handleEditFromFind}
+                            onReset={handleReset}
+                            onBtnDelete={() => setIsEditMode(false)}
+                            showTempMessage={showTempMessage}
                         />
                     )}
 
