@@ -65,12 +65,10 @@ const Group = () => {
     if (msgtype === 'true') {
       setShowMessage(true);
       setTimeout(() => setShowMessage(false), 3000);
-
     } else {
       setShowMessage_Error(true);
       setTimeout(() => setShowMessage_Error(false), 3000);
     }
-
   };
 
 

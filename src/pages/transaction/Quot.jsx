@@ -7,6 +7,8 @@ import FindQuot from './FindQuot';
 import GSTReport from '../reports/GSTReport';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import OutStanding from '../reports/OutStanding';
+import { useNavigate } from "react-router-dom";
 
 
 const Quot = ({ gstReportData }) => {
@@ -114,8 +116,8 @@ const Quot = ({ gstReportData }) => {
     const [showAddBrandModal, setShowAddBrandModal] = useState(false);
     const reportRef = useRef(null);
 
-
-
+    const [showPdf, setShowPdf] = useState(false);
+    const navigate = useNavigate();
 
 
 
@@ -142,6 +144,15 @@ const Quot = ({ gstReportData }) => {
         axiosInstance.get(`${gapi}/unit/list`).then(res => setAddUnitList(res.data.Data));
     }, []);
 
+    const handlePrint = () => {
+        if (!topData.QId) {
+            alert("Save quotation before printing");
+            return;
+        }
+        console.log(topData.QId)
+
+        navigate(`/reports/outstanding/${topData.QId}`);
+    };
 
     const loadProject = async () => {
         try {
@@ -732,9 +743,9 @@ const Quot = ({ gstReportData }) => {
         }
     };
 
-    useEffect(() => {
-        console.log("🔥 Quotation TOPDATA QId =", topData.QId);
-    }, [topData.QId]);
+    // useEffect(() => {
+    //     console.log("🔥 Quotation TOPDATA QId =", topData.QId);
+    // }, [topData.QId]);
 
     const handleEditFromFind = async (qId) => {
         try {
@@ -901,7 +912,7 @@ const Quot = ({ gstReportData }) => {
             );
             console.log("UPDATE Popup 👉", res.data)
             if (res.data?.Success === true) {
-                showTempMessage(res.data?.Message, true);
+                showTempMessage(res.data?.Message, 'true');
                 setIsEditMode(false);
                 handleReset();
             } else {
@@ -1186,27 +1197,27 @@ const Quot = ({ gstReportData }) => {
         }
     };
 
-    const handlePrint = async () => {
-        if (!reportRef.current) return;
+    // const handlePrint = async () => {
+    //     if (!reportRef.current) return;
 
-        await new Promise(res => setTimeout(res, 300)); // 🔥 allow render
+    //     await new Promise(res => setTimeout(res, 300)); // 🔥 allow render
 
-        const canvas = await html2canvas(reportRef.current, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#fff",
-        });
+    //     const canvas = await html2canvas(reportRef.current, {
+    //         scale: 2,
+    //         useCORS: true,
+    //         backgroundColor: "#fff",
+    //     });
 
-        const imgData = canvas.toDataURL("image/png");
+    //     const imgData = canvas.toDataURL("image/png");
 
-        const pdf = new jsPDF("p", "mm", "a4");
-        const pdfWidth = 210;
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    //     const pdf = new jsPDF("p", "mm", "a4");
+    //     const pdfWidth = 210;
+    //     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    //     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
 
-        window.open(pdf.output("bloburl"), "_blank");
-    };
+    //     window.open(pdf.output("bloburl"), "_blank");
+    // };
 
 
     return (
@@ -1261,52 +1272,64 @@ const Quot = ({ gstReportData }) => {
 
                                 {/* Q.No */}
                                 <div className="col-12 col-md-6 col-lg-2">
-                                    <div className="d-flex align-items-center gap-2">
-                                        <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
-                                            Q.No
-                                        </label>
-                                        <input
-                                            type="number"
-                                            className="form-control form-control-sm"
-                                            name='qNo'
-                                            value={topData.qNo}
-                                            onChange={handleTopChange}
-                                        />
+                                    <div className="row align-items-center gap-2">
+                                        <div className='col-2'>
+                                            <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
+                                                Q.No
+                                            </label>
+                                        </div>
+                                        <div className='col-8'>
+                                            <input
+                                                type="number"
+                                                className="form-control form-control-sm"
+                                                name='qNo'
+                                                value={topData.qNo}
+                                                onChange={handleTopChange}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* R.No */}
                                 <div className="col-12 col-md-6 col-lg-2">
-                                    <div className="d-flex align-items-center gap-2">
-                                        <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
-                                            R.No
-                                        </label>
-                                        <input
-                                            type="number"
-                                            className="form-control form-control-sm"
-                                            name='rNo'
-                                            value={topData.rNo}
-                                            onChange={handleTopChange}
-                                        />
+                                    <div className="row align-items-center gap-2">
+                                        <div className='col-2'>
+                                            <label className="fw-bold mb-0" style={{ whiteSpace: 'nowrap' }}>
+                                                R.No
+                                            </label>
+                                        </div>
+                                        <div className='col-8'>
+                                            <input
+                                                type="number"
+                                                className="form-control form-control-sm"
+                                                name='rNo'
+                                                value={topData.rNo}
+                                                onChange={handleTopChange}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Project */}
                                 <div className="col-12 col-md-6 col-lg-4  ">
-                                    <div className="d-flex align-items-center gap-2"
+                                    <div className="row align-items-center gap-2"
                                         style={{ position: 'relative', width: '100%' }}
                                     >
-                                        <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Project</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            placeholder="🔎 Search Project..."
-                                            onChange={handleProjectChange}
-                                            onKeyDown={handleProjectKeyDown}
-                                            value={projectQuery}
-                                            onFocus={() => projectQuery && setShowProjectDropdown(true)}
-                                            onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
-                                        />
+                                        <div className='col-2'>
+                                            <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Project</label>
+                                        </div>
+                                        <div className='col-9'>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                placeholder="🔎 Search Project..."
+                                                onChange={handleProjectChange}
+                                                onKeyDown={handleProjectKeyDown}
+                                                value={projectQuery}
+                                                onFocus={() => projectQuery && setShowProjectDropdown(true)}
+                                                onBlur={() => setTimeout(() => setShowProjectDropdown(false), 150)}
+                                            />
+                                        </div>
                                         {/* Dropdown */}
                                         {showProjectDropdown && (
                                             <div
@@ -1368,22 +1391,25 @@ const Quot = ({ gstReportData }) => {
                                     <div className="d-flex align-items-center gap-2"
                                         style={{ position: 'relative', width: '100%' }}
                                     >
-                                        <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Ledger</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            onChange={handleLedgerChange}
-                                            value={ledgerQuery}
-                                            onFocus={() => {
-                                                if (ledgerQuery.trim() !== '') setShowLedgerDropdown(true);
-                                            }}
-                                            onKeyDown={handleLedgerKeyDown}
-                                            onBlur={() => {
-                                                setTimeout(() => setShowLedgerDropdown(false), 150);
-                                            }}
-                                            disabled
-                                        />
-
+                                        <div className='col-2'>
+                                            <label className="form-label fw-bold" style={{ whiteSpace: 'nowrap' }}>Ledger</label>
+                                        </div>
+                                        <div className='col-9'>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                onChange={handleLedgerChange}
+                                                value={ledgerQuery}
+                                                onFocus={() => {
+                                                    if (ledgerQuery.trim() !== '') setShowLedgerDropdown(true);
+                                                }}
+                                                onKeyDown={handleLedgerKeyDown}
+                                                onBlur={() => {
+                                                    setTimeout(() => setShowLedgerDropdown(false), 150);
+                                                }}
+                                                disabled
+                                            />
+                                        </div>
                                         {/* DROPDOWN */}
                                         {showLedgerDropdown && (
                                             <div
@@ -2527,9 +2553,9 @@ const Quot = ({ gstReportData }) => {
 
                     <div
                         style={{
-                            position: "absolute",
-                            top: 0,   // 🔥 safer than opacity 0
-                            left: '9999px',
+                            position: "fixed",
+                            top: '10000px',   // 🔥 safer than opacity 0
+                            left: 0,
                             width: "210mm",
                             background: "#fff"
                         }}
@@ -2549,7 +2575,9 @@ const Quot = ({ gstReportData }) => {
                         />
                     )}
 
-
+                    {showPdf && (
+                        <OutStanding qId={topData.QId} />
+                    )}
 
                 </div>
             </div>

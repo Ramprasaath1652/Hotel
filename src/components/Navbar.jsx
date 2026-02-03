@@ -157,13 +157,13 @@ const Navbar = () => {
                             {openMenu === "transaction" && (
                                 <ul className="dropdown-menu show">
                                     {/* <li><Link className="dropdown-item" to="/transaction/suppquotation"><FontAwesomeIcon icon={faFileInvoice} className="me-2" />Supp Quotation</Link></li> */}
-                                    <li><Link className="dropdown-item" to="/transaction/squot" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faFileSignature} className="me-2" />SQuot</Link></li>
+                                    <li><Link className="dropdown-item" to="/transaction/squot" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faFileSignature} className="me-2" />Supplier Quotation</Link></li>
                                     {/* <li><Link className="dropdown-item" to="/transaction/quotation"><FontAwesomeIcon icon={faFileLines} className="me-2" />Quotation</Link></li> */}
-                                    <li><Link className="dropdown-item" to="/transaction/quot" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faReceipt} className="me-2" />Quot</Link></li>
+                                    <li><Link className="dropdown-item" to="/transaction/quot" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faReceipt} className="me-2" />Quotation</Link></li>
                                     <li><Link className="dropdown-item" to="/transaction/sales" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faCartShopping} className="me-2" />Sales</Link></li>
-                                    <li><Link className="dropdown-item" to="/transaction/purchase" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faTruck} className="me-2" />Purchase</Link></li>
+                                    {/* <li><Link className="dropdown-item" to="/transaction/purchase" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faTruck} className="me-2" />Purchase</Link></li>
                                     <li><Link className="dropdown-item" to="/transaction/stock-entry" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faBoxesStacked} className="me-2" />Stock Entry</Link></li>
-                                    <li><Link className="dropdown-item" to="/transaction/stock-decrease" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faArrowDown} className="me-2" />Stock Decrease</Link></li>
+                                    <li><Link className="dropdown-item" to="/transaction/stock-decrease" onClick={() => { setOpenMenu(null), setMobileOpen(false) }}><FontAwesomeIcon icon={faArrowDown} className="me-2" />Stock Decrease</Link></li> */}
                                 </ul>
                             )}
                         </li>

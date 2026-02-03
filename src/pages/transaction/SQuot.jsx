@@ -1010,7 +1010,7 @@ const SQuot = () => {
     //     }
     // };
 
-  
+
     const handleEditFromFind = async (sqId) => {
         try {
             const res = await axiosInstance.get(`${gapi}/suppquo/edit/${sqId}`);
@@ -1124,14 +1124,22 @@ const SQuot = () => {
                 `${gapi}/suppquo/update`,   // 🔑 NO SQId in URL
                 payload
             );
-
-            showTempMessage("Quotation Updated ✅", true);
-            setIsEditMode(false);
-            handleReset()
-
+            if (res.data?.Success === true) {
+                showTempMessage(res.data.Message, 'true');
+                setIsEditMode(false);
+                handleReset()
+            } else {
+                showTempMessage(res.data?.Message, 'false');
+            }
         } catch (err) {
-            console.error(err);
-            showTempMessage("Update Failed ❌", false);
+            const backendError =
+                err.response?.data?.Message ||
+                err.response?.data ||
+                err.message ||
+                'Something went wrong';
+
+            showTempMessage(backendError, 'false');
+            console.error('Update error:', err);
         }
     };
 
@@ -1451,7 +1459,7 @@ const SQuot = () => {
                         backgroundColor: 'white'
                     }}
                 >
-                    <h4><FontAwesomeIcon icon={faFileSignature} className="me-2" />SQuot</h4>
+                    <h4><FontAwesomeIcon icon={faFileSignature} className="me-2" />Supplier Quot</h4>
                 </div>
                 {/* card-body */}
                 <div

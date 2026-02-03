@@ -166,7 +166,7 @@ const App = () => {
                         <Route path='/reports/sales-return' element={<SalesReturn />} />
                         <Route path='/reports/purchase-return' element={<PurchaseReturn />} />
                         <Route path='/reports/stock-entry-report' element={<StockEntryReport />} />
-                        <Route path='/reports/outstanding' element={<OutStanding />} />
+                        <Route path='/reports/outstanding/:qid' element={<OutStanding />} />
                         <Route path='/reports/credit-note-report' element={<CreditNoteReport />} />
                         <Route path='/reports/debit-note-report' element={<DebitNoteReport />} />
                         <Route path='/reports/stock' element={<Stock />} />

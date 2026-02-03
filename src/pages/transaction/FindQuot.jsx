@@ -77,7 +77,7 @@ const FindQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) =>
     const confirmDelete = async () => {
         try {
             const res = await axiosInstance.delete(`${gapi}/quo/delete/${rowToDelete}`);
-
+            console.log("DELETE RESPONSE:", res.data);
             if (res.data?.Success === true) {
                 setFiltered(prev => prev.filter(r => r.QId !== rowToDelete));
                 setQuot(prev => prev.filter(r => r.QId !== rowToDelete));
@@ -92,7 +92,7 @@ const FindQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) =>
             }
 
         } catch (err) {
-            console.error("Delete Error",err);
+            console.error("Delete Error", err);
             showTempMessage(res.data?.Message, "false");
         }
     };

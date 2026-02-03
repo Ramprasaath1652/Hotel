@@ -45,7 +45,7 @@ const BrandMaster = () => {
       }
     } catch (err) {
       console.error("Error fetching brands:", err);
-        setBrands([])
+      setBrands([])
     }
   };
 
@@ -157,6 +157,7 @@ const BrandMaster = () => {
 
     try {
       const res = await axiosInstance.delete(`${API}delete/${brandToDelete.BrandId}`);
+      console.log("DELETE RESPONSE:", res.data);
       setShowDeleteModal(false);
       setBrandToDelete(null);
       if (res.data?.Success === true) {

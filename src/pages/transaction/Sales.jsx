@@ -1131,18 +1131,18 @@ const Sales = () => {
                 payload,
                 { headers: { "Content-Type": "application/json" } }
             );
-
+            console.log("UPDATE ID:",res.data)
             if (res.data?.Success === true) {
-                showTempMessage(res.data.Message, true);
+                showTempMessage(res.data.Message, 'true');
                 setIsEditMode(false);
                 handleReset();
             } else {
-                showTempMessage(res.data?.Message, false);
+                showTempMessage(res.data?.Message, 'false');
             }
 
         } catch (err) {
             console.error("❌ SALES UPDATE ERROR:", err.response?.data || err);
-            showTempMessage("Update failed ❌", false);
+            showTempMessage("Update failed ❌", 'false');
         }
     };
 
@@ -1427,9 +1427,6 @@ const Sales = () => {
         }
     };
 
-
-
-
     return (
         <div className='container-fluid mt-2'>
             <div
@@ -1449,7 +1446,7 @@ const Sales = () => {
                         color: '#6a1b9a'
                     }}
                 >
-                    <h4 className='mb-0'><FontAwesomeIcon icon={faReceipt} className="me-2" />Sales</h4>
+                    <h4 className='mb-0'><FontAwesomeIcon icon={faReceipt} className="me-2" />Invoice</h4>
                 </div>
 
                 {/* Body */}
@@ -1499,8 +1496,8 @@ const Sales = () => {
                                                 <option value="" disabled hidden>
                                                     -- Select Invoice --
                                                 </option>
-                                                <option value="proforma">Proforma Inv</option>
-                                                <option value="Invoice">Invoice</option>
+                                                <option value="proforma">Proforma Invoice</option>
+                                                <option value="Invoice">Tax-Invoice</option>
                                             </select>
                                         </div>
                                     </div>

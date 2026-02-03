@@ -85,22 +85,23 @@ const FindSQuot = ({ onClose, onEdit, onReset, onBtnDelete, showTempMessage }) =
             const res = await axiosInstance.delete(
                 `${gapi}/suppquo/delete/${rowToDelete}`
             );
+            console.log("DELETE RESPONSE:", res.data);
             setShowDeleteModal(false);
             onClose();
             if (res.data?.Success === true) {
-                showTempMessage(res.data.Message, "true");
+                showTempMessage(res.data.Message, 'true');
                 setFiltered(prev => prev.filter(r => r.SQId !== rowToDelete));
                 setQuot(prev => prev.filter(r => r.SQId !== rowToDelete));
                 onReset();
                 onBtnDelete();
                 setRowToDelete(null);
             } else {
-                showTempMessage(res.data?.Message, "false");
+                showTempMessage(res.data?.Message, 'false');
             }
 
         } catch (err) {
             console.error("Delete Error", err);
-            showTempMessage(res.data?.Message, "false");
+            // showTempMessage(res.data?.Message, 'false');
         }
     };
 
